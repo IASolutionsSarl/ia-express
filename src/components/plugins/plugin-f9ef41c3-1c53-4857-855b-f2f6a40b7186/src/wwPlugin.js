@@ -1,0 +1,718 @@
+import { createClient } from '@supabase/supabase-js';
+
+import { generateFilter } from './helpers/filters';
+import { getCurrentSupabaseSettings, resolveRuntimeProjectUrl } from './helpers/environmentConfig';
+
+import {
+    buildQueryString,
+    buildHeaders,
+    executeRegularInvocation,
+    executeStreamingInvocation,
+} from './helpers/edgeFunction.js';
+
+const maskForLog = value => {
+    if (!value) return null;
+    const str = String(value);
+    if (str.length <= 8) return str;
+    return `${str.slice(0, 4)}...${str.slice(-4)}`;
+};
+
+export default {
+    instance: null,
+    channels: {},
+    /*=============================================m_ÔÔ_m=============================================\
+        Plugin API
+    \================================================================================================*/
+    async _onLoad(settings) {
+
+        // Get configuration for current environment
+        let config = getCurrentSupabaseSettings('supabase');
+        let runtimeProjectUrl = resolveRuntimeProjectUrl(config);
+
+
+        await this.load(runtimeProjectUrl, config.publicApiKey);
+        this.subscribeTables(settings.publicData.realtimeTables || {});
+    },
+
+    async fetchProjectInfo(configOverride = null) {
+        const config = configOverride || getCurrentSupabaseSettings('supabase');
+        const projectUrl = config?.projectUrl;
+        const accessToken = config?.accessToken;
+        if (!accessToken || !projectUrl) return;
+
+        const params = this.getBranchQueryParams(config);
+        const { data: schemaData } = await this.requestAPI({ method: 'GET', path: '/schema', params });
+        const { data: edgeData } = await this.requestAPI({ method: 'GET', path: '/edge', params });
+        this.projectInfo = schemaData?.data;
+        this.projectInfo.edge = edgeData?.data;
+        wwLib.$emit('wwTopBar:supabase:refresh');
+        return this.projectInfo;
+    },
+    getBranchQueryParams(config = getCurrentSupabaseSettings('supabase')) {
+        if (!config) return undefined;
+        const params = {};
+        if (config.branchSlug) params.branch = config.branchSlug;
+        if (config.baseProjectRef) params.baseProjectRef = config.baseProjectRef;
+        return Object.keys(params).length ? params : undefined;
+    },
+    async onSave(settings) {
+        await this.syncSettings(settings);
+
+        // Get config for current environment
+        const config = getCurrentSupabaseSettings('supabase');
+        if (!config.projectUrl) return;
+
+        const runtimeProjectUrl = resolveRuntimeProjectUrl(config);
+
+        if (config.accessToken && config.projectUrl) {
+            await this.install();
+            await this.fetchProjectInfo(config);
+        }
+
+        if (wwLib.wwPlugins.supabaseAuth) {
+            // supabaseAuth will call syncInstance
+            const authConfig = getCurrentSupabaseSettings('supabaseAuth');
+            const authRuntimeUrl = resolveRuntimeProjectUrl(authConfig);
+            await wwLib.wwPlugins.supabaseAuth.load(authRuntimeUrl, authConfig.publicApiKey, authConfig.privateApiKey);
+        } else {
+            await this.load(runtimeProjectUrl, config.publicApiKey);
+            this.subscribeTables(settings.publicData.realtimeTables || {});
+        }
+    },
+    async requestAPI({ method, path, data, params, signal }, retry = true) {
+        try {
+            // Get current environment and send it explicitly
+            const config = getCurrentSupabaseSettings('supabase');
+            const currentEnv = config.environment; // 'editor', 'staging', or 'production'
+
+            return await wwAxios({
+                method,
+                url: `${wwLib.wwApiRequests._getPluginsUrl()}/designs/${
+                    wwLib.$store.getters['websiteData/getDesignInfo'].id
+                }/supabase${path}`,
+                data,
+                params: {
+                    ...params,
+                    wwEnv: currentEnv, // Send environment explicitly
+                },
+                signal, // Support AbortController signal
+            });
+        } catch (error) {
+            // Don't retry if request was aborted
+            if (error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
+                throw error;
+            }
+
+            const isOauthToken = wwLib.wwPlugins.supabase.settings.privateData.accessToken?.startsWith('sbp_oauth');
+            if (retry && [401, 403].includes(error.response?.status) && isOauthToken) {
+                const { data } = await wwAxios.post(
+                    `${wwLib.wwApiRequests._getPluginsUrl()}/designs/${
+                        wwLib.$store.getters['websiteData/getDesignInfo'].id
+                    }/supabase/refresh`
+                );
+                return await this.requestAPI({ method, path, data, params, signal }, false);
+            }
+            wwLib.wwNotification.open({ text: 'Error while requesting the supabase project.', color: 'red' });
+            throw error;
+        }
+    },
+    /* wwEditor:end */
+    /*  Called by supabase auth plugin
+     *  Allow supabase to use the supabase auth instance when available
+     */
+    syncInstance() {
+        if (wwLib.wwPlugins.supabaseAuth && wwLib.wwPlugins.supabaseAuth.publicInstance) {
+            this.instance = wwLib.wwPlugins.supabaseAuth.publicInstance;
+            this.subscribeTables(wwLib.wwPlugins.supabase.settings.publicData.realtimeTables || {});
+        }
+    },
+    /*=============================================m_ÔÔ_m=============================================\
+        Collection API
+    \================================================================================================*/
+    async _fetchCollection(collection) {
+        if (collection.mode === 'dynamic') {
+            try {
+                // Ensure we have an instance for the current environment
+                if (!this.instance) {
+                    const config = getCurrentSupabaseSettings('supabase');
+                    const runtimeProjectUrl = resolveRuntimeProjectUrl(config);
+                    if (runtimeProjectUrl && config.publicApiKey) {
+                        await this.load(runtimeProjectUrl, config.publicApiKey);
+                    }
+                }
+
+                const fields =
+                    collection.config.fieldsMode === 'guided'
+                        ? (collection.config.dataFields || []).join(', ')
+                        : collection.config.dataFieldsAdvanced;
+                let query = this.instance
+                    .from(collection.config.table)
+                    .select(fields || undefined, { count: collection.limit ? 'exact' : null });
+                const filter = generateFilter(collection.filter);
+
+                if (filter) query.or(filter);
+
+                if (collection.limit) {
+                    query.range(collection.offset, collection.offset + collection.limit - 1);
+                }
+
+                for (const sort of collection.sort) {
+                    const sortColumn = Array.isArray(sort.field) ? sort.field[0] : sort.field || sort.key;
+                    if (!sortColumn) continue;
+                    query.order(sortColumn, { ascending: sort.direction === 'ASC' });
+                }
+
+                const { data, error, count } = await query;
+                return { data, error, total: count ?? data?.length };
+            } catch (err) {
+                return {
+                    data: [],
+                    error: Object.getOwnPropertyNames(err).reduce((obj, key) => ({ ...obj, [key]: err[key] }), {}),
+                };
+            }
+        } else {
+            return { data: null, error: null, total: 0 };
+        }
+    },
+    /*=============================================m_ÔÔ_m=============================================\
+        Supabase API
+    \================================================================================================*/
+    subscribeTables(realtimeTables) {
+        if (!this.instance) return;
+        // this.instance.removeAllChannels();
+        for (const tableName of Object.keys(realtimeTables)) {
+            if (!realtimeTables[tableName]) continue;
+            this.instance
+                .channel('ww:public:' + tableName)
+                .on('postgres_changes', { event: '*', schema: 'public', table: tableName }, this.onSubscribe)
+                .subscribe();
+        }
+    },
+    async load(projectUrl, apiKey) {
+        if (!projectUrl || !apiKey) return;
+        try {
+            this.instance =
+                wwLib.wwPlugins.supabaseAuth && wwLib.wwPlugins.supabaseAuth.publicInstance
+                    ? wwLib.wwPlugins.supabaseAuth.publicInstance
+                    : createClient(projectUrl, apiKey);
+
+            if (!this.instance) throw new Error('Invalid Supabase configuration.');
+        } catch (err) {
+            this.instance = null;
+            this.doc = null;
+            wwLib.wwLog.error(err);
+        }
+    },
+    async select({ table, fieldsMode, dataFields, dataFieldsAdvanced, filters, modifiers }, wwUtils) {
+        wwUtils?.log('info', `[Supabase] Selecting ${table}`, { type: 'request' });
+        const fields = fieldsMode === 'guided' ? (dataFields || []).join(', ') : dataFieldsAdvanced;
+        const query = this.instance
+            .from(table)
+            .select(fields || undefined, { count: modifiers?.count?.mode, head: modifiers?.count?.countOnly });
+        applyFilters(query, filters);
+        applyModifiers(query, modifiers);
+        const { data, count, error } = await query;
+
+        if (error) throw new Error(error.message, { cause: error });
+        return modifiers?.count ? (modifiers.count.countOnly ? count : { data, count }) : data;
+    },
+    async insert(
+        { table, data: payload = {}, autoSync = true, mode = 'single', modifiers = {}, defaultToNull = true },
+        wwUtils
+    ) {
+        wwUtils?.log('info', `[Supabase] Inserting inside ${table}`, { preview: payload, type: 'request' });
+
+        const query = this.instance.from(table).insert(payload, { count: modifiers?.count?.mode, defaultToNull });
+
+        applyModifiers(query, {
+            select: { mode: 'guided', fields: [] },
+            ...modifiers,
+        });
+
+        const { data, count, error } = await query;
+        if (error)
+            throw new Error(
+                error.code === 'PGRST100'
+                    ? 'Mode minimal cannot be used on this postgres version, please update your supabase instance or use another mode.'
+                    : error.message,
+                { cause: error }
+            );
+        if (autoSync) this.performAutoSync(table, 'INSERT', data);
+        return this.formatReturn(data, count, mode === 'single');
+    },
+    async update(
+        { table, primaryData = {}, data: payload = {}, autoSync = true, mode = 'single', filters = [], modifiers = {} },
+        wwUtils
+    ) {
+        wwUtils?.log('info', `[Supabase] Updating ${table}`, {
+            type: 'request',
+            preview: { primaryData, filters, data: payload },
+        });
+
+        const query = this.instance.from(table).update(payload, { count: modifiers?.count?.mode });
+        if (mode === 'single') query.match(primaryData);
+        else applyFilters(query, filters);
+
+        applyModifiers(query, {
+            select: { mode: 'guided', fields: [] },
+            ...modifiers,
+        });
+
+        const { data, count, error } = await query;
+        if (error)
+            throw new Error(
+                error.code === 'PGRST100'
+                    ? 'Mode minimal cannot be used on this postgres version, please update your supabase instance or use another mode.'
+                    : error.message,
+                { cause: error }
+            );
+        if (autoSync) this.performAutoSync(table, 'UPDATE', data);
+        return this.formatReturn(data, count, mode === 'single');
+    },
+    async upsert(
+        {
+            table,
+            data: payload = {},
+            ignoreDuplicates = false,
+            onConflict = [],
+            defaultToNull = true,
+            autoSync = true,
+            mode = 'single',
+            modifiers = {},
+        },
+        wwUtils
+    ) {
+        wwUtils?.log('info', `[Supabase] Upserting data inside ${table}`, { type: 'request', preview: payload });
+
+        const query = this.instance.from(table).upsert(payload, {
+            count: modifiers?.count?.mode,
+            ignoreDuplicates,
+            ...(onConflict.length ? { onConflict: onConflict.join(',') } : null),
+            defaultToNull,
+        });
+
+        applyModifiers(query, {
+            select: { mode: 'guided', fields: [] },
+            ...modifiers,
+        });
+
+        const { data, count, error } = await query;
+        if (error)
+            throw new Error(
+                error.code === 'PGRST100'
+                    ? 'Mode minimal cannot be used on this postgres version, please update your supabase instance or use another mode.'
+                    : error.message,
+                { cause: error }
+            );
+        if (autoSync) this.performAutoSync(table, 'UPSERT', data);
+        return this.formatReturn(data, count, mode === 'single');
+    },
+    async delete({ table, primaryData = {}, autoSync = true, mode = 'single', filters = [], modifiers = {} }, wwUtils) {
+        wwUtils?.log('info', `[Supabase] Deleting from ${table}`, {
+            type: 'request',
+            preview: mode === 'single' ? primaryData : filters,
+        });
+
+        const query = this.instance.from(table).delete({ count: modifiers?.count?.mode });
+
+        if (mode === 'single') query.match(primaryData);
+        else applyFilters(query, filters);
+
+        applyModifiers(query, {
+            select: { mode: 'guided', fields: [] },
+            ...modifiers,
+        });
+
+        const { data, count, error } = await query;
+        if (error)
+            throw new Error(
+                error.code === 'PGRST100'
+                    ? 'Mode minimal cannot be used on this postgres version, please update your supabase instance or use another mode.'
+                    : error.message,
+                { cause: error }
+            );
+        if (autoSync) this.performAutoSync(table, 'DELETE', data);
+        return this.formatReturn(data, count, mode === 'single');
+    },
+    async callPostgresFunction({ functionName, params, modifiers }, wwUtils) {
+        const query = this.instance.rpc(
+            functionName,
+            Array.isArray(params)
+                ? params.reduce((result, item) => ({ ...result, [item.key]: item.value }), {})
+                : params,
+            { count: modifiers?.count?.mode, head: modifiers?.count?.countOnly }
+        );
+        applyModifiers(query, modifiers);
+        wwUtils?.log('info', `[Supabase] Call a Postgres function - ${functionName}`, {
+            type: 'request',
+            preview: params,
+        });
+        const { data, count, error } = await query;
+        if (error) throw new Error(error.message, { cause: error });
+        return this.formatReturn(data, count);
+    },
+    async invokeEdgeFunction(args, wwUtils) {
+        const {
+            functionName,
+            body,
+            headers = [],
+            queries = [],
+            method = 'POST',
+            useStreaming = false,
+            streamVariableId = null,
+        } = args;
+
+
+        wwUtils?.log('info', `[Supabase] ${useStreaming ? 'Streaming' : 'Invoking'} Edge function - ${functionName}`, {
+            type: 'request',
+            preview: { body, headers, method },
+        });
+        const queryString = buildQueryString(queries);
+        const headerObject = buildHeaders(headers);
+
+        if (useStreaming) {
+            return await executeStreamingInvocation(
+                {
+                    instance: this.instance,
+                    functionName,
+                    queryString,
+                    method,
+                    body,
+                    headerObject,
+                    streamVariableId,
+                    wwLib,
+                },
+                wwUtils
+            );
+        } else {
+            return await executeRegularInvocation(
+                {
+                    instance: this.instance,
+                    functionName,
+                    queryString,
+                    method,
+                    body,
+                    headerObject,
+                },
+                wwUtils
+            );
+        }
+    },
+    async listFiles({ bucket, path, options = {} }, wwUtils) {
+        wwUtils?.log('info', `[Supabase] List all files`, { type: 'request', preview: { bucket, path, options } });
+        const { data, error } = await this.instance.storage.from(bucket).list(path, {
+            ...(options.limit ? { limit: options.limit } : {}),
+            ...(options.offset ? { offset: options.offset } : {}),
+            ...(options.search ? { search: options.search } : {}),
+            ...(options.sortBy ? { sortBy: options.sortBy } : {}),
+        });
+        if (error) throw new Error(error.message, { cause: error });
+        return data;
+    },
+    async uploadFile({ bucket, path, file, options = {} }, wwUtils) {
+        wwUtils?.log('info', `[Supabase] Upload a file`, {
+            type: 'request',
+            preview: { bucket, path, file, options },
+        });
+        const { data, error } = await this.instance.storage.from(bucket).upload(path, file, {
+            ...(options.cacheControl ? { cacheControl: options.cacheControl } : {}),
+            ...(options.upsert ? { upsert: options.upsert } : {}),
+            ...(options.contentType ? { contentType: options.contentType } : {}),
+            ...(options.duplex ? { duplex: options.duplex } : {}),
+        });
+        if (error) throw new Error(error.message, { cause: error });
+        return data;
+    },
+    async downloadFile({ bucket, path, options = { transform: null } }, wwUtils) {
+        wwUtils?.log('info', `[Supabase] Download a file`, { type: 'request', preview: { bucket, path, options } });
+        const { data, error } = this.instance.storage.from(bucket).download(
+            path,
+            options.transform
+                ? {
+                      transform: {
+                          ...(options.transform.format ? { format: options.transform.format } : {}),
+                          ...(options.transform.quality ? { quality: options.transform.quality } : {}),
+                          ...(options.transform.resize ? { resize: options.transform.resize } : {}),
+                          ...(options.transform.width ? { width: options.transform.width } : {}),
+                          ...(options.transform.height ? { height: options.transform.height } : {}),
+                      },
+                  }
+                : {}
+        );
+        if (error) throw new Error(error.message, { cause: error });
+        return data;
+    },
+    async updateFile({ bucket, path, file, options = {} }, wwUtils) {
+        wwUtils?.log('info', `[Supabase] Update a file`, {
+            type: 'request',
+            preview: { bucket, path, file, options },
+        });
+        const { data, error } = this.instance.storage.from(bucket).update(path, file, {
+            ...(options.cacheControl ? { cacheControl: options.cacheControl } : {}),
+            ...(options.upsert ? { upsert: options.upsert } : {}),
+            ...(options.contentType ? { contentType: options.contentType } : {}),
+            ...(options.duplex ? { duplex: options.duplex } : {}),
+        });
+        if (error) throw new Error(error.message, { cause: error });
+        return data;
+    },
+    async moveFile({ bucket, path, newPath }, wwUtils) {
+        wwUtils?.log('info', `[Supabase] Move a file`, { type: 'request', preview: { bucket, path, newPath } });
+        const { data, error } = await this.instance.storage.from(bucket).move(path, newPath);
+        if (error) throw new Error(error.message, { cause: error });
+        return data;
+    },
+    async copyFile({ bucket, path, newPath }, wwUtils) {
+        wwUtils?.log('info', `[Supabase] Copy a file`, { type: 'request', preview: { bucket, path, newPath } });
+        const { data, error } = await this.instance.storage.from(bucket).copy(path, newPath);
+        if (error) throw new Error(error.message, { cause: error });
+        return data;
+    },
+    async deleteFiles({ bucket, paths }, wwUtils) {
+        wwUtils?.log('info', `[Supabase] Delete files`, { type: 'request', preview: { bucket, paths } });
+        const { data, error } = await this.instance.storage.from(bucket).remove(Array.isArray(paths) ? paths : [paths]);
+        if (error) throw new Error(error.message, { cause: error });
+        return data;
+    },
+    async createSignedUrl(
+        { mode = 'single', bucket, path, expiresIn, options = { download: false, transform: null } },
+        wwUtils
+    ) {
+        let query = this.instance.storage.from(bucket);
+        wwUtils?.log('info', `[Supabase] Create a signed URL`, {
+            type: 'request',
+            preview: { bucket, path, expiresIn, options },
+        });
+        if (mode === 'single') {
+            query = query.createSignedUrl(path, expiresIn, {
+                download: options.download ? options.download.filename || true : false,
+                transform: options.transform
+                    ? {
+                          ...(options.transform.format ? { format: options.transform.format } : {}),
+                          ...(options.transform.quality ? { quality: options.transform.quality } : {}),
+                          ...(options.transform.resize ? { resize: options.transform.resize } : {}),
+                          ...(options.transform.width ? { width: options.transform.width } : {}),
+                          ...(options.transform.height ? { height: options.transform.height } : {}),
+                      }
+                    : null,
+            });
+        } else {
+            query = query.createSignedUrls(path, expiresIn, {
+                download: options.download ? options.download.filename || true : false,
+            });
+        }
+        const { data, error } = await query;
+        if (error) throw new Error(error.message, { cause: error });
+        return data;
+    },
+    getPublicUrl({ bucket, path, options = { download: false, transform: null } }, wwUtils) {
+        wwUtils?.log('info', `[Supabase] Retrieve a public URL`, {
+            type: 'request',
+            preview: { bucket, path, options },
+        });
+        const { data, error } = this.instance.storage.from(bucket).getPublicUrl(path, {
+            download: options.download ? options.download.filename || true : false,
+            ...(options.transform
+                ? {
+                      transform: {
+                          ...(options.transform.format ? { format: options.transform.format } : {}),
+                          ...(options.transform.quality ? { quality: options.transform.quality } : {}),
+                          ...(options.transform.resize ? { resize: options.transform.resize } : {}),
+                          ...(options.transform.width ? { width: options.transform.width } : {}),
+                          ...(options.transform.height ? { height: options.transform.height } : {}),
+                      },
+                  }
+                : {}),
+        });
+        if (error) throw new Error(error.message, { cause: error });
+        return data;
+    },
+    onSubscribe(payload) {
+        const collections = Object.values(wwLib.$store.getters['data/getCollections']).filter(
+            collection =>
+                collection.pluginId === 'f9ef41c3-1c53-4857-855b-f2f6a40b7186' &&
+                collection.config.table === payload.table
+        );
+
+        switch (payload.eventType) {
+            case 'INSERT':
+                for (const collection of collections) {
+                    const itemIndex = findIndexFromPrimaryData(
+                        collection.data,
+                        payload.new,
+                        collection.config.primaryData
+                    );
+                    if (itemIndex !== -1) continue;
+                    wwLib.$store.dispatch('data/setCollection', {
+                        ...collection,
+                        total: collection.total + 1,
+                        data: [...(Array.isArray(collection.data) ? collection.data : []), payload.new],
+                    });
+                }
+                return;
+            case 'UPDATE':
+                for (const collection of collections) {
+                    const itemIndex = findIndexFromPrimaryData(
+                        collection.data,
+                        payload.new,
+                        collection.config.primaryData
+                    );
+                    if (itemIndex === -1) continue;
+                    const data = [...(Array.isArray(collection.data) ? collection.data : [])];
+                    data.splice(itemIndex, 1, { ...data[itemIndex], ...payload.new });
+                    wwLib.$store.dispatch('data/setCollection', { ...collection, data });
+                }
+                return;
+            case 'UPSERT':
+                for (const collection of collections) {
+                    const itemIndex = findIndexFromPrimaryData(
+                        collection.data,
+                        payload.new,
+                        collection.config.primaryData
+                    );
+                    const data = [...(Array.isArray(collection.data) ? collection.data : [])];
+                    const isInsert = itemIndex === -1;
+                    isInsert
+                        ? data.push(payload.new)
+                        : data.splice(itemIndex, 1, { ...data[itemIndex], ...payload.new });
+                    wwLib.$store.dispatch('data/setCollection', {
+                        ...collection,
+                        total: collection.total + (isInsert ? 1 : 0),
+                        data,
+                    });
+                }
+                return;
+            case 'DELETE':
+                for (const collection of collections) {
+                    const itemIndex = findIndexFromPrimaryData(
+                        collection.data,
+                        payload.old,
+                        collection.config.primaryData
+                    );
+                    if (itemIndex === -1) continue;
+                    const data = [...(Array.isArray(collection.data) ? collection.data : [])];
+                    data.splice(itemIndex, 1);
+                    wwLib.$store.dispatch('data/setCollection', { ...collection, total: collection.total - 1, data });
+                }
+                return;
+        }
+    },
+    subscribeToChannel({
+        channel,
+        type = 'postgres_changes',
+        event = '*',
+        schema = '*',
+        table,
+        filter,
+        self = false,
+        presence = false,
+    }) {
+        const _channel = this.instance.channel(channel, { config: { broadcast: { self } } });
+        _channel.on(
+            type,
+            {
+                event: event || '*',
+                ...(type === 'postgres_changes' ? { schema: schema || '*' } : {}),
+                ...(type === 'postgres_changes' && table ? { table } : {}),
+                ...(type === 'postgres_changes' && filter ? { filter } : {}),
+            },
+            e => {
+                wwLib.wwWorkflow.executeTrigger(this.id + '-realtime:' + type, {
+                    event: { channel, data: e },
+                    conditions: { channel, event: e.event || e.eventType },
+                });
+            }
+        );
+        if (presence) {
+            _channel.on(
+                'presence',
+                {
+                    event: '*',
+                },
+                e => {
+                    wwLib.wwWorkflow.executeTrigger(this.id + '-realtime:presence', {
+                        event: { channel, data: e },
+                        conditions: { channel, event: e.event },
+                    });
+                }
+            );
+        }
+        _channel.subscribe();
+    },
+    unsubscribeFromChannel({ channel }) {
+        const _channel = this.instance.getChannels().find(c => c.subTopic === channel);
+        if (!_channel) throw new Error('Channel not found, please subscribe to the channel before unsubscribing.');
+        this.instance.removeChannel(_channel);
+    },
+    sendMessageToChannel({ channel, type = 'broadcast', event, payload }) {
+        debugger;
+        const _channel = this.instance.getChannels().find(c => c.subTopic === channel);
+        if (!_channel) throw new Error('Channel not found, please subscribe to the channel before sending a message.');
+        _channel.send({ type, event, payload });
+    },
+    updateChannelState({ channel, state }) {
+        const _channel = this.instance.getChannels().find(c => c.subTopic === channel);
+        if (!_channel) throw new Error('Channel not found, please subscribe to the channel before updating the state.');
+        _channel.track(state);
+    },
+    performAutoSync(table, type, data) {
+        if (!data || this.settings.publicData.realtimeTables[table]) return;
+        if (typeof data === 'string') return; // csv case
+        const rows = Array.isArray(data) ? data : [data];
+        for (const row of rows) {
+            this.onSubscribe({ table, eventType: type, [type === 'DELETE' ? 'old' : 'new']: row });
+        }
+    },
+    formatReturn(rows, count, single = false) {
+        const data = single && Array.isArray(rows) ? rows[0] || null : rows;
+        return count !== null ? { data, count } : data;
+    },
+    types: {
+        integer: 'number',
+        string: 'query',
+    },
+};
+
+const applyFilters = (query, filters = []) => {
+    for (const filter of filters) {
+        if (!filter.isEnabled) continue;
+        if (filter.fn === 'textSearch') query[filter.fn](filter.column, filter.value, filter.options || {});
+        else if (filter.fn === 'or') query[filter.fn](filter.value);
+        else if (filter.fn === 'filter' || filter.fn === 'not')
+            query[filter.fn](filter.column, filter.operator, filter.value);
+        else query[filter.fn](filter.column, filter.value);
+    }
+};
+
+const applyModifiers = (query, { select, order, limit, range, single, maybeSingle, csv, explain } = {}) => {
+    if (select) {
+        query.select(
+            select.mode === 'minimal'
+                ? ''
+                : select.mode === 'guided'
+                  ? select?.fields.length
+                      ? select.fields.join(', ')
+                      : '*'
+                  : select?.fieldsAdvanced
+        );
+    }
+
+    if (order && order.column)
+        query.order(order.column, {
+            ascending: order.ascending,
+            foreignTable: order.foreignTable,
+            nullsFirst: order.nullsFirst,
+        });
+    if (limit && limit.count) query.limit(limit.count, { foreignTable: limit.foreignTable });
+    if (range && (range.from || range.to)) query.range(range.from, range.to, { foreignTable: range.foreignTable });
+    if (single) query.limit(1).single();
+    if (maybeSingle) query.limit(1).maybeSingle();
+    if (csv) query.csv();
+    if (explain) query.explain(explain);
+};
+
+const findIndexFromPrimaryData = (data, obj, primaryData) => {
+    if (!Array.isArray(data)) return -1;
+    return data.findIndex(item => primaryData.every(key => item && item[key] === obj[key]));
+};
+

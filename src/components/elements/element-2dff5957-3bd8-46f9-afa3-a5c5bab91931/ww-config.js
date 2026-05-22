@@ -108,7 +108,7 @@ export default {
                     activeRangeBackgroundColor: {
                         label: { en: 'Active range background' },
                         type: 'Color',
-                        hidden: content => !content.globalStyle.useActiveRangeBackground,
+                        hidden: content => !content.globalStyle?.useActiveRangeBackground,
                         bindable: true,
                     },
                     selectorBorderColor: {

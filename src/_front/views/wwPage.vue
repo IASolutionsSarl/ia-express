@@ -40,7 +40,7 @@ import { usePopupStore } from '@/pinia/popup.js';
 import wwFrontPopup from '@/_front/components/wwFrontPopup.vue';
 
 /* wwFront:start */
-import { useHead } from '@vueuse/head';
+import { useHead } from '@unhead/vue';
 /* wwFront:end */
 
  
@@ -99,7 +99,7 @@ export default {
         background() {
             return getBackgroundStyle(this.designInfo?.background || {});
         },
-    },
+     },
     watch: {
         activeLinkPopup() {
             if (this.activeLinkPopup) {

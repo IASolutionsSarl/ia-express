@@ -97,6 +97,7 @@ export default {
         const optionIconStyle = computed(() => {
             return {
                 width: props.content.optionIconSize,
+                height: props.content.optionIconSize,
                 color: props.content.optionIconColor,
                 display: 'flex',
                 'align-items': 'center',
@@ -141,6 +142,7 @@ export default {
         const mediaIconStyle = computed(() => {
             return {
                 width: props.content.optionIconSize,
+                height: props.content.optionIconSize,
                 color: props.content.optionFontColor,
                 display: 'flex',
                 'align-items': 'center',
@@ -266,6 +268,7 @@ export default {
             if (isSelected.value && canInteract.value && props.content.unselectOnClick) {
                 unselect();
                 focusFromOptionId(null);
+                focusSelectElement();
             } else if (!isSelected.value && canInteract.value && props.content.selectOnClick) {
                 updateValue(value.value);
                 focusFromOptionId(optionId);

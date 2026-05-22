@@ -5,7 +5,7 @@ import { isEqual, isEmpty, cloneDeep, get, set, merge } from 'lodash';
 
  
 /* wwFront:start */
-import { createHead } from '@vueuse/head';
+import { createHead } from '@unhead/vue/client';
 import wwServerClient from '@/_common/helpers/code/serverClient.js';
 /* wwFront:end */
 

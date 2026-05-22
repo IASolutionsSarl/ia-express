@@ -30,7 +30,7 @@
 </template>
 
 <script>
-import { computed, ref } from 'vue';
+import { computed, ref, inject } from 'vue';
 
 export default {
     props: {
@@ -39,12 +39,26 @@ export default {
         uid: { type: String, required: true },
     },
     emits: ['trigger-event', 'update:content:effect', 'update:sidepanel-content'],
-    setup(props) {
+    setup(props, { emit }) {
         const { value: variableValue, setValue } = wwLib.wwVariable.useComponentVariable({
             uid: props.uid,
             name: 'value',
             defaultValue: computed(() => (props.content.value === undefined ? '' : props.content.value)),
         });
+
+        const useForm = inject('_wwForm:useForm', () => {});
+
+        const fieldName = computed(() => props.content.fieldName);
+        const validation = computed(() => props.content.validation);
+        const customValidation = computed(() => props.content.customValidation);
+        const required = computed(() => props.content.required);
+
+        useForm(
+            variableValue,
+            { fieldName, validation, customValidation, required, initialValue: computed(() => props.content.value) },
+            { elementState: props.wwElementState, emit, sidepanelFormPath: 'form', setValue }
+        );
+
         return { variableValue, setValue, uniqueId: ref(null) };
     },
     mounted() {
@@ -90,8 +104,8 @@ export default {
                     this.content.direction === 'column'
                         ? 'nowrap'
                         : this.content.flexWrap === false
-                        ? 'nowrap'
-                        : 'wrap',
+                          ? 'nowrap'
+                          : 'wrap',
             };
         },
     },

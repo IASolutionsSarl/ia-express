@@ -73,11 +73,11 @@ export default {
         },
         'signup-email': async ({ args }, { instance }) => {
             if (!instance) throw new Error('WeWeb Auth instance is required');
-            const { email, password, displayName: name, image, redirectURL } = args;
+            const { email, password, displayName, image, redirectURL } = args;
             const { data, error } = await instance.signUp.email({
                 email,
                 password,
-                name,
+                name: displayName || email,
                 image,
                 ...(redirectURL ? { callbackURL: getPageUrl(redirectURL) } : {}),
             });

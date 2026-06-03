@@ -1380,6 +1380,14 @@ export async function executeWorkflowAction(
                 event?.preventDefault?.();
                 break;
             }
+            case 'stop-propagation': {
+                event?.stopPropagation?.();
+                break;
+            }
+            case 'prevent-default': {
+                event?.preventDefault?.();
+                break;
+            }
             case 'file-create-url': {
                 const base64String = resolveConfig('fileString', action.fileString, context, { event });
                 // Decode the Base64 string into a Uint8Array

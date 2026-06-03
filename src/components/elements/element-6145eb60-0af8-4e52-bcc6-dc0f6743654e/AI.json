@@ -50,11 +50,11 @@
     },
     {
       "name": "mappingLabel",
-      "description": "Formula to extract the label from each option item. For primitive values use context.mapping directly. For objects use context.mapping?.['label']. Always use 'context.mapping...'.",
+      "description": "Formula to extract the label from each option item. Always use 'context.mapping...'. Adapt the key to match the actual field in the bound data (e.g. context.mapping?.['name'] if the objects have a 'name' field). For primitive values, use context.mapping directly with no key.",
       "type": "formula",
       "defaultValue": {
         "type": "f",
-        "code": "context.mapping?.['label'] || context.mapping"
+        "code": "context.mapping?.['label'] ?? context.mapping"
       }
     },
     {
@@ -63,7 +63,7 @@
       "type": "formula",
       "defaultValue": {
         "type": "f",
-        "code": "context.mapping?.['icon'] || null"
+        "code": "context.mapping?.['icon'] ?? null"
       },
       "inactiveProperty": {
         "description": "Inactive when optionType is not 'iconText'."
@@ -75,7 +75,7 @@
       "type": "formula",
       "defaultValue": {
         "type": "f",
-        "code": "context.mapping?.['image'] || null"
+        "code": "context.mapping?.['image'] ?? null"
       },
       "inactiveProperty": {
         "description": "Inactive when optionType is not 'imageText'."
@@ -83,11 +83,11 @@
     },
     {
       "name": "mappingValue",
-      "description": "Formula to extract the value from each option item. For primitive values use context.mapping directly. For objects use context.mapping?.['value']. Always use 'context.mapping...'.",
+      "description": "Formula to extract the value from each option item. Always use 'context.mapping...'. Adapt the key to match the actual field in the bound data (e.g. context.mapping?.['id'] if the objects have an 'id' field). For primitive values, use context.mapping directly with no key.",
       "type": "formula",
       "defaultValue": {
         "type": "f",
-        "code": "context.mapping?.['value'] || context.mapping"
+        "code": "context.mapping?.['value'] ?? context.mapping"
       }
     },
     {

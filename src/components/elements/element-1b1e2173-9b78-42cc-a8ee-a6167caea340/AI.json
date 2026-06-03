@@ -38,7 +38,8 @@
         "Always use icons full names in binding",
         "Icons with partial or cut names will not be included in the published app",
         "Use format: if(cond, 'lucide/my-icon', 'lucide/other-icon') not 'lucide/' + if(cond, 'my-icon', 'other-icon')",
-        "Use width and height to change the size of the icon. font-size doesn't work."
+        "Use width and height to change the size of the icon. font-size doesn't work.",
+        "When an icon is placed alone in a wrapper div that should center it, the wrapper div must have justifyContent: 'center' and alignItems: 'center' in its style."
     ],
     "examples": []
 }

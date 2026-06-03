@@ -334,7 +334,7 @@ export default {
             }),
             defaultValue: {
                 type: 'f',
-                code: "context.mapping?.['label'] || context.mapping",
+                code: "context.mapping?.['label'] ?? context.mapping",
             },
             section: 'settings',
         },
@@ -346,7 +346,7 @@ export default {
             }),
             defaultValue: {
                 type: 'f',
-                code: "context.mapping?.['icon'] || null",
+                code: "context.mapping?.['icon'] ?? null",
             },
             section: 'settings',
             hidden: content => content.optionType !== 'iconText',
@@ -359,7 +359,7 @@ export default {
             }),
             defaultValue: {
                 type: 'f',
-                code: "context.mapping?.['image'] || null",
+                code: "context.mapping?.['image'] ?? null",
             },
             section: 'settings',
             hidden: content => content.optionType !== 'imageText',
@@ -372,7 +372,7 @@ export default {
             }),
             defaultValue: {
                 type: 'f',
-                code: "context.mapping?.['value'] || context.mapping",
+                code: "context.mapping?.['value'] ?? context.mapping",
             },
             section: 'settings',
         },

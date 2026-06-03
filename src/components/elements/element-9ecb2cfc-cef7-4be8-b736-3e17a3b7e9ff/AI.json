@@ -103,16 +103,10 @@
     "variables": [
         {
             "name": "form",
-            "description": "Object containing the full form state including fields (with their values and validity), isSubmitting, isSubmitted, and isValid flags. Accessed via variables['formId-form'].",
+            "description": "Object containing the full form state including isSubmitting, isSubmitted, and isValid flags. Accessed via variables['formId-form'].",
             "type": "object",
             "readonly": true,
             "content": {
-                "fields": {
-                    "fieldName": {
-                        "isValid": "boolean",
-                        "value": "any"
-                    }
-                },
                 "isSubmitting": "boolean",
                 "isSubmitted": "boolean",
                 "isValid": "boolean"

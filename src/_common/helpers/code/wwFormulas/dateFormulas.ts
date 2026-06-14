@@ -74,6 +74,70 @@ const DATE_TOKEN_MAP: Record<string, Intl.DateTimeFormatOptions> = {
     a: { hour12: true },
 };
 
+type DateTokenPartType =
+    | 'year'
+    | 'month'
+    | 'day'
+    | 'weekday'
+    | 'hour'
+    | 'minute'
+    | 'second'
+    | 'fractionalSecond'
+    | 'dayPeriod';
+
+const DATE_TOKEN_PART_MAP: Record<string, DateTokenPartType> = {
+    YYYY: 'year',
+    YY: 'year',
+    MMMM: 'month',
+    MMM: 'month',
+    MM: 'month',
+    M: 'month',
+    DD: 'day',
+    D: 'day',
+    dddd: 'weekday',
+    ddd: 'weekday',
+    dd: 'weekday',
+    HH: 'hour',
+    H: 'hour',
+    hh: 'hour',
+    h: 'hour',
+    mm: 'minute',
+    m: 'minute',
+    ss: 'second',
+    s: 'second',
+    SSS: 'fractionalSecond',
+};
+
+function getDatePartValue(
+    date: Date,
+    locale: string,
+    options: Intl.DateTimeFormatOptions,
+    partType: DateTokenPartType
+): string | undefined {
+    const formatter = new Intl.DateTimeFormat(locale, options);
+    return formatter.formatToParts(date).find(part => part.type === partType)?.value;
+}
+
+function formatDateToken(
+    date: Date,
+    locale: string,
+    options: Intl.DateTimeFormatOptions,
+    partType?: DateTokenPartType
+): string {
+    const formatter = new Intl.DateTimeFormat(locale, options);
+    if (!partType) return formatter.format(date);
+
+    return formatter.formatToParts(date).find(part => part.type === partType)?.value || formatter.format(date);
+}
+
+function getDayPeriod(date: Date, locale: string, options: Intl.DateTimeFormatOptions): string {
+    const dayPeriod = getDatePartValue(date, locale, { ...options, hour: 'numeric', hour12: true }, 'dayPeriod');
+    if (dayPeriod) return dayPeriod;
+
+    const hour = Number(getDatePartValue(date, 'en-US', { ...options, hour: 'numeric', hour12: false }, 'hour'));
+    return hour >= 12 && hour < 24 ? 'PM' : 'AM';
+}
+
 function formatDateWithPattern(date: string | Date, pattern: string, locale = 'en', timeZone?: string): string {
     try {
         const d = new Date(date);
@@ -90,17 +154,14 @@ function formatDateWithPattern(date: string | Date, pattern: string, locale = 'e
             }
 
             if (match === 'A' || match === 'a') {
-                const formatter = new Intl.DateTimeFormat(locale, { ...options, hour: 'numeric', hour12: true });
-                const parts = formatter.formatToParts(d);
-                const dayPeriod = parts.find(p => p.type === 'dayPeriod')?.value || (d.getHours() >= 12 ? 'PM' : 'AM');
+                const dayPeriod = getDayPeriod(d, locale, options);
                 return match === 'a' ? dayPeriod.toLowerCase() : dayPeriod.toUpperCase();
             }
 
             const tokenOptions = DATE_TOKEN_MAP[match];
             if (!tokenOptions) return match;
 
-            const formatter = new Intl.DateTimeFormat(locale, { ...options, ...tokenOptions });
-            return formatter.format(d);
+            return formatDateToken(d, locale, { ...options, ...tokenOptions }, DATE_TOKEN_PART_MAP[match]);
         });
     } catch (e) {
         return ``;

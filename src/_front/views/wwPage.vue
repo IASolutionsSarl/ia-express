@@ -15,7 +15,7 @@
                 />
             </template>
          </div>
-        <!-- POPUPS -->
+         <!-- POPUPS -->
         <transition name="ww-front-popups" tag="div">
             <wwLinkPopup
                 v-if="activeLinkPopup"
@@ -185,6 +185,7 @@ html {
         pointer-events: none;
     }
 
+ 
     .sections-wrapper {
         position: relative;
         isolation: isolate;

@@ -48,6 +48,10 @@ function getOrigin(url) {
     }
 }
 
+function resolveEnvironmentFromOrigin(currentOrigin) {
+    return currentOrigin?.includes('-staging.') ? 'staging' : 'production';
+}
+
 export function getFrontEnvVariables() {
      /* wwFront:start */
     if (!frontEnvVariables) {
@@ -60,13 +64,9 @@ export function getFrontEnvVariables() {
 }
 
 export function resolveEnvironmentFromEnvVariables(values, currentOrigin = window.location.origin) {
-    if (!values || typeof values !== 'object' || Array.isArray(values)) {
-        return 'production';
-    }
-
-    const appUrl = values.APP_URL;
+    const appUrl = values?.APP_URL;
     if (!appUrl || typeof appUrl !== 'object') {
-        return 'production';
+        return resolveEnvironmentFromOrigin(currentOrigin);
     }
 
     for (const env of ['staging', 'production']) {
@@ -76,7 +76,7 @@ export function resolveEnvironmentFromEnvVariables(values, currentOrigin = windo
         }
     }
 
-    return 'production';
+    return resolveEnvironmentFromOrigin(currentOrigin);
 }
 
 export function getRuntimeEnvironment(currentOrigin = window.location.origin) {

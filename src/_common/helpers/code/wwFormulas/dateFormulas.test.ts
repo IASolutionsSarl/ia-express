@@ -69,13 +69,21 @@ describe('dateFormulas', () => {
             expect(result).toBe('2024-06-15');
         });
 
+        it('should format 12-hour time without duplicating the day period', () => {
+            const date = '2026-05-18T17:15:49.383';
+
+            expect(dateFormulas.formatDate(date, 'h:mm A', 'en')).toBe('5:15 PM');
+            expect(dateFormulas.formatDate(date, 'hh:mm A', 'en')).toBe('05:15 PM');
+            expect(dateFormulas.formatDate(date, 'h:mm a', 'en')).toBe('5:15 pm');
+        });
+
         it('should format with locale', () => {
             const result = dateFormulas.formatDate(testDate, 'MMMM', 'fr');
             expect(result.toLowerCase()).toBe('juin');
         });
 
-        it('should throw for invalid date', () => {
-            expect(() => dateFormulas.formatDate('invalid', 'YYYY')).toThrow('Invalid date');
+        it('should return an empty string for invalid date', () => {
+            expect(dateFormulas.formatDate('invalid', 'YYYY')).toBe('');
         });
     });
 
@@ -385,6 +393,17 @@ describe('dateFormulas', () => {
         it('should use default timezone if not specified', () => {
             const result = dateFormulas.formatDateTimezone('2024-06-15T12:00:00.000Z', 'YYYY-MM-DD');
             expect(result).toBe('2024-06-15');
+        });
+
+        it('should format 12-hour time without duplicating the day period', () => {
+            const result = dateFormulas.formatDateTimezone(
+                '2026-05-18T15:15:49.383Z',
+                'h:mm A',
+                'Europe/Paris',
+                'en'
+            );
+
+            expect(result).toBe('5:15 PM');
         });
     });
 });

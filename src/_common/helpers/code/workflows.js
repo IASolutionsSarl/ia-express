@@ -318,7 +318,7 @@ export async function executeWorkflowAction(
                             scopeId: currentVar.scopeId,
                         });
                     }
-                    result = returnFullValue ? newValue : value;
+                    result = returnFullValue ? _.cloneDeep(newValue) : value;
                     break;
                 }
 
@@ -329,19 +329,23 @@ export async function executeWorkflowAction(
                 const innerComponentVariables = context?.component?.componentVariablesConfiguration || {};
 
                 if (innerVariables[action.varId] || innerComponentVariables[action.varId]) {
-                    result = context?.component?.methods?.updateVariable(action.varId, value, {
-                        path,
-                        index,
-                        arrayUpdateType: action.arrayUpdateType,
-                        workflowContext: { workflow, actionId: action.id, executionContext },
-                    });
+                    result = _.cloneDeep(
+                        context?.component?.methods?.updateVariable(action.varId, value, {
+                            path,
+                            index,
+                            arrayUpdateType: action.arrayUpdateType,
+                            workflowContext: { workflow, actionId: action.id, executionContext },
+                        })
+                    );
                 } else if (variablesStore.getConfiguration(action.varId)) {
-                    result = wwLib.wwVariable.updateValue(action.varId, value, {
-                        path,
-                        index,
-                        arrayUpdateType: action.arrayUpdateType,
-                        workflowContext: { workflow, actionId: action.id, executionContext },
-                    });
+                    result = _.cloneDeep(
+                        wwLib.wwVariable.updateValue(action.varId, value, {
+                            path,
+                            index,
+                            arrayUpdateType: action.arrayUpdateType,
+                            workflowContext: { workflow, actionId: action.id, executionContext },
+                        })
+                    );
                 }
 
                 break;

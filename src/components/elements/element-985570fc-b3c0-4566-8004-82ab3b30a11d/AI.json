@@ -785,8 +785,10 @@
     "slots": [
         {
             "name": "triggerZone",
-            "description": "The clickable trigger that opens the picker menu. Required unless `enableCalendarOnly=true`. Must contain at least one element (typically a `ww-div` with a date label and an icon). Inside this slot, `context.item.data.preview` exposes the formatted display string and `context.item.data.value` exposes the raw value.",
-            "type": "array"
+            "description": "The clickable trigger that opens the picker menu. REQUIRED (unless `enableCalendarOnly=true`). Always generate children for this slot: a `ww-div` container (slot=triggerZone) that contains at least a `ww-text` whose text is bound to `context.item.data.preview` (with a fallback placeholder like 'Select a date...'). Optionally add a `ww-icon` alongside the text. Without this content, the picker has no visible input and is completely unusable.",
+            "type": "array",
+            "required": true,
+            "tag": "ww-div"
         },
         {
             "name": "actionSelectElement",

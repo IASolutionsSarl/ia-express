@@ -56,11 +56,13 @@ export const useBackTableViewsStore = defineStore('backTableViews', () => {
         )
     );
 
-    function resetData() {
+    function resetData(resetPersistant) {
         currentNavigationId.value = wwLib.globalVariables._navigationId;
-        for (const key in data) delete data[key];
-        for (const key in states) delete states[key];
-        for (const key in latestFetchParameters) delete latestFetchParameters[key];
+        const shouldKeep = key =>
+            !resetPersistant && tableViews[key]?.isPersistentOnNav && (states[key]?.isLoaded || states[key]?.isLoading);
+        for (const key in data) if (!shouldKeep(key)) delete data[key];
+        for (const key in states) if (!shouldKeep(key)) delete states[key];
+        for (const key in latestFetchParameters) if (!shouldKeep(key)) delete latestFetchParameters[key];
     }
 
     function setData(tableViewId, newData) {

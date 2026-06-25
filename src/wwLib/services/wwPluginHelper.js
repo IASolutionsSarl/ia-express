@@ -1,7 +1,7 @@
 import { watchEffect, shallowReactive } from 'vue';
 import { useComponentBasesStore } from '@/pinia/componentBases.js';
 import { useVariablesStore } from '@/pinia/variables.js';
-import { cloneDeep } from 'lodash';
+import { cloneDeep } from 'lodash-es';
 
 export default {
      async registerPlugin(componentId, content, devOptions = null) {

@@ -1,4 +1,4 @@
-import { get, isObject } from 'lodash';
+import { get, isObject } from 'lodash-es';
 import { computed } from 'vue';
 import { isFile, isFileList } from '@/_common/helpers/code/filePayload.js';
 import { _wwFormulas } from '@/_common/helpers/code/wwFormulas';

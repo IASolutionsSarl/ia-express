@@ -3,7 +3,7 @@ import { executeComponentAction } from '@/_common/use/useActions.js';
 import { detectInfinityLoop } from '@/_common/helpers/code/workflowsCallstack.js';
 import { applyVariableUpdate } from '@/_common/helpers/updateVariable.js';
 import { getFrontWorkflowCapabilities } from '@/_common/helpers/workflowVersion';
-import { set } from 'lodash';
+import { set } from 'lodash-es';
 import { unref } from 'vue';
 import { useVariablesStore } from '@/pinia/variables.js';
 import { executeBackendWorkflow, parseSSEStreamAsync } from '@/_common/helpers/code/backendWorkflows.js';

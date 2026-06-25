@@ -40,7 +40,7 @@ export function getFrontWorkflowVersion(workflow?: FrontWorkflowLike) {
 
 export function resolveFrontWorkflowVersion(version?: number) {
     const normalizedVersion = getFrontWorkflowVersion({ version });
-    let resolvedVersion = FRONT_WORKFLOW_VERSIONS.LEGACY;
+    let resolvedVersion: number = FRONT_WORKFLOW_VERSIONS.LEGACY;
 
     for (const knownVersion of KNOWN_FRONT_WORKFLOW_VERSIONS) {
         if (knownVersion > normalizedVersion) break;

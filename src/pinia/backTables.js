@@ -75,8 +75,8 @@ export const useBackTablesStore = defineStore('backTables', () => {
              return [];
         }
 
-        return (tableInfo.rawTable.columns || [])
-            .filter(column => !['id', 'createdAt', 'updatedAt'].includes(column.name))
+        const physicalColumns = (tableInfo.rawTable.columns || [])
+            .filter(column => !column.isSystem)
             .map(column => ({
                 id: column.name,
                 name: column.name,
@@ -84,9 +84,24 @@ export const useBackTablesStore = defineStore('backTables', () => {
                 label: column.name,
                 isRequired: column.isRequired,
                 defaultValue: column.defaultValue,
+                isSystem: column.isSystem || false,
                 isIntegration: false,
                 linkedColumn: column.linkedColumn,
             }));
+        const formulaColumns = backTableFormulaColumnsStore.getByTable(tableIdentifier).map(column => ({
+            id: column.id,
+            name: column.name,
+            type: 'text',
+            label: column.name,
+            isRequired: false,
+            isIntegration: false,
+            isFormulaColumn: true,
+            isComputed: true,
+            isReadOnly: true,
+            formula: column.formula,
+        }));
+
+        return [...physicalColumns, ...formulaColumns];
     };
 
     const getTableOptions = () => {

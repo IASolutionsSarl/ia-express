@@ -1,4 +1,4 @@
-import { cloneDeep, set } from 'lodash';
+import { cloneDeep, set } from 'lodash-es';
 
 export function checkVariableType(variable, value, { path, arrayUpdateType } = {}) {
     switch (variable.type) {

@@ -1,4 +1,4 @@
-import { isEqual } from 'lodash';
+import { isEqual } from 'lodash-es';
 import { escape } from 'html-escaper';
 import { useBackAuthStore } from '@/pinia/backAuth.js';
 import { dateFormulas, DATE_FORMULAS_CATEGORY } from './dateFormulas';
@@ -15,17 +15,17 @@ export const _wwFormulas = {
     if(cond, iftrue, iffalse) {
         return cond ? iftrue : iffalse;
     },
-    ifEmpty(cond, val) {
+    ifEmpty(cond, val, valIfNotEmpty) {
         if (wwLib.wwUtils.isEmpty(cond)) {
             return val;
         } else {
-            return cond;
+            return valIfNotEmpty === undefined ? cond : valIfNotEmpty;
         }
     },
     //DEPRECATED
-    ifempty(cond, val) {
+    ifempty(cond, val, valIfNotEmpty) {
         wwLib.wwLog.error('ifempty is deprecated. Please use ifEmpty instead');
-        return this.ifEmpty(cond, val);
+        return this.ifEmpty(cond, val, valIfNotEmpty);
     },
     not(val) {
         return !val;

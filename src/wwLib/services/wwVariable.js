@@ -1,6 +1,6 @@
 import { ref, readonly as setReadonly, computed, inject, unref, watch } from 'vue';
 import { checkVariableType } from '@/_common/helpers/updateVariable.js';
-import { cloneDeep } from 'lodash';
+import { cloneDeep } from 'lodash-es';
 import { useVariablesStore } from '@/pinia/variables.js';
 import { storeToRefs } from 'pinia';
  

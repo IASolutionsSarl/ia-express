@@ -1,6 +1,6 @@
 import { getValue } from '@/_common/helpers/code/customCode.js';
 import { betterFetch } from '@better-fetch/fetch';
-import { get } from 'lodash';
+import { get } from 'lodash-es';
 
 export default {
     async loadView({ tableConfig, viewConfig = {}, parameters = {} }) {

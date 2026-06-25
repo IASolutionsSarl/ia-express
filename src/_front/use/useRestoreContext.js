@@ -1,5 +1,5 @@
 import { inject, ref, unref, provide, computed, reactive } from 'vue';
-import { get } from 'lodash';
+import { get } from 'lodash-es';
 
 export function useRestoreContext({ path }) {
     const data = inject('componentData', ref({}));

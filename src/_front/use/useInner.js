@@ -1,4 +1,4 @@
-import { cloneDeep, set } from 'lodash';
+import { cloneDeep, set } from 'lodash-es';
 import { computed, onUnmounted, reactive, watch, onMounted, inject } from 'vue';
 import { checkVariableType } from '@/_common/helpers/updateVariable.js';
 import { getValue } from '@/_common/helpers/code/customCode.js';

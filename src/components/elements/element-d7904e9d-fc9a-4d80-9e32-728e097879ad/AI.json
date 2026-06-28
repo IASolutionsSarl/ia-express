@@ -9,7 +9,7 @@
       "label"
     ],
     "features": [
-      "Multiple HTML tag options (p, h1-h4, button, div)",
+      "Multiple HTML tag options (p, h1-h4, button, div, span)",
       "Multi-language text content",
       "Dynamic text binding per language",
       "Linkable"
@@ -30,7 +30,8 @@
         "h3",
         "h4",
         "button",
-        "div"
+        "div",
+        "span"
       ],
       "defaultValue": "p"
     },

@@ -37,6 +37,7 @@ export default {
                     { value: 'h4', label: 'H4' },
                     { value: 'button', label: 'Button' },
                     { value: 'div', label: 'Div' },
+                    { value: 'span', label: 'Span' },
                 ],
             },
             defaultValue: 'p',

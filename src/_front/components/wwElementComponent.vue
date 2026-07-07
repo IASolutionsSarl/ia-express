@@ -416,6 +416,11 @@ export default {
                      wwObjectStyle.cursor = this.style.cursor;
              }
 
+            //POINTER-EVENTS
+            if (this.style.pointerEvents) {
+                     wwObjectStyle.pointerEvents = this.style.pointerEvents;
+             }
+
             //ANIMATION
             Object.assign(wwObjectStyle, this.animationStyle);
 

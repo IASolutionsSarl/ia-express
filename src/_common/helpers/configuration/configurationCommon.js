@@ -587,6 +587,19 @@ export const STYLE_CONFIGURATION = {
             cssSupports: 'cursor',
         },
     },
+    pointerEvents: {
+        label: 'Pointer events',
+        category: 'advanced',
+        responsive: true,
+        bindable: true,
+        states: true,
+        classes: true,
+        bindingValidation: {
+            markdown: 'pointer-events',
+            type: 'string',
+            cssSupports: 'pointer-events',
+        },
+    },
     textAlign: {
         label: 'Text align',
         category: 'display',

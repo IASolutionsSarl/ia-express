@@ -1,6 +1,14 @@
 import type { ResponseContext } from '@better-fetch/fetch';
 
 type RequestHeaders = Record<string, unknown>;
+type LateResponse = {
+    __wwLateResponse: true;
+    status?: number;
+    headers?: Record<string, string>;
+    contentType?: string;
+    body?: unknown;
+    bodyEncoding?: 'base64';
+};
 
 function sanitizeHeaders(headers: RequestHeaders = {}) {
     const sanitizedHeaders: Record<string, string> = {};
@@ -54,6 +62,58 @@ export function buildRequestPayload({
     return { body: body ?? parameters };
 }
 
+function isLateResponse(value: unknown): value is LateResponse {
+    return !!value && typeof value === 'object' && (value as LateResponse).__wwLateResponse === true;
+}
+
+function decodeBase64Body(body: unknown, contentType?: string) {
+    if (typeof body !== 'string' || typeof globalThis.atob !== 'function') return body;
+
+    const binary = globalThis.atob(body);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index++) {
+        bytes[index] = binary.charCodeAt(index);
+    }
+
+    if (typeof globalThis.Blob === 'function') {
+        return new Blob([bytes], { type: contentType || 'application/octet-stream' });
+    }
+
+    return bytes;
+}
+
+function getLateResponseBody(response: LateResponse) {
+    if (response.bodyEncoding === 'base64') {
+        return decodeBase64Body(response.body, response.contentType);
+    }
+
+    return response.body;
+}
+
+function unwrapLateResponse<T>(value: T | LateResponse): T {
+    if (!isLateResponse(value)) return value as T;
+
+    const status = value.status || 200;
+    const body = getLateResponseBody(value);
+    if (status < 400) return body as T;
+
+    const message =
+        body && typeof body === 'object' && 'message' in body
+            ? String(body.message)
+            : `Request failed with status ${status}`;
+    const error = new Error(message) as Error & {
+        status?: number;
+        error?: unknown;
+        headers?: Record<string, string>;
+        response?: LateResponse;
+    };
+    error.status = status;
+    error.error = body;
+    error.headers = value.headers;
+    error.response = value;
+    throw error;
+}
+
 export async function requestWithOptionalSSE<T = unknown>({
     url,
     requestOptions = {},
@@ -87,7 +147,7 @@ export async function requestWithOptionalSSE<T = unknown>({
                 return context.response;
             },
         })
-            .then(resolve)
+            .then(value => resolve(unwrapLateResponse<T>(value)))
             .catch(reject);
     });
 }

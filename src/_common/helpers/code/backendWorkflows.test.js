@@ -36,6 +36,10 @@ vi.mock('./customCode.js', () => {
     };
 });
 
+vi.mock('./workflows.js', () => ({
+    convertErrorToObject: vi.fn(error => error),
+}));
+
 describe('testBackendWorkflow', () => {
     beforeEach(() => {
         flushHistory.mockReset();
@@ -128,4 +132,32 @@ describe('testBackendWorkflow', () => {
             Text: ['text'],
         });
     });
+
+    it('uses /api and handles SSE for legacy stream requests', async () => {
+        const { testBackendWorkflow } = await import('./backendWorkflows.js');
+
+        global.localStorage.getItem = vi.fn(() => 'false');
+        global.window = { location: { origin: 'https://example.weweb.io' } };
+
+        await testBackendWorkflow(
+            {
+                id: 'stream-workflow',
+                trigger: 'ww-api',
+                meta: {
+                    method: 'POST',
+                    path: '/stream-workflow',
+                },
+                parameters: {},
+            },
+            {},
+            { __wwstream: true },
+            {}
+        );
+
+        const [{ url, stream }] = requestWithOptionalSSE.mock.calls[0];
+
+        expect(url).toBe('https://example.weweb.io//api/stream-workflow');
+        expect(stream).toBe(true);
+    });
+
 });

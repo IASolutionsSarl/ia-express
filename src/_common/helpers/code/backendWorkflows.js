@@ -2,13 +2,14 @@
 import { buildEditorRequestHeaders, buildRequestPayload, requestWithOptionalSSE } from './editorRequests.ts';
 import { isFile, normalizeFiles } from './filePayload.js';
 import { getValue } from './customCode.js';
+import { convertErrorToObject } from './workflows.js';
 
 export function getServerUrl() {
      return `${window.location.origin}/`;
 }
 
-export function getApiPath(stream = false) {
-     return stream ? '/api/stream' : '/api';
+export function getApiPath() {
+    return '/api';
 }
 
 const MULTIPART_BODY_SIZE_LIMIT = 6 * 1024 * 1024;
@@ -222,7 +223,7 @@ export async function executeBackendWorkflow(workflowId, parameters = {}, option
         });
     }
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-    const requestPath = options.__wwstream ? `/stream${normalizedPath}` : normalizedPath;
+    const requestPath = normalizedPath;
     // eslint-disable-next-line no-unreachable
     try {
         const requestPayload = await buildWorkflowRequestPayload(

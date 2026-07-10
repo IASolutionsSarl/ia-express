@@ -490,20 +490,16 @@ export async function executeWorkflowAction(
                 const merge = resolveConfig('merge', action.merge, context, { event });
                 const refreshFilter = resolveConfig('refreshFilter', action.refreshFilter, context, { event });
                 const refreshSort = resolveConfig('refreshSort', action.refreshSort, context, { event });
-                await wwLib.wwCollection.updateCollection(
-                    action.collectionId,
-                    data,
-                    {
-                        updateType: action.updateType,
-                        updateIndex,
-                        updateBy: action.updateBy,
-                        idKey,
-                        idValue,
-                        merge,
-                        refreshFilter,
-                        refreshSort,
-                    }
-                );
+                await wwLib.wwCollection.updateCollection(action.collectionId, data, {
+                    updateType: action.updateType,
+                    updateIndex,
+                    updateBy: action.updateBy,
+                    idKey,
+                    idValue,
+                    merge,
+                    refreshFilter,
+                    refreshSort,
+                });
                 break;
             }
             case 'fetch-table-view': {
@@ -588,10 +584,7 @@ export async function executeWorkflowAction(
                      /* wwFront:start */
                     href = wwLib.wwPageHelper.getPagePath(pageId);
                     /* wwFront:end */
-                    const resolvedParameters = Object.keys(action.parameters || {}).reduce((result, param) => {
-                        result[param] = getValue(action.parameters[param], context, { event });
-                        return result;
-                    }, {});
+                    const resolvedParameters = resolveConfig('parameters', action.parameters || {}, context, { event });
                     setResolvedConfig('parameters', resolvedParameters);
                     const variables = wwLib.$store.getters['data/getPageParameterVariablesFromId'](pageId);
                      /* wwFront:start */
@@ -762,10 +755,12 @@ export async function executeWorkflowAction(
                             name: file.name.replace(/[#!@$%^&*()+=\[\]{};':"\\|,<>\? \/]/g, '_'), // Replace problematic characters with underscores
                             type: file.type || file.mimeType,
                             size: file.size,
-                            tag: `${resolveConfig('fileTag', action.fileTag, context, {
-                                event,
-                                recursive: false,
-                            }) || ''}`,
+                            tag: `${
+                                resolveConfig('fileTag', action.fileTag, context, {
+                                    event,
+                                    recursive: false,
+                                }) || ''
+                            }`,
                         }
                     );
 
@@ -1618,7 +1613,7 @@ export async function executeWorkflowAction(
         }
 
         // Generic stream handling
-        if (action.args?.__wwstream === true && Symbol.asyncIterator in result) {
+        if (action.args?.__wwstream === true && result && typeof result === 'object' && Symbol.asyncIterator in result) {
             const chunks = [];
 
             if (internal) {
@@ -2004,7 +1999,7 @@ export const workflowFunctions = {
     },
 };
 
-function convertErrorToObject(err) {
+export function convertErrorToObject(err) {
     const keys = ['name', ...Object.getOwnPropertyNames(err)];
     let error = {};
     for (const key of keys) error[key] = err[key];

@@ -23,6 +23,20 @@ export async function executeWorkflow(
     if (!workflow) return {};
     callstack = [...callstack, workflow.id];
 
+    // Save callstack log
+    if (!context.callstackLog) {
+        context.callstackLog = [{ workflowId: workflow.id, traceId: executionContext.traceId, entry: true }];
+    } else {
+        context.callstackLog = [
+            ...context.callstackLog,
+            { workflowId: workflow.id, traceId: executionContext.traceId },
+        ];
+    }
+
+    if (!context.traceId) {
+        context.traceId = crypto.randomUUID();
+    }
+
     if (detectInfinityLoop(callstack)) {
          return {};
     }

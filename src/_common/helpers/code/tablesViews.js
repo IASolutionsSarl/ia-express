@@ -5,7 +5,7 @@ import integrationsCore from '@/_front/integrations/index.js';
  
 let latestRequestId = {};
 
-function getTableViewExecutionContext(id) {
+function getTableViewExecutionContext(id, env = null) {
     const backTableViewsStore = useBackTableViewsStore(wwLib.$pinia);
     const backTablesStore = useBackTablesStore(wwLib.$pinia);
     const integrationsStore = useIntegrationsStore(wwLib.$pinia);
@@ -15,7 +15,8 @@ function getTableViewExecutionContext(id) {
     return {
         tableView,
         integrationTable,
-        connection: integrationsStore.getConnection(integrationTable?.connectionId),
+        integrationsStore,
+        connection: integrationsStore.getConnection(integrationTable?.connectionId, env),
         instance: integrationsStore.getInstance(integrationTable?.connectionId || integrationTable?.integration),
     };
 }
@@ -35,14 +36,18 @@ export async function loadTableView(id, parameters = {}, options = { isTest: fal
     latestRequestId[id] = wwLib.wwUtils.getUid();
     const currentRequestId = latestRequestId[id];
     try {
-        const { tableView, integrationTable, connection, instance } = getTableViewExecutionContext(id);
+        const { tableView, integrationTable, integrationsStore, connection, instance } = getTableViewExecutionContext(
+            id,
+            options.env
+        );
         if (tableView && integrationTable?.type === 'front') {
-            response = await integrationsCore[integrationTable.integration].loadView({
+            let viewInstance = instance;
+             response = await integrationsCore[integrationTable.integration].loadView({
                 tableConfig: integrationTable.config,
                 viewConfig: tableView.config,
                 parameters,
                 connection,
-                instance,
+                instance: viewInstance,
             });
         } else {
             response = await wwServerClient(`/ww/table-views/${id}`, getTableViewRequestOptions(parameters, options));

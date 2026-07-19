@@ -32,6 +32,7 @@ export const useIntegrationsStore = defineStore('integrations', () => {
         }
     }
 
+ 
     async function initializeIntegrationInstance(integrationKey) {
         const integration = integrationCore[integrationKey];
         if (!integration?.init) return;
@@ -61,11 +62,11 @@ export const useIntegrationsStore = defineStore('integrations', () => {
         getInstance(id) {
             return instances[id] || null;
         },
-        getConnection(connectionId) {
+        getConnection(connectionId, env = null) {
             if (!connectionId) return null;
             const connection = connections.value[connectionId];
             if (!connection) return null;
-            return resolveConnection(connection);
+            return resolveConnection(connection, env);
         },
         initializeInstances,
         initializeConnectionInstance,

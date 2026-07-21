@@ -1,11 +1,8 @@
 import { isEqual } from 'lodash-es';
 import { escape } from 'html-escaper';
+import { isPlainObject } from '@/_common/helpers/objectGuards';
 import { useBackAuthStore } from '@/pinia/backAuth.js';
 import { dateFormulas, DATE_FORMULAS_CATEGORY } from './dateFormulas';
-
-function isObject(obj) {
-    return !obj || Array.isArray(obj) || typeof obj !== 'object' ? false : true;
-}
 
 // RFC 5322 compliant email regex
 const EMAIL_REGEX =
@@ -67,15 +64,15 @@ export const _wwFormulas = {
         return arr.length;
     },
     keys(obj) {
-        if (!isObject(obj)) throw 'First parameter must be an object';
+        if (!isPlainObject(obj)) throw 'First parameter must be an object';
         return Object.keys(obj);
     },
     values(obj) {
-        if (!isObject(obj)) throw 'First parameter must be an object';
+        if (!isPlainObject(obj)) throw 'First parameter must be an object';
         return Object.values(obj);
     },
     objectToArray(obj) {
-        if (!isObject(obj)) throw 'First parameter must be an object';
+        if (!isPlainObject(obj)) throw 'First parameter must be an object';
         return Object.entries(obj);
     },
     slice(arr, start, end) {
@@ -277,7 +274,7 @@ export const _wwFormulas = {
         return result;
     },
     getKeyValue(obj, key) {
-        if (!isObject(obj)) throw 'First parameter must be an object';
+        if (!isPlainObject(obj)) throw 'First parameter must be an object';
         return _.get(obj, key);
     },
     // DEPRECATED
@@ -286,7 +283,7 @@ export const _wwFormulas = {
         return this.getKeyValue(obj, key);
     },
     setKeyValue(obj, key, value) {
-        if (!isObject(obj)) throw 'First parameter must be an object';
+        if (!isPlainObject(obj)) throw 'First parameter must be an object';
         return { ...obj, [key]: value };
     },
     // DEPRECATED
@@ -336,7 +333,7 @@ export const _wwFormulas = {
         return this.createArray(...args);
     },
     pick(obj, ...args) {
-        if (!isObject(obj)) throw 'First parameter must be an object';
+        if (!isPlainObject(obj)) throw 'First parameter must be an object';
         const keys = [...args];
         return keys.reduce((result, key) => {
             result[key] = _.get(obj, key);
@@ -344,7 +341,7 @@ export const _wwFormulas = {
         }, {});
     },
     omit(obj, ...args) {
-        if (!isObject(obj)) throw 'First parameter must be an object';
+        if (!isPlainObject(obj)) throw 'First parameter must be an object';
         const keys = Object.keys(obj).filter(key => !args.includes(key));
         return keys.reduce((result, key) => {
             result[key] = _.get(obj, key);

@@ -31,6 +31,45 @@ function getTableViewRequestOptions(parameters, options = {}) {
     return requestOptions;
 }
 
+function getTableViewParameterKey(parameter) {
+    return parameter?.key || parameter?.name || null;
+}
+
+function getTableViewParameterDefaultValue(parameter) {
+    if (parameter?.type === 'object') {
+        return parameter?.value && typeof parameter.value === 'object' && !Array.isArray(parameter.value)
+            ? { ...parameter.value }
+            : {};
+    }
+
+    return parameter?.value;
+}
+
+function buildTableViewParameterValues(definitions = [], currentValues = {}) {
+    const safeCurrentValues = currentValues && typeof currentValues === 'object' ? currentValues : {};
+    const values = { ...safeCurrentValues };
+
+    for (const definition of definitions) {
+        const key = getTableViewParameterKey(definition);
+        if (!key) continue;
+
+        if (Object.hasOwn(safeCurrentValues, key)) {
+            continue;
+        }
+
+        if (definition?.type === 'object') {
+            values[key] = getTableViewParameterDefaultValue(definition);
+            continue;
+        }
+
+        if (definition?.value !== undefined && definition?.value !== '') {
+            values[key] = definition.value;
+        }
+    }
+
+    return values;
+}
+
 export async function loadTableView(id, parameters = {}, options = { isTest: false }) {
     let response = null;
     latestRequestId[id] = wwLib.wwUtils.getUid();
@@ -42,10 +81,11 @@ export async function loadTableView(id, parameters = {}, options = { isTest: fal
         );
         if (tableView && integrationTable?.type === 'front') {
             let viewInstance = instance;
-             response = await integrationsCore[integrationTable.integration].loadView({
+             const frontParameters = buildTableViewParameterValues(tableView.parameters || [], parameters);
+            response = await integrationsCore[integrationTable.integration].loadView({
                 tableConfig: integrationTable.config,
                 viewConfig: tableView.config,
-                parameters,
+                parameters: frontParameters,
                 connection,
                 instance: viewInstance,
             });

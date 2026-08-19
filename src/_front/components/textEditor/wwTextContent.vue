@@ -94,7 +94,19 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-a {
-    display: inline;
+@layer ww-style-core {
+    .ww-text-content {
+        // Transition inherited from the text CSS contract (--ww-element-transition set on .ww-<uid>).
+        // Lets the text animate on state changes even when the text node isn't the uid-classed node
+        // (e.g. the span inside ww-button). No var set => invalid => transition falls back to none.
+        transition: var(--ww-element-transition, none);
+        background-color: var(--ww-text-background-color, transparent);
+        overflow: var(--ww-text-overflow, initial);
+        text-overflow: var(--ww-text-text-overflow, initial);
+        white-space: var(--ww-text-white-space, initial);
+    }
+    a {
+        display: inline;
+    }
 }
  </style>

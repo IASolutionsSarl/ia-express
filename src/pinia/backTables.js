@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { reactive, watch } from 'vue';
- import { useIntegrationsStore } from '@/pinia/integrations.js';
+ import { useIntegrationsStore } from '@/pinia/integrations';
 
 export const useBackTablesStore = defineStore('backTables', () => {
     const integrationsStore = useIntegrationsStore();

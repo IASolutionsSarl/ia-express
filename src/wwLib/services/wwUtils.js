@@ -68,46 +68,6 @@ export default {
     /**
      * @PUBLIC_API
      */
-    getTextStyleFromContent(content) {
-        const style = {
-            ...(content['_ww-text_font']
-                ? {
-                      fontSize: 'unset',
-                      fontFamily: 'unset',
-                      lineHeight: 'unset',
-                      fontWeight: 'unset',
-                      fontStyle: 'unset',
-                      font: content['_ww-text_font'] || '',
-                  }
-                : {
-                      fontSize: content['_ww-text_fontSize'],
-                      fontFamily: content['_ww-text_fontFamily'] || 'var(--ww-default-font-family)',
-                      lineHeight: content['_ww-text_lineHeight'],
-                      fontWeight: content['_ww-text_fontWeight'],
-                      fontStyle: content['_ww-text_fontStyle'],
-                  }),
-            textAlign: content['_ww-text_textAlign'],
-            color: content['_ww-text_color'],
-            textTransform: content['_ww-text_textTransform'],
-            textShadow: content['_ww-text_textShadow'],
-            letterSpacing: content['_ww-text_letterSpacing'],
-            wordSpacing: content['_ww-text_wordSpacing'],
-            textDecoration: content['_ww-text_textDecoration'],
-            textDecorationStyle: content['_ww-text_textDecorationStyle'],
-            textDecorationColor: content['_ww-text_textDecorationColor'],
-            textOverflow: content['_ww-text_ellipsis'] ? 'ellipsis' : 'initial',
-            whiteSpace: content['_ww-text_nowrap'] ? 'nowrap' : 'initial',
-            whiteSpaceCollapse: 'preserve',
-        };
-        if (content['_ww-text_nowrap']) {
-            style.overflow = 'hidden';
-        }
-        return style;
-    },
-
-    /**
-     * @PUBLIC_API
-     */
     getStyleFromToken(token) {
         if (!token || typeof token !== 'string') return null;
         const VAR_REGEXP = /^var\(--(.+)\s*,\s*(.+)\)$/;

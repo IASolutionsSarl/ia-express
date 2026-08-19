@@ -67,28 +67,30 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.ww-background-video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow: hidden;
-    z-index: -1;
-
-    video {
+@layer ww-style-core {
+    .ww-background-video {
         position: absolute;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        left: 50%;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow: hidden;
+        z-index: -1;
 
-        &.cover {
-            min-height: 100%;
-            min-width: 100%;
-        }
-        &.contain {
-            max-height: 100%;
-            max-width: 100%;
+        video {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            left: 50%;
+
+            &.cover {
+                min-height: 100%;
+                min-width: 100%;
+            }
+            &.contain {
+                max-height: 100%;
+                max-width: 100%;
+            }
         }
     }
 }

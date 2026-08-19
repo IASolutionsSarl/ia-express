@@ -4,7 +4,6 @@
         v-bind="properties"
         class="ww-image-basic"
         ww-responsive="ww-image-basic"
-        :style="style"
         :class="{ '-link': hasLink && !isEditing }"
     >
         <div class="ww-image-basic-overlay"></div>
@@ -14,9 +13,6 @@
 
 <script>
 export default {
-    inject: {
-        componentStyle: { default: () => {} },
-    },
     props: {
         content: { type: Object, required: true },
         wwElementState: { type: Object, required: true },
@@ -44,23 +40,6 @@ export default {
             return this.isWeWeb ? `${wwLib.wwUtils.getCdnPrefix()}${this.url}` : this.url;
         },
 
-        /* STYLE */
-        aspectRatio() {
-            const elementAspectRatio = this.componentStyle.aspectRatio;
-            if (elementAspectRatio && elementAspectRatio !== 'unset') {
-                return `${elementAspectRatio}`;
-            } else {
-                return 'unset';
-            }
-        },
-        style() {
-            return {
-                '--wwi-ar': this.aspectRatio,
-                '--wwi-of': this.content.objectFit,
-                '--wwi-f': this.content.filter,
-                '--wwi-o': this.content.overlay,
-            };
-        },
         isEditing() {
             // eslint-disable-next-line no-unreachable
             return false;
@@ -91,7 +70,7 @@ export default {
         left: 0;
         right: 0;
         bottom: 0;
-        background: var(--wwi-o);
+        background: var(--wwi-o, transparent);
         pointer-events: none;
     }
 
@@ -100,9 +79,9 @@ export default {
         width: 100%;
         height: 100%;
         display: block;
-        aspect-ratio: var(--wwi-ar);
-        object-fit: var(--wwi-of);
-        filter: var(--wwi-f);
+        aspect-ratio: var(--wwi-ar, unset);
+        object-fit: var(--wwi-of, fill);
+        filter: var(--wwi-f, none);
         image-rendering: -webkit-optimize-contrast;
     }
 }

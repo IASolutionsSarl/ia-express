@@ -3,10 +3,12 @@
     <div
         v-if="isRendering"
         ref="rootElement"
-        :style="containerStyle"
         ww-responsive="ww-section"
         class="ww-section"
         :data-section-uid="uid"
+        :data-ww-states="currentStatesAttribute"
+        :data-ww-forced-states="forcedStatesAttribute"
+        :data-ww-component-id="sectionContainerComponentId"
         :class="[
              `ww-section-${uid}`,
         ]"
@@ -23,10 +25,12 @@
             :is="vueComponentName"
             ref="component"
             class="ww-section-element"
-            :class="[state.class || '']"
+            :class="state.class || ''"
             v-bind="componentAttributes"
-            :style="elementStyle"
             ww-responsive="ww-section-element"
+            :data-ww-states="currentStatesAttribute"
+            :data-ww-forced-states="forcedStatesAttribute"
+            :data-ww-component-id="sectionElementComponentId"
             :content="content"
             :uid="uid"
             :ww-section-state="wwSectionState"
@@ -48,15 +52,13 @@ import {
     getComponentIcon,
     getComponentLabel,
     getComponentVueComponentName,
-    getComponentSize,
-    getDisplayValue,
 } from '@/_common/helpers/component/component';
 import { useComponentData, useComponentTriggerEvent } from '@/_common/use/useComponent';
 import { useComponentStates } from '@/_front/use/useComponentStates';
 import { useComponentAdvancedInteractions } from '@/_front/use/useComponentAdvancedInteractions';
 import { useComponentActions } from '@/_common/use/useActions';
-
-import { getBackgroundStyle } from '@/_front/helpers/wwBackgroungStyle';
+import { useStyleCompilerDynamicVariables } from '@/_front/use/useStyleCompilerDynamicVariables';
+import { createComponentId } from '@/_front/services/componentIds';
 
  
 import { inheritFrom } from '@/_common/helpers/configuration/configuration';
@@ -72,11 +74,20 @@ export default {
     setup(props) {
         const component = shallowRef(null);
         const rootElement = shallowRef(null);
+        const sectionContainerComponentId = createComponentId();
+        const sectionElementComponentId = createComponentId();
         provide('sectionId', props.uid);
         provide('dragZoneId', props.uid);
 
  
-        const { currentStates, addInternalState, removeInternalState, toggleInternalState } = useComponentStates(
+        const {
+            currentStates,
+            currentStatesAttribute,
+            forcedStatesAttribute,
+            addInternalState,
+            removeInternalState,
+            toggleInternalState,
+        } = useComponentStates(
             { uid: props.uid, type: 'section' },
             {
                 context: {},
@@ -84,30 +95,24 @@ export default {
              }
         );
 
-        const wwIsInStretchedSection = computed(() => {
-            return content['_ww-layout_alignItems'] === 'stretch' && content['_ww-layout_flexDirection'] === 'column';
-        });
-
-        provide('__wwIsInStretchedSection', wwIsInStretchedSection);
-
         const {
             content,
-            style,
             state,
             configuration,
             name: sectionName,
+            isRendering,
          } = useComponentData({
             type: 'section',
             uid: props.uid,
             currentStates,
          });
 
-        const isRendering = computed(() => {
- 
-            /* wwFront:start */
-            // eslint-disable-next-line no-unreachable
-            return style.conditionalRendering;
-            /* wwFront:end */
+        useStyleCompilerDynamicVariables({
+            sourceUid: toRef(props, 'uid'),
+            targets: {
+                sectionContainer: rootElement,
+                sectionElement: component,
+            },
         });
 
         // When component is unmount, we reset state (the mouse leave event is not fired)
@@ -137,12 +142,15 @@ export default {
         return {
             rootElement,
             component,
+            sectionContainerComponentId,
+            sectionElementComponentId,
             content,
-            style,
             state,
             configuration,
             listeners,
             triggerEvent,
+            currentStatesAttribute,
+            forcedStatesAttribute,
             addInternalState,
             removeInternalState,
             toggleInternalState,
@@ -154,102 +162,9 @@ export default {
                 return wwLib.wwUtils.sanitize(sectionTitle);
             }),
             isRendering,
-            containerStyle: computed(() => {
-                let _style = {
-                    height: getComponentSize(style.height, 'auto'),
-                    aspectRatio: style.aspectRatio,
-                    margin: style.margin,
-                    zIndex: style.zIndex || 'unset',
-                    overflow: style.overflow,
-                    opacity: style.opacity,
-                };
-
-                //MIN-HEIGHT
-                _style.minHeight = getComponentSize(style.minHeight);
-                //MAX-HEIGHT
-                _style.maxHeight = getComponentSize(style.maxHeight);
-
-                //Manage display
-                _style.display = getDisplayValue(style.display, configuration, {
-                    content,
-                });
-
-                if (style.position === 'sticky' || style.position === 'fixed' || style.position === 'absolute') {
-                    _style.position = style.position;
-                    const hasValue = style.top || style.bottom || style.left || style.right;
-                    _style.top = style.top || (hasValue ? null : '0px');
-                    _style.bottom = style.bottom;
-                    _style.left = style.left;
-                    _style.right = style.right;
-                    _style.width =
-                        style.position !== 'sticky' || !hasValue ? getComponentSize(style.width, undefined) : undefined;
-                }
-
-                _style.background = getBackgroundStyle(style);
-
-                //CURSOR
-                if ( style.cursor) {
-                    _style.cursor = style.cursor;
-                }
-
-                // OTHER
-                ['transition', 'transform'].forEach(prop => {
-                    if (style[prop]) {
-                        _style[prop] = style[prop];
-                    }
-                });
-
-                //CUSTOM CSS
-                for (const prop in style.customCss || {}) {
-                    _style[prop] = style.customCss[prop];
-                }
-
-                return _style;
-            }),
          };
     },
     computed: {
-        elementStyle() {
-            const style = {
-                width: getComponentSize(this.style.width, '100%'),
-                padding: this.style.padding,
-            };
-
-            //MAX-WIDTH
-            style.maxWidth = getComponentSize(this.style.maxWidth);
-            //MIN-WIDTH
-            style.minWidth = getComponentSize(this.style.minWidth);
-
-            //MIN-HEIGHT
-            style.minHeight = getComponentSize(this.style.minHeight);
-            //MAX-HEIGHT
-            style.maxHeight = getComponentSize(this.style.maxHeight);
-
-            // OTHER
-            [
-                'border',
-                'borderTop',
-                'borderBottom',
-                'borderLeft',
-                'borderRight',
-                'borderRadius',
-                'boxShadow',
-                'transition',
-                'transform',
-            ].forEach(prop => {
-                if (this.style[prop]) {
-                    style[prop] = this.style[prop];
-                }
-            });
-
-            let perspective = this.style.perspective || 0;
-            const hasPerspective = wwLib.wwUtils.getLengthUnit(perspective)[0];
-            if (hasPerspective) {
-                style.perspective = perspective;
-            }
-
-            return style;
-        },
         backgroundVideo() {
             if (!inheritFrom(this.configuration, 'ww-background-video') || !this.content['_ww-backgroundVideo'])
                 return null;
@@ -298,23 +213,25 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.ww-section {
-    position: relative;
-    max-width: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+@layer ww-style-core {
+    .ww-section {
+        position: relative;
+        max-width: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
 
-    .ww-section-element {
-        width: 100%;
-        // min-height: 50px;
+        .ww-section-element {
+            width: 100%;
+            // min-height: 50px;
+        }
+
+        .hash-anchor {
+            position: absolute;
+            top: 0;
+            left: 50%;
+        }
     }
+}
 
-    .hash-anchor {
-        position: absolute;
-        top: 0;
-        left: 50%;
-    }
-
- }
  </style>

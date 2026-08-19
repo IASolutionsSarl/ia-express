@@ -1,15 +1,18 @@
 <template>
      <!-- wwFront:start -->
     <wwElementComponent
-        v-if="!isLoop"
+        v-if="!isLoop && isRendering"
         :key="rootUid"
         ref="elementComponent"
         :uid="rootUid"
         is-library-component-root
+        :class="instanceStyleClass"
         :library-component-data="componentData"
         :library-component-trigger-event="triggerEvent"
         :library-component-trigger-library-component-event="triggerLibraryComponentEvent"
         v-bind="$attrs"
+        :data-ww-states="currentStatesAttribute"
+        :data-ww-forced-states="forcedStatesAttribute"
         @addState="addInternalState(...$event)"
         @removeState="removeInternalState(...$event)"
     ></wwElementComponent>
@@ -17,13 +20,16 @@
 </template>
 
 <script>
-import { ref, inject, provide, computed, reactive, onBeforeUnmount } from 'vue';
+import { ref, inject, provide, computed, reactive, onBeforeUnmount, toRef } from 'vue';
 import { getComponentBaseUid } from '@/_common/helpers/component/component.js';
  import wwElementComponent from '@/_front/components/wwElementComponent.vue';
 import { useComponentData, useComponentTriggerEvent, useLibraryComponentWorkflow } from '@/_common/use/useComponent.js';
+import { createElementClassName } from '@/_common/helpers/styleCompiler';
 import { useInner } from '@/_front/use/useInner.js';
 import { useComponentStates } from '@/_front/use/useComponentStates.js';
 import { useLibraryComponentActions } from '@/_common/use/useActions.js';
+import { useStyleCompilerDynamicVariables } from '@/_front/use/useStyleCompilerDynamicVariables';
+import { provideLibraryComponentLayoutStyleScope } from '@/_front/use/useLayoutStyleScopes';
 import { usePopupStore } from '@/pinia/popup';
 
 let componentId = 1;
@@ -45,9 +51,9 @@ export default {
         const wwLayoutContext = inject('wwLayoutContext', {});
         const bindingContext = inject('bindingContext', null);
         const isACopy = computed(() => bindingContext && bindingContext.isACopy);
-        const containerType = inject('__wwContainerType', null);
 
         provide('wwLibraryComponentUid_', props.uid);
+        provideLibraryComponentLayoutStyleScope(toRef(props, 'uid'));
 
         const modalsStore = usePopupStore();
 
@@ -69,6 +75,8 @@ export default {
 
         const {
             currentStates,
+            currentStatesAttribute,
+            forcedStatesAttribute,
             addInternalState,
             removeInternalState,
          } = useComponentStates(
@@ -80,12 +88,13 @@ export default {
 
         const {
             content,
-            style,
             state,
             rawContent,
-            rawStyle,
             rawState,
             name: elementName,
+            // Instance-level conditional rendering: the library instance self-hides (like an element),
+            // since style overrides no longer flow to the root child via the data bundle.
+            isRendering,
          } = useComponentData({
             type: 'libraryComponent',
             uid: props.uid,
@@ -93,6 +102,15 @@ export default {
             currentStates,
             context,
          });
+
+        useStyleCompilerDynamicVariables({
+            sourceUid: toRef(props, 'uid'),
+            context,
+            targets: {
+                element: computed(() => elementComponent.value?.component),
+            },
+        });
+        const instanceStyleClass = createElementClassName(props.uid);
 
  
         const { variables, updateVariable, formulas, componentVariablesConfiguration } = useInner(
@@ -191,11 +209,13 @@ export default {
             isLoop: computed(() => counts.value[baseUid] > 10),
             triggerEvent,
             triggerLibraryComponentEvent,
+            instanceStyleClass,
+            isRendering,
+            currentStatesAttribute,
+            forcedStatesAttribute,
             componentData: reactive({
                 state,
-                style,
                 rawState,
-                rawStyle,
              }),
             modalsStore,
             elementComponent,

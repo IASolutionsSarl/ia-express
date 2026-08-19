@@ -12,7 +12,6 @@ export default {
             'background',
             'styling',
             'advanced-style',
-            'customCss',
             'animation',
         ],
     },

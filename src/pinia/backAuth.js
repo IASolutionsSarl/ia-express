@@ -2,7 +2,7 @@ import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useEnvVariablesStore } from '@/pinia/envVariables.js';
 import { useHooksStore } from '@/pinia/hooks.js';
- import { useIntegrationsStore } from '@/pinia/integrations.js';
+ import { useIntegrationsStore } from '@/pinia/integrations';
 
 export const useBackAuthStore = defineStore('backAuth', () => {
     const projectAuth = ref(null);

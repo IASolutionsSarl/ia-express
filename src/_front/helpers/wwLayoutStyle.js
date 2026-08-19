@@ -1,5 +1,10 @@
 import { getDisplayValue } from '@/_common/helpers/component/component';
 
+/**
+ * @deprecated Layout CSS is now rendered by the style compiler via the `.ww-layout` surface. This
+ * helper (and `wwLib.wwElement.useLayoutStyle`) is kept only for backward compatibility with external
+ * components; it has no internal callers anymore.
+ */
 export function getLayoutStyleFromContent(content, style, componentConfiguration, context) {
     const display = getDisplayValue(style.display, componentConfiguration, context);
 

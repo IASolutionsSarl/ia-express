@@ -10,6 +10,7 @@
 <script>
  import wwElementComponent from '@/_front/components/wwElementComponent.vue';
 import wwLibraryComponent from './wwLibraryComponent.vue';
+import { resetLibraryComponentLayoutStyleScopes } from '@/_front/use/useLayoutStyleScopes';
 
 export default {
     name: 'wwElement',
@@ -21,14 +22,16 @@ export default {
     props: {
         uid: { type: String, required: true },
     },
-    /* wwFront:start */
     setup(props) {
+        resetLibraryComponentLayoutStyleScopes();
+
+        /* wwFront:start */
         return {
             isLibraryComponent: !!wwLib.$store.getters['websiteData/getWwObjects'][props.uid]?.libraryComponentBaseId,
             parentKey: `${wwLib.$store.getters['websiteData/getWwObjects'][props.uid]?.parentLibraryComponentId}`,
         };
+        /* wwFront:end */
     },
-    /* wwFront:end */
     computed: {
         // Used externally to get the component instance
         componentRef() {

@@ -1,4 +1,12 @@
 export default {
+    css({ style }) {
+        return [
+            {
+                property: '--component-cursor',
+                value: style.cursor,
+            },
+        ];
+    },
     editor: {
         label: {
             en: 'Input select',

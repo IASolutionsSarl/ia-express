@@ -4,7 +4,6 @@
         :tag="tag"
         :disabled="!canEditText"
         :model-value="internalText"
-        :text-style="textStyle"
         :links="links"
         :sanitize="sanitize"
         @update:modelValue="updateText"
@@ -36,10 +35,7 @@ export default {
             return false;
             /* wwFront:end */
         },
-         textStyle() {
-            return wwLib.wwUtils.getTextStyleFromContent(this.content);
-        },
-        internalText() {
+         internalText() {
             return (this.text === undefined ? this.content['_ww-text_text'] : this.text) || '';
         },
         sanitize() {

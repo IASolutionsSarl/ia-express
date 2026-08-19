@@ -7,7 +7,7 @@
         ref="component"
         :style="elementStyle"
         class="ww-element"
-        :class="[state.class || '', `ww-element-${uid}`]"
+        :class="[state.class || '', ...styleClasses]"
         v-bind="componentAttributes"
         :content="content"
         :uid="uid"
@@ -33,28 +33,38 @@ import {
     getComponentConfiguration,
     getComponentLabel,
     getComponentIcon,
-    getComponentSize,
-    getDisplayValue,
 } from '@/_common/helpers/component/component';
 
  
 import { useComponentData, useComponentTriggerEvent } from '@/_common/use/useComponent';
+import { createElementClassName } from '@/_common/helpers/styleCompiler';
 import { useComponentStates } from '@/_front/use/useComponentStates';
-import { useComponentKeyframes } from '@/_front/use/useComponentKeyframes';
-import { useComponentAdvancedInteractions } from '@/_front/use/useComponentAdvancedInteractions';
+ import { useComponentAdvancedInteractions } from '@/_front/use/useComponentAdvancedInteractions';
 import { useComponentActions } from '@/_common/use/useActions';
 import { useElementLocalContext } from '@/_front/use/useElementLocalContext';
+import { useStyleCompilerDynamicVariables } from '@/_front/use/useStyleCompilerDynamicVariables';
+import { createComponentId } from '@/_front/services/componentIds';
+import { getElementStyleResetClasses } from '@/_front/helpers/elementStyleReset';
 
-import { getBackgroundStyle } from '@/_front/helpers/wwBackgroungStyle';
+function mergeStateAttributes(...values) {
+    const states = new Set();
 
-let componentId = 1;
+    for (const value of values) {
+        if (typeof value !== 'string') continue;
+
+        for (const state of value.split(/\s+/)) {
+            if (state) states.add(state);
+        }
+    }
+
+    return states.size ? [...states].join(' ') : null;
+}
 
 export default {
     components: {
      },
     inject: {
         parentId: { from: '_wwElementUid', default: null },
-        wwIsInStretchedSection: { from: '__wwIsInStretchedSection', default: false },
     },
     inheritAttrs: false,
     props: {
@@ -70,19 +80,15 @@ export default {
     // update:child-selected and update:is-selected are used by useElementSelection
     emits: ['element-event', 'update:child-selected', 'update:is-selected', 'add-state', 'remove-state'],
     setup(props, vueContext) {
-        const id = componentId;
-        componentId++;
+        const id = createComponentId();
         const component = shallowRef(null);
 
         const wwLayoutContext = inject('wwLayoutContext', {});
         const bindingContext = inject('bindingContext', null);
         const sectionId = inject('sectionId', null);
-        const containerType = inject('__wwContainerType', null);
         const wwLibraryComponentUid_ = inject('wwLibraryComponentUid_', null);
 
         provide('wwLayoutContext', {});
-        provide('__wwContainerType', null);
-        provide('__wwIsInStretchedSection', false);
         provide('_wwElementUid', props.uid);
         provide('_wwElementComponentId', id);
 
@@ -103,6 +109,8 @@ export default {
 
         const {
             currentStates,
+            currentStatesAttribute,
+            forcedStatesAttribute,
             addInternalState,
             removeInternalState,
             toggleInternalState,
@@ -120,12 +128,11 @@ export default {
 
         const {
             content,
-            style,
             state,
             rawContent,
-            rawStyle,
             name: elementName,
             configuration,
+            isRendering,
          } = useComponentData({
             type: 'element',
             uid: props.uid,
@@ -136,6 +143,18 @@ export default {
             libraryComponentDataRef: computed(() => props.libraryComponentData),
          });
  
+        useStyleCompilerDynamicVariables({
+            sourceUid: toRef(props, 'uid'),
+            context,
+            targets: {
+                element: component,
+            },
+        });
+        const styleClasses = computed(() => [
+            createElementClassName(props.uid),
+            ...getElementStyleResetClasses(getComponentConfiguration('element', props.uid)),
+        ]);
+
         // TODO: could be one common reactive property
         // This is already the case for Section
         const wwFrontState = reactive({
@@ -164,14 +183,6 @@ export default {
         });
         provide('wwElementState', wwElementState);
 
-        const isRendering = computed(() => {
- 
-            /* wwFront:start */
-            // eslint-disable-next-line no-unreachable
-            return style.conditionalRendering;
-            /* wwFront:end */
-        });
-
         // When component is unmount, we reset state (the mouse leave event is not fired)
         watch(isRendering, isRendering => {
             if (!isRendering) {
@@ -188,11 +199,7 @@ export default {
  
         useComponentAdvancedInteractions(state, wwLib.$store.getters['websiteData/getPageId']);
 
-        const { animationStyle } = useComponentKeyframes({
-            componentId: id,
-            style,
-         });
-
+ 
  
         useComponentActions(
             { uid: props.uid, componentId: id, type: 'element', repeatIndex: bindingContext?.index },
@@ -229,7 +236,7 @@ export default {
                 'data-ww-component-id': id,
             };
 
-            if (bindingContext?.index) attributes['data-ww-repeat-index'] = bindingContext?.index;
+            if (bindingContext?.index != null) attributes['data-ww-repeat-index'] = bindingContext?.index;
 
             if (wwLibraryComponentUid_) attributes['data-ww-comp-uid'] = wwLibraryComponentUid_;
 
@@ -244,7 +251,6 @@ export default {
         return {
             component,
             content,
-            style,
             state,
             componentId: id,
             sectionId,
@@ -261,11 +267,12 @@ export default {
             wwFrontState,
             hasLink,
             wwElementState,
-            containerType,
             isRendering,
-            animationStyle,
             wwLibraryComponentUid_,
+            styleClasses,
             wwTechnicalAttributes,
+            currentStatesAttribute,
+            forcedStatesAttribute,
          };
     },
     computed: {
@@ -275,9 +282,6 @@ export default {
         /*=============================================m_ÔÔ_m=============================================\
             CONFIG / STATE
         \================================================================================================*/
-        configurationOptions() {
-            return this.configuration.options || {};
-        },
         componentAttributes() {
             let attributes = { ...this.$attrs };
 
@@ -307,6 +311,14 @@ export default {
             }
 
             Object.assign(attributes, this.wwTechnicalAttributes);
+            attributes['data-ww-states'] = mergeStateAttributes(
+                attributes['data-ww-states'],
+                this.currentStatesAttribute
+            );
+            attributes['data-ww-forced-states'] = mergeStateAttributes(
+                attributes['data-ww-forced-states'],
+                this.forcedStatesAttribute
+            );
 
             return attributes;
         },
@@ -314,141 +326,13 @@ export default {
         /*=============================================m_ÔÔ_m=============================================\
             STYLE
         \================================================================================================*/
-        isFlexboxChild() {
-            return this.containerType === 'flex' || this.containerType === 'inline-flex';
-        },
-        isGridChild() {
-            return this.containerType === 'grid' || this.containerType === 'inline-grid';
-        },
         elementStyle() {
-            const ignoredStyleProperties = this.configuration?.options?.ignoredStyleProperties || [];
-
-            const wwObjectStyle = {};
-
-            if (!ignoredStyleProperties.includes('margin')) {
-                wwObjectStyle.margin = this.style.margin || '0';
-            }
-            if (!ignoredStyleProperties.includes('padding')) {
-                wwObjectStyle.padding = this.style.padding || '0';
-            }
-            if (!ignoredStyleProperties.includes('overflow')) {
-                wwObjectStyle.overflow = this.style.overflow;
-            }
-            wwObjectStyle.zIndex = this.style.zIndex || 'unset';
-
-            //ALIGN SELF
-            wwObjectStyle.alignSelf = this.isFlexboxChild && this.style.align ? this.style.align : 'unset';
-
-            //DISPLAY
-            wwObjectStyle.display = getDisplayValue(this.style.display, this.configuration, {
-                content: this.content,
-                wwProps: this.wwProps,
-            });
-
-            // POSITION
-            if (['absolute', 'fixed', 'sticky'].includes(this.style.position)) {
-                wwObjectStyle.position = this.style.position;
-                const hasValue = this.style.top || this.style.bottom || this.style.left || this.style.right;
-                wwObjectStyle.top = this.style.top || (hasValue ? null : '0px');
-                wwObjectStyle.bottom = this.style.bottom;
-                wwObjectStyle.left = this.style.left;
-                wwObjectStyle.right = this.style.right;
-            }
-
-            // WIDTH
-            wwObjectStyle.width = getComponentSize(
-                this.style.width,
-                this.configurationOptions.autoByContent ? 'auto' : null
-            );
-
-            if (this.isFlexboxChild && this.style.flex) {
-                wwObjectStyle.flex = this.style.flex;
-            }
-
-            // MAX-WIDTH
-            wwObjectStyle.maxWidth = getComponentSize(this.style.maxWidth);
-            // MIN-WIDTH
-            wwObjectStyle.minWidth = getComponentSize(this.style.minWidth);
-
-            //PERSPECTIVE
-            let perspective = this.style.perspective || 0;
-            const hasPerspective = wwLib.wwUtils.getLengthUnit(perspective)[0];
-            if (hasPerspective) {
-                wwObjectStyle.perspective = perspective;
-            }
-
-            //HEIGHT
-            wwObjectStyle.height = this.style.height || 'auto';
-
-            //ASPECT-RATIO
-            if (!ignoredStyleProperties.includes('aspectRatio')) {
-                wwObjectStyle.aspectRatio = this.style.aspectRatio;
-            }
-
-            //MAX-HEIGHT
-            wwObjectStyle.maxHeight = getComponentSize(this.style.maxHeight);
-            //MIN-HEIGHT
-            wwObjectStyle.minHeight = getComponentSize(this.style.minHeight);
-
-            if (!ignoredStyleProperties.includes('background')) {
-                wwObjectStyle.background = getBackgroundStyle(this.style);
-            }
-
-            // OTHER
-            const otherProperties = ['boxShadow', 'opacity', 'transition', 'transform'];
-            if (!ignoredStyleProperties.includes('border')) {
-                otherProperties.push('border', 'borderTop', 'borderBottom', 'borderLeft', 'borderRight');
-            }
-            if (!ignoredStyleProperties.includes('outline')) {
-                otherProperties.push('outline', 'outlineOffset');
-            }
-            if (!ignoredStyleProperties.includes('borderRadius')) {
-                otherProperties.push('borderRadius');
-            }
-            otherProperties.forEach(prop => {
-                if (this.style[prop] !== undefined && this.style[prop] !== null) {
-                    wwObjectStyle[prop] = this.style[prop];
-                }
-            });
-
-            //CURSOR
-            if (this.style.cursor) {
-                     wwObjectStyle.cursor = this.style.cursor;
-             }
-
-            //POINTER-EVENTS
-            if (this.style.pointerEvents) {
-                     wwObjectStyle.pointerEvents = this.style.pointerEvents;
-             }
-
-            //ANIMATION
-            Object.assign(wwObjectStyle, this.animationStyle);
-
-            //CUSTOM CSS
-            for (const prop in this.style.customCss || {}) {
-                wwObjectStyle[prop] = this.style.customCss[prop];
-            }
-
-            if (this.wwIsInStretchedSection && !this.style.align) {
-                wwObjectStyle.width = wwObjectStyle.width || '100%';
-                wwObjectStyle.alignSelf = 'center';
-            }
-
-            //ADD EXTRA-STYLE
-            return { ...wwObjectStyle, ...this.gridStyle, ...(this.$attrs['extra-style'] || {}) };
-        },
-        gridStyle() {
-            if (!this.isGridChild) return {};
-
-            const { columnSpan, rowSpan, gridColumn, gridRow } = this.style;
-
-            const gridStyles = {};
-            if (columnSpan) gridStyles.gridColumn = `span ${columnSpan}`;
-            if (rowSpan) gridStyles.gridRow = `span ${rowSpan}`;
-            if (gridColumn) gridStyles.gridColumn = gridColumn;
-            if (gridRow) gridStyles.gridRow = gridRow;
-
-            return gridStyles;
+            // Everything is rendered by the style compiler (CSS). The editor still layers an inline
+            // animation override for the canvas preview; the published build has no inline style at all.
+             /* wwFront:start */
+            // eslint-disable-next-line no-unreachable
+            return {};
+            /* wwFront:end */
         },
  
         /*=============================================m_ÔÔ_m=============================================\

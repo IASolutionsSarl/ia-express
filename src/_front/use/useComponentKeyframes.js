@@ -1,44 +1,25 @@
 import { computed } from 'vue';
-import { useInjectStyle } from '@/_common/use/useInjectStyle';
 
-export function useComponentKeyframes({ componentId, style, isEditing, isSelected }) {
-    const _animationName = `ww-keyframes-${componentId}`;
+/**
+ * Editor-only animation preview override.
+ *
+ * The published animation (the `animation-*` longhands and the `@keyframes` block) is rendered by the
+ * style compiler on the `.ww-element-<uid>` rule. Two editor-canvas behaviors cannot live in the pure
+ * compiler and are driven here with an inline override (inline styles win over the compiler layer):
+ *  - non-selected elements stay static (`animation: none`);
+ *  - the selected element previews the keyframe editor (`keyframe-edition-animation`, played/paused
+ *    from `editorKeyframesStore`).
+ *
+ * The keyframe preview rebuilds the FULL animation shorthand from the element's data plus the historic
+ * defaults. The compiler preserves the same `iteration-count → infinite` default for the published
+ * animation, while this override additionally controls play/pause during keyframe editing.
+ *
+ * The whole override is stripped from the published build, which then animates purely from CSS.
+ */
+export function useComponentKeyframes( ) {
+    /* wwFront:start */
+    return {};
+    /* wwFront:end */
+ }
 
-    const animationKeyframes = computed(() => {
-        return (
-            style?.animationKeyframes &&
-            `${style?.animationKeyframes}`.replace(/^(@keyframes\s*)[^\s{]*(\s*{)/gi, `$1${_animationName}$2`)
-        );
-    });
-
-    useInjectStyle(_animationName, animationKeyframes);
-
-    return {
-        animationStyle: computed(() => {
-            if (!style.animationDuration) return {};
  
-            let animationPlayState = getRealValue(
-                style.animationPlayState === undefined ? true : style.animationPlayState,
-                'running',
-                'paused'
-            );
-            let animationName = _animationName;
- 
-            return {
-                animationName,
-                animationPlayState,
-                animationDuration: style.animationDuration,
-                animationTimingFunction: style.animationTimingFunction || 'ease',
-                animationDelay: style.animationDelay || '0s',
-                animationIterationCount: style.animationIterationCount || 'infinite',
-                animationFillMode: style.animationFillMode || 'none',
-                animationDirection: getRealValue(style.animationDirection, 'alternate', 'normal'),
-            };
-        }),
-    };
-}
-
-function getRealValue(value, valueTrue, valueFalse) {
-    if (value === valueTrue || value === valueFalse) return value;
-    return value ? valueTrue : valueFalse;
-}

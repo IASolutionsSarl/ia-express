@@ -46,25 +46,27 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.ww-page-load-progress {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    opacity: 0;
-    height: 3px;
-    display: flex;
-    pointer-events: none;
-    align-items: flex-start;
-    z-index: 99999999999999999;
+@layer ww-style-core {
+    .ww-page-load-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        opacity: 0;
+        height: 3px;
+        display: flex;
+        pointer-events: none;
+        align-items: flex-start;
+        z-index: 99999999999999999;
 
-    &.display {
-        opacity: 1;
-    }
-    & .progress {
-        height: 100%;
-        background: red;
-        transition: width 0.3s linear;
+        &.display {
+            opacity: 1;
+        }
+        & .progress {
+            height: 100%;
+            background: red;
+            transition: width 0.3s linear;
+        }
     }
 }
 </style>

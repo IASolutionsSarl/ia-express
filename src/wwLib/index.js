@@ -311,17 +311,6 @@ wwLib.wwPluginHelper.registerPlugin('plugin-2bd1c688-31c5-443e-ae25-59aa5b6431fb
 
     /**
      * @PUBLIC_API
-     * @DEPRECATED wwLib.wwutils.getTextStyleFromContent
-     */
-    getTextStyleFromContent(...args) {
-        // wwLib.wwLog.warn(
-        //     'wwLib.getTextStyleFromContent is DEPRECATED, use wwLib.wwUtils.getTextStyleFromContent instead'
-        // );
-        return wwLib.wwUtils.getTextStyleFromContent(...args);
-    },
-
-    /**
-     * @PUBLIC_API
      * @DEPRECATED wwLib.wwWorkflow.executeGlobal
      */
     async executeWorkflow(...args) {

@@ -27,9 +27,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.text-link {
-    display: inline-block;
-    text-decoration: inherit;
-    cursor: pointer;
+@layer ww-style-core {
+    .text-link {
+        display: inline-block;
+        text-decoration: inherit;
+        cursor: pointer;
+    }
 }
 </style>

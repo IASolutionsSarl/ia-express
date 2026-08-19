@@ -39,7 +39,7 @@ export default {
                             required: false,
                         },
                     ],
-                    copilot: {
+                    aiMetadata: {
                         description: 'Close the popup',
                         schema: {
                             args: {

@@ -3,7 +3,7 @@ import { executeWorkflows, resetWorkflows } from './workflows';
 import { useVariablesStore } from '@/pinia/variables.js';
 import { useBackTableViewsStore } from '@/pinia/backTableViews.js';
 import { useBackAuthStore } from '@/pinia/backAuth.js';
-import { useIntegrationsStore } from '@/pinia/integrations.js';
+import { useIntegrationsStore } from '@/pinia/integrations';
 
  
 let isFirstLoad = true;

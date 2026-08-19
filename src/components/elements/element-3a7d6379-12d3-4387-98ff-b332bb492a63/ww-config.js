@@ -1,5 +1,25 @@
 export default {
     type: 'wwObject',
+    css({ style, content }) {
+        return [
+            {
+                property: '--wwi-ar',
+                value: style.aspectRatio,
+            },
+            {
+                property: '--wwi-of',
+                value: content.objectFit,
+            },
+            {
+                property: '--wwi-f',
+                value: content.filter,
+            },
+            {
+                property: '--wwi-o',
+                value: content.overlay,
+            },
+        ];
+    },
     options: {
         sizable: true,
         ignoredStyleProperties: ['overflow'],

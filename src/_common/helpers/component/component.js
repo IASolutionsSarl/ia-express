@@ -1,6 +1,10 @@
 import { useComponentBasesStore } from '@/pinia/componentBases';
 import { usePopupStore } from '@/pinia/popup';
 
+const ELEMENT_BASE_ALIASES = {
+    'ww-text': 'd7904e9d-fc9a-4d80-9e32-728e097879ad',
+};
+
 export function getComponentVueComponentName(type, uid, noLog = false) {
     const baseUid = getComponentBaseUid(type, uid, noLog);
     return getComponentBaseVueComponentName(type, baseUid);
@@ -79,8 +83,13 @@ export function getComponentBaseConfiguration(type, baseUid) {
     if (type === 'libraryComponent') {
         return wwLib.$store.getters['libraries/getComponents'][baseUid]?.configuration || {};
     }
-    const name = getComponentBaseVueComponentName(type, baseUid);
+    const name = getComponentBaseVueComponentName(type, getComponentBaseAlias(type, baseUid));
     return _getComponentConfiguration(name);
+}
+
+function getComponentBaseAlias(type, baseUid) {
+    if (type !== 'element') return baseUid;
+    return ELEMENT_BASE_ALIASES[baseUid] || baseUid;
 }
 
 function _getLabel(type, config) {

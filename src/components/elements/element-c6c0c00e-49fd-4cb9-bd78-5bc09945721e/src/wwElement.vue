@@ -227,19 +227,19 @@ export default {
 }
 .slideDown-animation {
     animation: slideDown v-bind(animationDuration) v-bind(animationEasing);
-    will-change: opacity, transform;
+    will-change: transform;
 }
 .slideUp-animation {
     animation: slideUp v-bind(animationDuration) v-bind(animationEasing);
-    will-change: opacity, transform;
+    will-change: transform;
 }
 .slideLeft-animation {
     animation: slideLeft v-bind(animationDuration) v-bind(animationEasing);
-    will-change: opacity, transform;
+    will-change: transform;
 }
 .slideRight-animation {
     animation: slideRight v-bind(animationDuration) v-bind(animationEasing);
-    will-change: opacity, transform;
+    will-change: transform;
 }
 
 .transform {
@@ -270,43 +270,35 @@ export default {
 
 @keyframes slideUp {
     from {
-        opacity: 0;
         transform: translate(var(--translate-x), calc(var(--translate-y) - 30px));
     }
     to {
-        opacity: 1;
         transform: translate(var(--translate-x), calc(var(--translate-y)));
     }
 }
 
 @keyframes slideDown {
     from {
-        opacity: 0;
         transform: translate(var(--translate-x), calc(var(--translate-y) + 30px));
     }
     to {
-        opacity: 1;
         transform: translate(var(--translate-x), calc(var(--translate-y)));
     }
 }
 
 @keyframes slideLeft {
     from {
-        opacity: 0;
         transform: translate(calc(var(--translate-x) - 30px), var(--translate-y));
     }
     to {
-        opacity: 1;
         transform: translate(var(--translate-x), calc(var(--translate-y)));
     }
 }
 @keyframes slideRight {
     from {
-        opacity: 0;
         transform: translate(calc(var(--translate-x) + 30px), var(--translate-y));
     }
     to {
-        opacity: 1;
         transform: translate(var(--translate-x), calc(var(--translate-y)));
     }
 }

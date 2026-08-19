@@ -24,10 +24,9 @@
             <wwBackgroundVideo v-if="backgroundVideo" :video="backgroundVideo"></wwBackgroundVideo>
             <slot v-if="!noDropzone"></slot>
         </template>
-        <template #default="{ item, index, itemStyle }">
+        <template #default="{ item, index }">
             <wwElement
                 v-bind="item"
-                :extra-style="itemStyle"
                 class="ww-flexbox__object"
                 :ww-responsive="`wwobject-${index}`"
                 :data-ww-flexbox-index="index"

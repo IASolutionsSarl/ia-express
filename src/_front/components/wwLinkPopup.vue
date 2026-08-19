@@ -56,41 +56,45 @@ export default {
 </script>
 
 <style>
-.no-scroll {
-    overflow: hidden;
+@layer ww-style-core {
+    .no-scroll {
+        overflow: hidden;
+    }
 }
 </style>
 
 <style scoped lang="scss">
-.ww-link-popup {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 101;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow-y: auto;
-
-    &__background {
-        position: absolute;
+@layer ww-style-core {
+    .ww-link-popup {
+        position: fixed;
         top: 0;
-        left: 0;
         bottom: 0;
+        left: 0;
         right: 0;
-        min-height: 100%;
-    }
-    &__content {
-        position: relative;
-        min-height: 20px;
-        width: 100%;
-        z-index: 102;
-        max-height: 100%;
+        z-index: 101;
         display: flex;
         justify-content: center;
         align-items: center;
+        overflow-y: auto;
+
+        &__background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            min-height: 100%;
+        }
+        &__content {
+            position: relative;
+            min-height: 20px;
+            width: 100%;
+            z-index: 102;
+            max-height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
     }
 }
 </style>

@@ -48,7 +48,7 @@ vi.mock('@/_front/integrations/index.js', () => ({
     default: {},
 }));
 
-vi.mock('@/pinia/integrations.js', () => ({
+vi.mock('@/pinia/integrations', () => ({
     useIntegrationsStore: vi.fn(() => ({})),
 }));
 
@@ -118,10 +118,7 @@ describe('executeWorkflow versioned formula handling', () => {
 
         expect(execution.error).toBeUndefined();
         expect(execution.result).toBeUndefined();
-        expect(dispatch).not.toHaveBeenCalledWith(
-            'data/setWorkflowError',
-            expect.anything()
-        );
+        expect(dispatch).not.toHaveBeenCalledWith('data/setWorkflowError', expect.anything());
     });
 
     it('fails v2 workflows when a config formula fails', async () => {

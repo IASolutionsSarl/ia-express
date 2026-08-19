@@ -3,18 +3,20 @@ import { ref, shallowReactive } from 'vue';
  import integrationCore from '@/_front/integrations/index.js';
 import { resolveConnection } from '@/_common/helpers/code/connnections.js';
  
-export const NATIVE_INTEGRATIONS = ['http-request', 'weweb-auth', 'weweb-storage', 'custom-auth'];
+export const NATIVE_INTEGRATIONS = ['ai-gateway', 'http-request', 'weweb-auth', 'weweb-storage', 'custom-auth'];
 
 export const useIntegrationsStore = defineStore('integrations', () => {
     const installed = ref([...NATIVE_INTEGRATIONS]);
-    const connections = ref({});
+    type Connection = { id: string; name: string; integration: any; config: any };
+    const connections = ref<Record<string, Connection>>({});
     /* wwFront:start */
     // eslint-disable-next-line no-undef
+    // @ts-expect-error {} is injected at build time by the weweb build process
     connections.value = {};
     /* wwFront:end */
     const instances = {};
  
-    async function initializeConnectionInstance(connectionId) {
+    async function initializeConnectionInstance(connectionId: string) {
         const rawConnection = connections.value[connectionId];
         if (!rawConnection) return;
 
@@ -33,7 +35,7 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     }
 
  
-    async function initializeIntegrationInstance(integrationKey) {
+    async function initializeIntegrationInstance(integrationKey: string) {
         const integration = integrationCore[integrationKey];
         if (!integration?.init) return;
 
@@ -59,10 +61,10 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     return {
         installed,
         connections,
-        getInstance(id) {
+        getInstance(id: string) {
             return instances[id] || null;
         },
-        getConnection(connectionId, env = null) {
+        getConnection(connectionId: string, env: string = null) {
             if (!connectionId) return null;
             const connection = connections.value[connectionId];
             if (!connection) return null;
@@ -70,13 +72,13 @@ export const useIntegrationsStore = defineStore('integrations', () => {
         },
         initializeInstances,
         initializeConnectionInstance,
-         addIntegration(integration) {
+         addIntegration(integration: string) {
             if (!integration) return;
             if (!installed.value.includes(integration)) {
                 installed.value.push(integration);
             }
         },
-        removeIntegration(integration) {
+        removeIntegration(integration: string) {
             const index = installed.value.indexOf(integration);
             if (index !== -1) {
                 installed.value.splice(index, 1);
@@ -86,7 +88,7 @@ export const useIntegrationsStore = defineStore('integrations', () => {
                 delete instances[integration];
             }
         },
-        addConnection(connection) {
+        addConnection(connection: Connection) {
             if (!connection?.id) return;
             connections.value[connection.id] = connection;
         },

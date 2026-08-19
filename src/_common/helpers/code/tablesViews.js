@@ -1,6 +1,6 @@
 import { useBackTableViewsStore } from '@/pinia/backTableViews.js';
 import { useBackTablesStore } from '@/pinia/backTables.js';
-import { useIntegrationsStore } from '@/pinia/integrations.js';
+import { useIntegrationsStore } from '@/pinia/integrations';
 import integrationsCore from '@/_front/integrations/index.js';
  
 let latestRequestId = {};

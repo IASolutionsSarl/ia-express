@@ -1,3 +1,27 @@
+const TYPOGRAPHY_OVERRIDE_EDITOR_GROUP = {
+    id: 'typography-overrides',
+    label: 'Typography overrides',
+    isCollapsible: true,
+    startOpened: false,
+};
+
+const TYPOGRAPHY_OVERRIDE_PROPERTIES = [
+    '_ww-text_fontSize',
+    '_ww-text_fontFamily',
+    '_ww-text_fontWeight',
+    '_ww-text_fontStyle',
+    '_ww-text_lineHeight',
+];
+
+function hasTypography(content, boundProperties) {
+    return !!(content['_ww-text_font'] || boundProperties?.['_ww-text_font']);
+}
+
+function getTypographyOverrideEditorGroup(content, _, boundProperties) {
+    if (!hasTypography(content, boundProperties)) return null;
+    return TYPOGRAPHY_OVERRIDE_EDITOR_GROUP;
+}
+
 export const TEXT_CONFIGURATION = {
     properties: {
         '_ww-text_text': {
@@ -39,6 +63,7 @@ export const TEXT_CONFIGURATION = {
                     boundProperties['_ww-text_fontStyle'] ||
                     boundProperties['_ww-text_lineHeight'],
                 creationDisabledMessage: 'Cannot create typography from bound properties',
+                clearProperties: TYPOGRAPHY_OVERRIDE_PROPERTIES.map(property => `content.${property}`),
             }),
             bindable: true,
             responsive: true,
@@ -62,7 +87,8 @@ export const TEXT_CONFIGURATION = {
             states: true,
             classes: true,
             bindable: true,
-            hidden: (content, _, boundProps) => content['_ww-text_font'] || boundProps['_ww-text_font'],
+            canReset: true,
+            editorGroup: getTypographyOverrideEditorGroup,
             bindingValidation: { markdown: 'font-size', type: 'string', cssSupports: 'font-size' },
             isStyle: true,
         },
@@ -74,7 +100,11 @@ export const TEXT_CONFIGURATION = {
             states: true,
             classes: true,
             bindable: true,
-            hidden: (content, _, boundProps) => content['_ww-text_font'] || boundProps['_ww-text_font'],
+            canReset: true,
+            editorGroup: getTypographyOverrideEditorGroup,
+            options: (content, _, boundProperties) => ({
+                defaultLabel: hasTypography(content, boundProperties) ? 'Typography' : undefined,
+            }),
             bindingValidation: { markdown: 'font-family', type: 'string', cssSupports: 'font-family' },
             isStyle: true,
         },
@@ -82,9 +112,13 @@ export const TEXT_CONFIGURATION = {
             label: 'Font weight',
             type: 'TextSelect',
             category: 'text',
-            options: {
+            options: (content, _, boundProperties) => ({
                 options: [
-                    { value: null, label: 'Default', default: true },
+                    {
+                        value: null,
+                        label: hasTypography(content, boundProperties) ? 'Typography' : 'Default',
+                        default: true,
+                    },
                     { value: 100, label: '100 - Thin' },
                     { value: 200, label: '200 - Extra Light' },
                     { value: 300, label: '300 - Light' },
@@ -95,12 +129,13 @@ export const TEXT_CONFIGURATION = {
                     { value: 800, label: '800 - Extra Bold' },
                     { value: 900, label: '900 - Black' },
                 ],
-            },
+            }),
             responsive: true,
             states: true,
             classes: true,
             bindable: true,
-            hidden: (content, _, boundProps) => content['_ww-text_font'] || boundProps['_ww-text_font'],
+            canReset: true,
+            editorGroup: getTypographyOverrideEditorGroup,
             bindingValidation: { markdown: 'font-weight', type: 'string', cssSupports: 'font-weight' },
             isStyle: true,
         },
@@ -108,17 +143,23 @@ export const TEXT_CONFIGURATION = {
             label: 'Font Style',
             type: 'TextRadioGroup',
             category: 'text',
-            options: {
+            options: (content, _, boundProperties) => ({
                 choices: [
-                    { value: null, title: 'Default', icon: 'typo-default', default: true },
+                    {
+                        value: null,
+                        title: hasTypography(content, boundProperties) ? 'Typography' : 'Default',
+                        icon: 'typo-default',
+                        default: true,
+                    },
                     { value: 'italic', title: 'Italic', icon: 'typo-italic' },
                 ],
-            },
+            }),
             responsive: true,
             states: true,
             bindable: true,
             classes: true,
-            hidden: (content, _, boundProps) => content['_ww-text_font'] || boundProps['_ww-text_font'],
+            canReset: true,
+            editorGroup: getTypographyOverrideEditorGroup,
             bindingValidation: { markdown: 'font-style', type: 'string', cssSupports: 'font-style' },
             isStyle: true,
         },
@@ -141,7 +182,8 @@ export const TEXT_CONFIGURATION = {
             states: true,
             classes: true,
             bindable: true,
-            hidden: (content, _, boundProps) => content['_ww-text_font'] || boundProps['_ww-text_font'],
+            canReset: true,
+            editorGroup: getTypographyOverrideEditorGroup,
             bindingValidation: { markdown: 'line-height', type: 'string', cssSupports: 'line-height' },
             isStyle: true,
         },

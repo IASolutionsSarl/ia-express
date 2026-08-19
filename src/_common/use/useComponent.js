@@ -1,7 +1,7 @@
 import { get } from 'lodash-es';
 import { computed, reactive, inject, provide, watch, ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 
-import { getComponentConfiguration } from '@/_common/helpers/component/component.js';
+import { getComponentConfiguration, getDisplayValue } from '@/_common/helpers/component/component.js';
 import { STYLE_CONFIGURATION, STATE_CONFIGURATION } from '@/_common/helpers/configuration/configurationCommon.js';
 import { getValue } from '@/_common/helpers/code/customCode.js';
 import { executeWorkflow } from '@/_common/helpers/code/workflows.js';
@@ -22,12 +22,8 @@ export function useComponentData({
     let rawContent = {};
     let sidepanelContent = reactive({
         content: {},
-        _state: {
-            style: {},
-        },
+        _state: {},
     });
-    let style = {};
-    let rawStyle = {};
     let rawState = {};
     let state = {};
 
@@ -61,36 +57,12 @@ export function useComponentData({
          }
     }
 
-    for (let propertyName in STYLE_CONFIGURATION) {
-        if (
-            STYLE_CONFIGURATION[propertyName].componentType &&
-            STYLE_CONFIGURATION[propertyName].componentType !== type
-        ) {
-            continue;
-        }
-        if (!STYLE_CONFIGURATION[propertyName].editorOnly) {
-            const rawProperty = computed(() =>
-                getComponentRawProperty({
-                    dataRef: component,
-                    prefix: '_state.style',
-                    suffix: propertyName,
-                    propertyConfiguration: STYLE_CONFIGURATION[propertyName],
-                    statesRef: currentStates,
-                    libraryComponentDataRef,
-                 })
-            );
-            const property = computed(() =>
-                getValue(rawProperty.value, context, {
-                    defaultUndefined: STYLE_CONFIGURATION[propertyName].fallbackToDefault
-                        ? STYLE_CONFIGURATION[propertyName].defaultValue
-                        : STYLE_CONFIGURATION[propertyName].defaultUndefined,
-                })
-            );
-            // eslint-disable-next-line vue/no-ref-as-operand
-            style[propertyName] = property;
-            rawStyle[propertyName] = rawProperty;
-         }
-    }
+    // No per-style-prop loop here anymore: element CSS (incl. animation) is rendered by the compiler, and
+    // library style overrides go through its CSS cascade layers. The one non-CSS style prop that needed a
+    // JS instance→root override — `conditionalRendering` (a v-if) — is handled by each library instance
+    // self-hiding via its own `isRendering` (wwLibraryComponent), not by a data merge. STYLE_CONFIGURATION
+    // has no `editorOnly` style prop (audited editor + assets), so `sidepanelContent._state.style` is never
+    // populated. Editor-only STATE props (e.g. forceRendering) are still mirrored by the state loop below.
     for (const propertyName in STATE_CONFIGURATION) {
         if (propertyName === 'interactions') {
             const rawProperty = computed(() => component.value?._state?.interactions);
@@ -131,11 +103,44 @@ export function useComponentData({
     }
 
     content = reactive(content);
-    style = reactive(style);
     rawContent = reactive(rawContent);
-    rawStyle = reactive(rawStyle);
     rawState = reactive(rawState);
     state = reactive(state);
+
+ 
+    // Resolve a single style prop from the data, INDEPENDENTLY of the monolithic `style` object (so
+    // targeted consumers survive `style`'s removal). Ungated so it can feed front computeds too; the
+    // `useEditorKeyframesRef` param is gated inline (as in the style loop).
+    const resolveStyleProperty = suffix =>
+        getValue(
+            getComponentRawProperty({
+                dataRef: component,
+                prefix: '_state.style',
+                suffix,
+                propertyConfiguration: STYLE_CONFIGURATION[suffix],
+                statesRef: currentStates,
+                libraryComponentDataRef,
+             }),
+            context,
+            {
+                defaultUndefined: STYLE_CONFIGURATION[suffix].fallbackToDefault
+                    ? STYLE_CONFIGURATION[suffix].defaultValue
+                    : STYLE_CONFIGURATION[suffix].defaultUndefined,
+            }
+        );
+
+    // conditionalRendering drives `isRendering` (v-if) on FRONT + editor. Same resolution as the
+    // navigator's eye icon. Not a CSS prop → stays resolved in JS, but decoupled from `style`.
+    const componentConditionalRendering = computed(() => resolveStyleProperty('conditionalRendering'));
+
+    // Rendering flag (component v-if), factored here (identical in wwElementComponent/wwSectionComponent;
+    // wwLibraryComponent delegates to its root element). On the published site it IS
+    // `componentConditionalRendering` (no extra computed); in the editor it also honors force-render.
+    let isRendering;
+     /* wwFront:start */
+    // eslint-disable-next-line vue/no-ref-as-operand
+    isRendering = componentConditionalRendering;
+    /* wwFront:end */
 
  
     if (type === 'libraryComponent') {
@@ -143,19 +148,16 @@ export function useComponentData({
     } else {
         provide('componentContent', content);
         provide('componentState', state);
-        provide('componentStyle', style);
-        provide('componentRawContent', rawContent);
-        provide('componentConfiguration', configuration);
+         provide('componentRawContent', rawContent);
         provide('componentData', component);
         provide('componentWwProps', wwProps);
     }
 
     return {
         content,
-         style,
-        state,
+        isRendering,
+         state,
         rawContent,
-        rawStyle,
         rawState,
         name: computed(() => component.value && component.value.name),
         configuration,

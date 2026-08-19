@@ -6,6 +6,7 @@ import { STYLE_CONFIGURATION, STATE_CONFIGURATION } from '@/_common/helpers/conf
 import { getValue } from '@/_common/helpers/code/customCode.js';
 import { executeWorkflow } from '@/_common/helpers/code/workflows.js';
 import { getComponentRawProperty } from '@/_common/helpers/component/componentProperty.js';
+import { resolveLibraryComponentConditionalRendering } from '@/_common/helpers/component/libraryComponentRendering';
 import { lazySet } from '@/_common/helpers/reactivity.js';
 import { usePopupStore } from '@/pinia/popup';
 
@@ -58,11 +59,11 @@ export function useComponentData({
     }
 
     // No per-style-prop loop here anymore: element CSS (incl. animation) is rendered by the compiler, and
-    // library style overrides go through its CSS cascade layers. The one non-CSS style prop that needed a
-    // JS instance→root override — `conditionalRendering` (a v-if) — is handled by each library instance
-    // self-hiding via its own `isRendering` (wwLibraryComponent), not by a data merge. STYLE_CONFIGURATION
-    // has no `editorOnly` style prop (audited editor + assets), so `sidepanelContent._state.style` is never
-    // populated. Editor-only STATE props (e.g. forceRendering) are still mirrored by the state loop below.
+    // library style overrides go through its CSS cascade layers. `conditionalRendering` is the one non-CSS
+    // style prop that still needs a targeted JS instance→root override; it is resolved below and forwarded
+    // by wwLibraryComponent. STYLE_CONFIGURATION has no `editorOnly` style prop (audited editor + assets),
+    // so `sidepanelContent._state.style` is never populated. Editor-only STATE props (e.g. forceRendering)
+    // are still mirrored by the state loop below.
     for (const propertyName in STATE_CONFIGURATION) {
         if (propertyName === 'interactions') {
             const rawProperty = computed(() => component.value?._state?.interactions);
@@ -111,27 +112,42 @@ export function useComponentData({
     // Resolve a single style prop from the data, INDEPENDENTLY of the monolithic `style` object (so
     // targeted consumers survive `style`'s removal). Ungated so it can feed front computeds too; the
     // `useEditorKeyframesRef` param is gated inline (as in the style loop).
+    const resolveRawStyleProperty = suffix =>
+        getComponentRawProperty({
+            dataRef: component,
+            prefix: '_state.style',
+            suffix,
+            propertyConfiguration: STYLE_CONFIGURATION[suffix],
+            statesRef: currentStates,
+            libraryComponentDataRef,
+         });
+
     const resolveStyleProperty = suffix =>
-        getValue(
-            getComponentRawProperty({
-                dataRef: component,
-                prefix: '_state.style',
-                suffix,
-                propertyConfiguration: STYLE_CONFIGURATION[suffix],
-                statesRef: currentStates,
-                libraryComponentDataRef,
-             }),
-            context,
-            {
-                defaultUndefined: STYLE_CONFIGURATION[suffix].fallbackToDefault
-                    ? STYLE_CONFIGURATION[suffix].defaultValue
-                    : STYLE_CONFIGURATION[suffix].defaultUndefined,
-            }
-        );
+        getValue(resolveRawStyleProperty(suffix), context, {
+            defaultUndefined: STYLE_CONFIGURATION[suffix].fallbackToDefault
+                ? STYLE_CONFIGURATION[suffix].defaultValue
+                : STYLE_CONFIGURATION[suffix].defaultUndefined,
+        });
 
     // conditionalRendering drives `isRendering` (v-if) on FRONT + editor. Same resolution as the
-    // navigator's eye icon. Not a CSS prop → stays resolved in JS, but decoupled from `style`.
-    const componentConditionalRendering = computed(() => resolveStyleProperty('conditionalRendering'));
+    // navigator's eye icon. Library roots receive the instance's value through a dedicated rendering
+    // payload, keeping the removed runtime style object out of the component contract.
+    const resolveRawConditionalRendering = () =>
+        resolveLibraryComponentConditionalRendering(libraryComponentDataRef?.value, () =>
+            resolveRawStyleProperty('conditionalRendering')
+        );
+    const rawConditionalRendering = type === 'libraryComponent' ? computed(resolveRawConditionalRendering) : undefined;
+    const componentConditionalRendering = computed(() =>
+        getValue(
+            type === 'libraryComponent' ? rawConditionalRendering.value : resolveRawConditionalRendering(),
+            context,
+            {
+                defaultUndefined: STYLE_CONFIGURATION.conditionalRendering.fallbackToDefault
+                    ? STYLE_CONFIGURATION.conditionalRendering.defaultValue
+                    : STYLE_CONFIGURATION.conditionalRendering.defaultUndefined,
+            }
+        )
+    );
 
     // Rendering flag (component v-if), factored here (identical in wwElementComponent/wwSectionComponent;
     // wwLibraryComponent delegates to its root element). On the published site it IS
@@ -156,6 +172,8 @@ export function useComponentData({
     return {
         content,
         isRendering,
+        componentConditionalRendering,
+        rawConditionalRendering,
          state,
         rawContent,
         rawState,

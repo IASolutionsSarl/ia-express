@@ -784,7 +784,7 @@ function createDynamicCssVariableReference({
     breakpoint,
     value,
     condition,
-    fallbackWhenAllValuesEmpty,
+    runtimeFallback,
     cssFallback,
 }: Omit<StyleDynamicVariableBase, 'name' | 'group'> & {
     input: StyleCompilerInput;
@@ -819,7 +819,7 @@ function createDynamicCssVariableReference({
         validationProperty,
         omitWhenUndefined,
         condition,
-        fallbackWhenAllValuesEmpty,
+        runtimeFallback,
     };
 
     return createReference(fallbackValue);
@@ -945,7 +945,7 @@ export function createConditionalDynamicCssVariableReference({
  * Unlike a CSS `var()` fallback, this decision requires formula results and therefore cannot be
  * made while compiling the stylesheet.
  */
-export function createEmptyGroupFallbackDynamicCssVariableReference({
+export function createWhenAllEmptyDynamicCssVariableReference({
     input,
     surface,
     sourceUid,
@@ -957,11 +957,11 @@ export function createEmptyGroupFallbackDynamicCssVariableReference({
     breakpoint,
     value,
     condition,
-    fallbackWhenAllValuesEmpty,
+    runtimeFallback,
     cssFallbackValue,
 }: Omit<StyleDynamicVariableBase, 'name' | 'group'> & {
     input: StyleCompilerInput;
-    fallbackWhenAllValuesEmpty: NonNullable<StyleDynamicVariableBase['fallbackWhenAllValuesEmpty']>;
+    runtimeFallback: Extract<NonNullable<StyleDynamicVariableBase['runtimeFallback']>, { type: 'when-all-empty' }>;
     cssFallbackValue: unknown;
 }) {
     return createDynamicCssVariableReference({
@@ -976,8 +976,70 @@ export function createEmptyGroupFallbackDynamicCssVariableReference({
         breakpoint,
         value,
         condition,
-        fallbackWhenAllValuesEmpty,
+        runtimeFallback,
         cssFallback: { value: cssFallbackValue },
+    });
+}
+
+/**
+ * Creates one runtime variable with an ordered secondary value.
+ *
+ * The primary and fallback formulas are resolved by the same runtime registration. This avoids
+ * independently clearing a CSS declaration when a nested fallback fragment resolves empty.
+ */
+export function createWhenEmptyDynamicCssVariableReference({
+    input,
+    surface,
+    sourceUid,
+    domain,
+    property,
+    outputKey,
+    valueNormalizer,
+    state,
+    breakpoint,
+    value,
+    condition,
+    runtimeFallback,
+    cssFallbackValue,
+}: Omit<StyleDynamicVariableBase, 'name' | 'group'> & {
+    input: StyleCompilerInput;
+    runtimeFallback: Extract<NonNullable<StyleDynamicVariableBase['runtimeFallback']>, { type: 'when-empty' }>;
+    cssFallbackValue?: unknown;
+}) {
+    const request = {
+        sourceUid,
+        surface,
+        domain,
+        property,
+        state,
+        breakpoint,
+    };
+    const primaryFallback = resolveFallbackCandidate(input, value, { ...request, valueNormalizer });
+    const primaryCssValue = serializeFallbackCandidate(property, primaryFallback, valueNormalizer);
+    let fallbackValue = cssFallbackValue === undefined ? primaryFallback : cssFallbackValue;
+    if (cssFallbackValue === undefined && !primaryCssValue) {
+        const emptyFallback = resolveFallbackCandidate(input, runtimeFallback.value, {
+            ...request,
+            valueNormalizer: runtimeFallback.valueNormalizer,
+        });
+        fallbackValue =
+            serializeFallbackCandidate(property, emptyFallback, runtimeFallback.valueNormalizer) || NO_DYNAMIC_FALLBACK;
+    }
+
+    return createDynamicCssVariableReference({
+        input,
+        surface,
+        sourceUid,
+        domain,
+        property,
+        outputKey,
+        valueNormalizer,
+        state,
+        breakpoint,
+        value,
+        condition,
+        runtimeFallback,
+        cssFallback: { value: fallbackValue },
     });
 }
 
@@ -1001,6 +1063,20 @@ function resolveDynamicFallback(
 
     const result = input.resolveFormulaFallback?.(formula, request);
     return result?.status === 'resolved' ? result.value : NO_DYNAMIC_FALLBACK;
+}
+
+function resolveFallbackCandidate(
+    input: StyleCompilerInput,
+    value: unknown,
+    request: Parameters<NonNullable<StyleCompilerInput['resolveFormulaFallback']>>[1]
+) {
+    return isDynamicValue(value) ? resolveDynamicFallback(input, value, request) : value;
+}
+
+function serializeFallbackCandidate(property: string, value: unknown, valueNormalizer?: StyleCssValueNormalizer) {
+    if (value === NO_DYNAMIC_FALLBACK) return undefined;
+
+    return serializeRuntimeCssVariableValue(property, value, { valueNormalizer });
 }
 
 function createDynamicCssVariableName(domain: StylePropertyDomain, property: string, outputKey?: string) {
@@ -1049,7 +1125,12 @@ export function isStyleDynamicVariableReference(value: unknown): value is StyleD
     );
 }
 
-function resolveRawStyleProperty({
+/**
+ * Resolves the authored cascade without creating a CSS-variable reference or discovering a static
+ * formula fallback. Composite declarations use this for secondary values that are only needed
+ * after their primary value resolves empty.
+ */
+export function resolveRawStyleProperty({
     input,
     source,
     property,

@@ -42,6 +42,21 @@ export function registerStyleDynamicVariable(variable: StyleDynamicVariable): St
     };
 }
 
+/** Registers one published page manifest under a single lifecycle cleanup. */
+export function registerStyleDynamicVariables(variables: readonly StyleDynamicVariable[]): StyleScopeStop {
+    const cleanups: StyleScopeStop[] = [];
+    for (const variable of variables) {
+        cleanups.push(registerStyleDynamicVariable(variable));
+    }
+
+    return () => {
+        for (let index = cleanups.length - 1; index >= 0; index--) {
+            cleanups[index]();
+        }
+        cleanups.length = 0;
+    };
+}
+
 /**
  * Reads variables for one style source and tracks registry changes in Vue effects.
  */

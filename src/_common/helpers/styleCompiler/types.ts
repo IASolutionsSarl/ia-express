@@ -274,6 +274,11 @@ export type StyleCssValueNormalizer =
           type: 'empty-if-falsy';
       }
     | {
+          /** Prefixes a truthy fragment while keeping falsy fragments empty for ordered fallbacks. */
+          type: 'prefix-if-truthy';
+          prefix: string;
+      }
+    | {
           /** Serializes legacy array-backed CSS lists with the same `Array#join(' ') || fallback` semantics. */
           type: 'space-separated-list';
           fallbackValue: unknown;
@@ -701,15 +706,24 @@ export type StyleDynamicVariableCondition =
       };
 
 /**
- * Runtime fallback applied only when every value in a related declaration group resolves empty.
+ * Mutually exclusive runtime fallback strategies for one generated CSS variable.
  *
- * Position offsets use this to preserve the legacy `top: 0` default without applying it while a
- * bound `right`, `bottom`, or `left` value is still unresolved.
+ * `when-empty` resolves one ordered secondary value. `when-all-empty` observes a related value
+ * group after the primary value has resolved empty. Both preserve unresolved results so static CSS
+ * can remain in control until every required formula is known.
  */
-export type StyleDynamicVariableEmptyGroupFallback = {
-    values: readonly unknown[];
-    value: unknown;
-};
+export type StyleDynamicVariableRuntimeFallback =
+    | {
+          type: 'when-empty';
+          value: unknown;
+          valueNormalizer?: StyleCssValueNormalizer;
+      }
+    | {
+          type: 'when-all-empty';
+          /** Secondary values which must also resolve empty. The primary value is evaluated once by the caller. */
+          dependencies: readonly unknown[];
+          value: unknown;
+      };
 
 /**
  * Formula/dynamic source value before the runtime knows the final emitted CSS property.
@@ -732,7 +746,7 @@ export type StyleDynamicVariableBase = {
     omitWhenUndefined?: boolean;
     /** A single runtime gate, or several gates combined with AND semantics. */
     condition?: StyleDynamicVariableCondition | readonly StyleDynamicVariableCondition[];
-    fallbackWhenAllValuesEmpty?: StyleDynamicVariableEmptyGroupFallback;
+    runtimeFallback?: StyleDynamicVariableRuntimeFallback;
 };
 
 /**

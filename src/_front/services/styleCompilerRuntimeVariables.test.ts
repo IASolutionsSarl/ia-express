@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import type { StyleDynamicVariable, StyleSurface } from '@/_common/helpers/styleCompiler';
-import { getStyleDynamicVariablesForSource, registerStyleDynamicVariable } from './styleCompilerRuntimeVariables';
+import {
+    getStyleDynamicVariablesForSource,
+    registerStyleDynamicVariable,
+    registerStyleDynamicVariables,
+} from './styleCompilerRuntimeVariables';
 
 describe('styleCompilerRuntimeVariables', () => {
     it('returns variables for one source and cleans them up when their compiler chunk is disposed', () => {
@@ -21,6 +25,19 @@ describe('styleCompilerRuntimeVariables', () => {
 
         stopSection();
         stopOtherSource();
+    });
+
+    it('registers and cleans a whole published page manifest', () => {
+        const variables = [createVariable('manifestA', 'element'), createVariable('manifestB', 'section-element')];
+        const stop = registerStyleDynamicVariables(variables);
+
+        expect(getStyleDynamicVariablesForSource('manifestA')).toEqual([variables[0]]);
+        expect(getStyleDynamicVariablesForSource('manifestB')).toEqual([variables[1]]);
+
+        stop();
+
+        expect(getStyleDynamicVariablesForSource('manifestA')).toEqual([]);
+        expect(getStyleDynamicVariablesForSource('manifestB')).toEqual([]);
     });
 });
 

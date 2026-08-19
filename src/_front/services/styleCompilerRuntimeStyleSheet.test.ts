@@ -85,6 +85,75 @@ describe('styleCompilerRuntimeStyleSheet', () => {
         stopRegistration();
     });
 
+    it('switches an effective grid placement between its primary value, span fallback, and empty state', async () => {
+        const doc = new FakeDocument();
+        Object.assign(wwLib, {
+            getFrontDocument: () => doc,
+            wwLog: { warn: vi.fn() },
+        });
+        const placementFormula = { __wwtype: 'f', code: 'variables.gridColumn' };
+        const spanFormula = { __wwtype: 'f', code: 'variables.columnSpan' };
+        const placement = ref<unknown>('2 / 8');
+        const span = ref<unknown>('6');
+        executeStyleFormula.mockImplementation(formula => ({
+            status: 'resolved',
+            value: formula === placementFormula ? placement.value : span.value,
+        }));
+        const variable = {
+            ...createBorderVariable(),
+            name: '--ww-style-grid-column',
+            sourceUid: 'grid-child',
+            property: 'gridColumn',
+            value: placementFormula,
+            valueNormalizer: { type: 'empty-if-falsy' },
+            runtimeFallback: {
+                type: 'when-empty',
+                value: spanFormula,
+                valueNormalizer: { type: 'prefix-if-truthy', prefix: 'span ' },
+            },
+            cssProperty: 'grid-column',
+            validationProperty: 'grid-column',
+            directDeclaration: true,
+            selector: '.ww-element-grid-child',
+        } as StyleDynamicVariable;
+        const stopRegistration = registerStyleDynamicVariable(variable);
+        const scope = effectScope();
+        const element = {
+            nodeType: 1,
+            style: {},
+            getAttribute: () => 'instance-grid-child',
+        } as unknown as HTMLElement;
+
+        scope.run(() => {
+            useStyleCompilerDynamicVariables({
+                sourceUid: 'grid-child',
+                targets: { element: ref(element) },
+            });
+        });
+        await nextTick();
+
+        expect(getRuntimeDeclaration(doc, '--ww-style-grid-column')).toBe('2 / 8');
+        expect(getGeneratedLayerDeclaration(doc, 'element', 'grid-column')).toBe('');
+
+        placement.value = '';
+        await nextTick();
+        expect(getRuntimeDeclaration(doc, '--ww-style-grid-column')).toBe('span 6');
+        expect(getGeneratedLayerDeclaration(doc, 'element', 'grid-column')).toBe('');
+
+        span.value = '';
+        await nextTick();
+        expect(getRuntimeDeclaration(doc, '--ww-style-grid-column')).toBe('');
+        expect(getGeneratedLayerDeclaration(doc, 'element', 'grid-column')).toBe('revert-layer');
+
+        placement.value = '3 / 7';
+        await nextTick();
+        expect(getRuntimeDeclaration(doc, '--ww-style-grid-column')).toBe('3 / 7');
+        expect(getGeneratedLayerDeclaration(doc, 'element', 'grid-column')).toBe('');
+
+        scope.stop();
+        stopRegistration();
+    });
+
     it('keeps the last accepted runtime value when a reactive update is invalid', async () => {
         const doc = new FakeDocument((property, value) => property !== 'width' || value !== '10p');
         Object.assign(wwLib, {
@@ -190,7 +259,9 @@ describe('styleCompilerRuntimeStyleSheet', () => {
     });
 
     it('validates shorthand fragments against their declared value grammar', async () => {
-        const supports = vi.fn((property: string, value: string) => property === 'background-size' && value === 'cover');
+        const supports = vi.fn(
+            (property: string, value: string) => property === 'background-size' && value === 'cover'
+        );
         const doc = new FakeDocument(supports);
         Object.assign(wwLib, {
             getFrontDocument: () => doc,

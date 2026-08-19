@@ -68,8 +68,37 @@ export function resolveStyleCompilerRuntimeVariableResult<TContext>({
     const cssValue = serializeVariableValue(variable, execution.value);
     if (cssValue) return { status: 'value', cssValue };
 
-    const emptyGroupFallback = resolveEmptyGroupFallback(variable, context, executor, executionResults);
-    return emptyGroupFallback ? { status: 'value', cssValue: emptyGroupFallback } : { status: 'empty' };
+    return resolveRuntimeFallback(variable, context, executor, executionResults) || { status: 'empty' };
+}
+
+function resolveRuntimeFallback<TContext>(
+    variable: StyleDynamicVariable,
+    context: TContext,
+    executor: FormulaExecutor<TContext>,
+    executionResults: Map<unknown, FormulaExecutionResult>
+): StyleCompilerRuntimeVariableResolution | null {
+    const fallback = variable.runtimeFallback;
+    if (!fallback) return null;
+
+    if (fallback.type === 'when-empty') {
+        const execution = executeFormula(fallback.value, context, executor, executionResults);
+        if (execution.status !== 'resolved') return { status: 'unresolved' };
+
+        const cssValue = serializeRuntimeCssVariableValue(variable.cssProperty, execution.value, {
+            valueNormalizer: fallback.valueNormalizer,
+        });
+        return cssValue ? { status: 'value', cssValue } : { status: 'empty' };
+    }
+
+    for (const value of fallback.dependencies) {
+        const result = executeFormula(value, context, executor, executionResults);
+        if (result.status !== 'resolved') return { status: 'unresolved' };
+
+        if (result.value) return { status: 'empty' };
+    }
+
+    const cssValue = serializeVariableValue(variable, fallback.value);
+    return cssValue ? { status: 'value', cssValue } : { status: 'empty' };
 }
 
 function serializeVariableValue(variable: StyleDynamicVariable, value: unknown) {
@@ -78,26 +107,6 @@ function serializeVariableValue(variable: StyleDynamicVariable, value: unknown) 
             valueNormalizer: variable.valueNormalizer,
         }) || null
     );
-}
-
-function resolveEmptyGroupFallback<TContext>(
-    variable: StyleDynamicVariable,
-    context: TContext,
-    executor: FormulaExecutor<TContext>,
-    executionResults: Map<unknown, FormulaExecutionResult>
-) {
-    const fallback = variable.fallbackWhenAllValuesEmpty;
-    if (!fallback) return null;
-
-    for (const value of fallback.values) {
-        const result = executeFormula(value, context, executor, executionResults);
-        if (result.status !== 'resolved') return null;
-
-        const resolvedValue = value === variable.value ? serializeVariableValue(variable, result.value) : result.value;
-        if (resolvedValue) return null;
-    }
-
-    return serializeVariableValue(variable, fallback.value);
 }
 
 function executeFormula<TContext>(

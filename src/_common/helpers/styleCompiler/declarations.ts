@@ -14,12 +14,15 @@ import {
 } from './capabilities';
 import {
     createConditionalDynamicCssVariableReference,
-    createEmptyGroupFallbackDynamicCssVariableReference,
+    createWhenAllEmptyDynamicCssVariableReference,
+    createWhenEmptyDynamicCssVariableReference,
     isDynamicCssVariableReference,
+    isDynamicValue,
     isStyleDynamicVariableReference,
     normalizeStyleRuntimeValue,
     resolveEffectiveStyleProperty,
     resolveMappedStyleProperty,
+    resolveRawStyleProperty,
     resolveStyleProperty,
     resolveStylePropertyOrigin,
     type StylePropertyOrigin,
@@ -460,7 +463,7 @@ function createElementAlignDeclaration(scope: DeclarationScope) {
         createDeclaration(
             scope,
             'alignSelf',
-            createEmptyGroupFallbackDynamicCssVariableReference({
+            createWhenEmptyDynamicCssVariableReference({
                 input: scope.input,
                 surface: scope.surface,
                 sourceUid: scope.source.uid(),
@@ -472,8 +475,8 @@ function createElementAlignDeclaration(scope: DeclarationScope) {
                 breakpoint: scope.breakpoint,
                 value: align.variable.value,
                 condition: align.variable.condition,
-                fallbackWhenAllValuesEmpty: {
-                    values: [align.variable.value],
+                runtimeFallback: {
+                    type: 'when-empty',
                     value: SECTION_ROOT_AUTO_ALIGN_VALUE,
                 },
                 cssFallbackValue: SECTION_ROOT_AUTO_ALIGN_VALUE,
@@ -518,10 +521,9 @@ function createSectionRootWidthValue(scope: DeclarationScope, width: unknown, al
             return width.withCssFallbackIfMissing(autoByContent ? 'auto' : 'revert-layer');
         }
 
-        const fallbackValues = [width.variable.value];
-        if (isStyleDynamicVariableReference(align)) fallbackValues.push(align.variable.value);
+        const fallbackValues = isStyleDynamicVariableReference(align) ? [align.variable.value] : [];
 
-        return createEmptyGroupFallbackDynamicCssVariableReference({
+        return createWhenAllEmptyDynamicCssVariableReference({
             input: scope.input,
             surface: scope.surface,
             sourceUid: scope.source.uid(),
@@ -533,8 +535,9 @@ function createSectionRootWidthValue(scope: DeclarationScope, width: unknown, al
             breakpoint: scope.breakpoint,
             value: width.variable.value,
             condition: width.variable.condition,
-            fallbackWhenAllValuesEmpty: {
-                values: fallbackValues,
+            runtimeFallback: {
+                type: 'when-all-empty',
+                dependencies: fallbackValues,
                 value: emptyWidth,
             },
             cssFallbackValue: align ? (autoByContent ? 'auto' : 'revert-layer') : emptyWidth,
@@ -1643,7 +1646,9 @@ function createRuntimeFallbackTopVariable(
     offsets: PositionOffsets,
     position?: StyleDynamicVariableReference
 ) {
-    const values = POSITION_OFFSET_PROPERTIES.map(property => unwrapDynamicVariableValue(offsets[property]));
+    const values = POSITION_OFFSET_PROPERTIES.filter(property => property !== 'top').map(property =>
+        unwrapDynamicVariableValue(offsets[property])
+    );
     const hasDynamicOffset = POSITION_OFFSET_PROPERTIES.some(property =>
         isStyleDynamicVariableReference(offsets[property])
     );
@@ -1657,7 +1662,7 @@ function createRuntimeFallbackTopVariable(
     });
     if (!topIsDynamic && hasTruthyStaticOffset) return null;
 
-    return createEmptyGroupFallbackDynamicCssVariableReference({
+    return createWhenAllEmptyDynamicCssVariableReference({
         input: scope.input,
         surface: scope.surface,
         sourceUid: scope.source.uid(),
@@ -1674,8 +1679,9 @@ function createRuntimeFallbackTopVariable(
                   allowedValues: POSITIONED_VALUES,
               }
             : undefined,
-        fallbackWhenAllValuesEmpty: {
-            values,
+        runtimeFallback: {
+            type: 'when-all-empty',
+            dependencies: values,
             value: '0px',
         },
         cssFallbackValue: 'revert-layer',
@@ -1833,22 +1839,68 @@ function shouldEmitBackgroundDeclaration(
 function createGridChildDeclarations(scope: DeclarationScope) {
     if (!shouldEmitStyleProperty(scope, 'gridColumn') && !shouldEmitStyleProperty(scope, 'gridRow')) return [];
 
-    const columnSpan = read(scope, 'columnSpan');
-    const rowSpan = read(scope, 'rowSpan');
-    const gridColumn = read(scope, 'gridColumn');
-    const gridRow = read(scope, 'gridRow');
-    // Old data may store spans as `columnSpan`/`rowSpan`; CSS wants grid-column/row.
-    const legacyGridColumn = columnSpan !== undefined && columnSpan ? `span ${columnSpan}` : undefined;
-    const legacyGridRow = rowSpan !== undefined && rowSpan ? `span ${rowSpan}` : undefined;
-
     return [
         shouldEmitStyleProperty(scope, 'gridColumn')
-            ? createDeclaration(scope, 'gridColumn', gridColumn !== undefined ? gridColumn : legacyGridColumn)
+            ? createGridPlacementDeclaration(scope, 'gridColumn', 'columnSpan')
             : null,
-        shouldEmitStyleProperty(scope, 'gridRow')
-            ? createDeclaration(scope, 'gridRow', gridRow !== undefined ? gridRow : legacyGridRow)
-            : null,
+        shouldEmitStyleProperty(scope, 'gridRow') ? createGridPlacementDeclaration(scope, 'gridRow', 'rowSpan') : null,
     ];
+}
+
+function createGridPlacementDeclaration(scope: DeclarationScope, property: string, spanProperty: string) {
+    const placementNormalizer = { type: 'empty-if-falsy' } as const satisfies StyleCssValueNormalizer;
+    const spanNormalizer = {
+        type: 'prefix-if-truthy',
+        prefix: 'span ',
+    } as const satisfies StyleCssValueNormalizer;
+    const placement = read(scope, property, 'style', placementNormalizer);
+    const normalizedPlacement = isStyleDynamicVariableReference(placement)
+        ? placement
+        : normalizeStyleRuntimeValue(placement, placementNormalizer);
+
+    // A configured static placement is authoritative. Its legacy span must not register a runtime
+    // dependency that can later overwrite the declaration.
+    if (!isStyleDynamicVariableReference(normalizedPlacement) && normalizedPlacement) {
+        return createDeclaration(scope, property, normalizedPlacement);
+    }
+
+    const span = resolveRawStyleProperty({
+        input: scope.input,
+        source: scope.source,
+        property: spanProperty,
+        state: scope.state,
+        breakpoint: scope.breakpoint,
+        slot: scope.slot('style'),
+        domain: 'style',
+    });
+    const normalizedSpan = isDynamicValue(span) ? span : normalizeStyleRuntimeValue(span, spanNormalizer);
+
+    if (!isStyleDynamicVariableReference(normalizedPlacement) && !isDynamicValue(normalizedSpan)) {
+        return createDeclaration(scope, property, normalizedSpan);
+    }
+
+    return createDeclaration(
+        scope,
+        property,
+        createWhenEmptyDynamicCssVariableReference({
+            input: scope.input,
+            surface: scope.surface,
+            sourceUid: scope.source.uid(),
+            domain: 'style',
+            property,
+            state: scope.state,
+            breakpoint: scope.breakpoint,
+            value: isStyleDynamicVariableReference(normalizedPlacement)
+                ? normalizedPlacement.variable.value
+                : normalizedPlacement,
+            valueNormalizer: placementNormalizer,
+            runtimeFallback: {
+                type: 'when-empty',
+                value: span,
+                valueNormalizer: spanNormalizer,
+            },
+        })
+    );
 }
 
 function shouldEmitStyleProperty(scope: DeclarationScope, property: string) {

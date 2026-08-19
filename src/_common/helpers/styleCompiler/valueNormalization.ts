@@ -24,6 +24,7 @@ export function normalizeStyleRuntimeValue(value: unknown, normalizer: StyleCssV
         return !value || value === 'auto' ? normalizer.fallbackValue : value;
     }
     if (normalizer.type === 'empty-if-falsy') return value || undefined;
+    if (normalizer.type === 'prefix-if-truthy') return value ? `${normalizer.prefix}${value}` : undefined;
     if (normalizer.type === 'space-separated-list') {
         if (!Array.isArray(value)) return normalizer.fallbackValue;
 

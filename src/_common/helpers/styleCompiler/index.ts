@@ -37,6 +37,8 @@ export {
     splitLegacyCssPriority,
 } from './serialization';
 export { createStyleEffectScope } from './scope';
+export { decodeStyleRuntimeManifest, encodeStyleRuntimeManifest } from './runtimeManifest';
+export type { StyleRuntimeManifest } from './runtimeManifest';
 export {
     getNativeStyleStatePseudoClass,
     getStateRuleSelectors,
@@ -85,6 +87,7 @@ export type {
     StyleDynamicVariable,
     StyleDynamicVariableBase,
     StyleDynamicVariableCondition,
+    StyleDynamicVariableRuntimeFallback,
     StyleDynamicVariableReference,
     StyleElementReader,
     StyleFormulaFallbackRequest,

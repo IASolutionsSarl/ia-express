@@ -1,7 +1,7 @@
 <template>
      <!-- wwFront:start -->
     <wwElementComponent
-        v-if="!isLoop && isRendering"
+        v-if="!isLoop"
         :key="rootUid"
         ref="elementComponent"
         :uid="rootUid"
@@ -24,6 +24,7 @@ import { ref, inject, provide, computed, reactive, onBeforeUnmount, toRef } from
 import { getComponentBaseUid } from '@/_common/helpers/component/component.js';
  import wwElementComponent from '@/_front/components/wwElementComponent.vue';
 import { useComponentData, useComponentTriggerEvent, useLibraryComponentWorkflow } from '@/_common/use/useComponent.js';
+import { createLibraryComponentRenderingData } from '@/_common/helpers/component/libraryComponentRendering';
 import { createElementClassName } from '@/_common/helpers/styleCompiler';
 import { useInner } from '@/_front/use/useInner.js';
 import { useComponentStates } from '@/_front/use/useComponentStates.js';
@@ -92,9 +93,8 @@ export default {
             rawContent,
             rawState,
             name: elementName,
-            // Instance-level conditional rendering: the library instance self-hides (like an element),
-            // since style overrides no longer flow to the root child via the data bundle.
-            isRendering,
+            componentConditionalRendering,
+            rawConditionalRendering,
          } = useComponentData({
             type: 'libraryComponent',
             uid: props.uid,
@@ -210,12 +210,15 @@ export default {
             triggerEvent,
             triggerLibraryComponentEvent,
             instanceStyleClass,
-            isRendering,
             currentStatesAttribute,
             forcedStatesAttribute,
             componentData: reactive({
                 state,
                 rawState,
+                ...createLibraryComponentRenderingData({
+                    raw: rawConditionalRendering,
+                    value: componentConditionalRendering,
+                }),
              }),
             modalsStore,
             elementComponent,

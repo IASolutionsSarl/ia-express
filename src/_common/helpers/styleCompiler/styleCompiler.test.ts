@@ -26,6 +26,278 @@ import {
 } from './index';
 
 describe('styleCompiler', () => {
+    it('uses legacy grid spans when explicit grid placement is empty', () => {
+        const stylesheet = createStringStyleSheetAdapter();
+        const reader = createReader({
+            elements: {
+                gridChild: {
+                    uid: 'gridChild',
+                    styles: {
+                        base: {
+                            default: {
+                                columnSpan: '12',
+                                gridColumn: '',
+                                rowSpan: '2',
+                                gridRow: '',
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        const run = createStyleCompiler().compileStylesheet({
+            scope: { elementUids: ['gridChild'], sectionUids: [], libraryComponentIds: [] },
+            reader,
+            stylesheet,
+        });
+
+        expect(run.result).toContain('grid-column: span 12;');
+        expect(run.result).toContain('grid-row: span 2;');
+    });
+
+    it('uses legacy grid spans when bound explicit grid placement resolves empty', () => {
+        const stylesheet = createStringStyleSheetAdapter();
+        const reader = createReader({
+            elements: {
+                gridChild: {
+                    uid: 'gridChild',
+                    styles: {
+                        base: {
+                            default: {
+                                columnSpan: '12',
+                                gridColumn: {
+                                    __wwtype: 'f',
+                                    code: 'variables.gridColumn',
+                                    staticValue: '',
+                                },
+                                rowSpan: '2',
+                                gridRow: {
+                                    __wwtype: 'f',
+                                    code: 'variables.gridRow',
+                                    staticValue: '',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        const run = createStyleCompiler().compileStylesheet({
+            scope: { elementUids: ['gridChild'], sectionUids: [], libraryComponentIds: [] },
+            reader,
+            stylesheet,
+        });
+
+        expect(run.result).toContain('grid-column: var(--ww-style-grid-column, span 12);');
+        expect(run.result).toContain('grid-row: var(--ww-style-grid-row, span 2);');
+    });
+
+    it('preserves bound legacy grid spans as fallbacks for bound grid placement', () => {
+        const variables: StyleDynamicVariable[] = [];
+        const stylesheet = createDynamicVariableStringStyleSheetAdapter(variables);
+        const columnSpan = {
+            __wwtype: 'f',
+            code: 'variables.columnSpan',
+            staticValue: '12',
+        };
+        const rowSpan = {
+            __wwtype: 'f',
+            code: 'variables.rowSpan',
+            staticValue: '2',
+        };
+        const reader = createReader({
+            elements: {
+                gridChild: {
+                    uid: 'gridChild',
+                    styles: {
+                        base: {
+                            default: {
+                                columnSpan,
+                                gridColumn: {
+                                    __wwtype: 'f',
+                                    code: 'variables.gridColumn',
+                                    staticValue: '',
+                                },
+                                rowSpan,
+                                gridRow: {
+                                    __wwtype: 'f',
+                                    code: 'variables.gridRow',
+                                    staticValue: '',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        const run = createStyleCompiler().compileStylesheet({
+            scope: { elementUids: ['gridChild'], sectionUids: [], libraryComponentIds: [] },
+            reader,
+            stylesheet,
+        });
+
+        expect(run.result).toContain('grid-column: var(--ww-style-grid-column, span 12);');
+        expect(run.result).toContain('grid-row: var(--ww-style-grid-row, span 2);');
+        expect(variables.map(variable => variable.property)).toEqual(['gridColumn', 'gridRow']);
+        expect(variables[0]?.runtimeFallback).toEqual({
+            type: 'when-empty',
+            value: columnSpan,
+            valueNormalizer: { type: 'prefix-if-truthy', prefix: 'span ' },
+        });
+        expect(variables[1]?.runtimeFallback).toEqual({
+            type: 'when-empty',
+            value: rowSpan,
+            valueNormalizer: { type: 'prefix-if-truthy', prefix: 'span ' },
+        });
+    });
+
+    it('keeps ordered grid fallbacks runtime-only when neither formula has a static value', () => {
+        const variables: StyleDynamicVariable[] = [];
+        const stylesheet = createDynamicVariableStringStyleSheetAdapter(variables);
+        const reader = createReader({
+            elements: {
+                gridChild: {
+                    uid: 'gridChild',
+                    styles: {
+                        base: {
+                            default: {
+                                columnSpan: { __wwtype: 'f', code: 'variables.columnSpan' },
+                                gridColumn: { __wwtype: 'f', code: 'variables.gridColumn' },
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        const run = createStyleCompiler().compileStylesheet({
+            scope: { elementUids: ['gridChild'], sectionUids: [], libraryComponentIds: [] },
+            reader,
+            stylesheet,
+        });
+
+        expect(run.result).toContain('grid-column: var(--ww-style-grid-column);');
+        expect(variables.map(variable => variable.property)).toEqual(['gridColumn']);
+        expect(variables[0]?.runtimeFallback).toEqual({
+            type: 'when-empty',
+            value: { __wwtype: 'f', code: 'variables.columnSpan' },
+            valueNormalizer: { type: 'prefix-if-truthy', prefix: 'span ' },
+        });
+    });
+
+    it('does not resolve a legacy span fallback while grid placement has a usable static fallback', () => {
+        const variables: StyleDynamicVariable[] = [];
+        const resolvedFallbacks: unknown[] = [];
+        const columnSpan = { __wwtype: 'f', code: 'variables.columnSpan' };
+        const stylesheet = createDynamicVariableStringStyleSheetAdapter(variables);
+        const reader = createReader({
+            elements: {
+                gridChild: {
+                    uid: 'gridChild',
+                    styles: {
+                        base: {
+                            default: {
+                                columnSpan,
+                                gridColumn: {
+                                    __wwtype: 'f',
+                                    code: 'variables.gridColumn',
+                                    staticValue: '2 / 8',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        const run = createStyleCompiler().compileStylesheet({
+            scope: { elementUids: ['gridChild'], sectionUids: [], libraryComponentIds: [] },
+            reader,
+            stylesheet,
+            resolveFormulaFallback(formula) {
+                resolvedFallbacks.push(formula);
+                return { status: 'resolved', value: '12' };
+            },
+        });
+
+        expect(run.result).toContain('grid-column: var(--ww-style-grid-column, 2 / 8);');
+        expect(resolvedFallbacks).toEqual([]);
+        expect(variables[0]?.runtimeFallback).toEqual({
+            type: 'when-empty',
+            value: columnSpan,
+            valueNormalizer: { type: 'prefix-if-truthy', prefix: 'span ' },
+        });
+    });
+
+    it('prefers explicit grid placement over legacy grid spans', () => {
+        const stylesheet = createStringStyleSheetAdapter();
+        const reader = createReader({
+            elements: {
+                gridChild: {
+                    uid: 'gridChild',
+                    styles: {
+                        base: {
+                            default: {
+                                columnSpan: '12',
+                                gridColumn: '2 / 8',
+                                rowSpan: '2',
+                                gridRow: '3 / 5',
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        const run = createStyleCompiler().compileStylesheet({
+            scope: { elementUids: ['gridChild'], sectionUids: [], libraryComponentIds: [] },
+            reader,
+            stylesheet,
+        });
+
+        expect(run.result).toContain('grid-column: 2 / 8;');
+        expect(run.result).toContain('grid-row: 3 / 5;');
+        expect(run.result).not.toContain('grid-column: span 12;');
+        expect(run.result).not.toContain('grid-row: span 2;');
+    });
+
+    it('does not register a bound legacy span when explicit grid placement is static', () => {
+        const variables: StyleDynamicVariable[] = [];
+        const stylesheet = createDynamicVariableStringStyleSheetAdapter(variables);
+        const reader = createReader({
+            elements: {
+                gridChild: {
+                    uid: 'gridChild',
+                    styles: {
+                        base: {
+                            default: {
+                                columnSpan: {
+                                    __wwtype: 'f',
+                                    code: 'variables.columnSpan',
+                                    staticValue: '12',
+                                },
+                                gridColumn: '2 / 8',
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        const run = createStyleCompiler().compileStylesheet({
+            scope: { elementUids: ['gridChild'], sectionUids: [], libraryComponentIds: [] },
+            reader,
+            stylesheet,
+        });
+
+        expect(run.result).toContain('grid-column: 2 / 8;');
+        expect(run.result).not.toContain('--ww-style-grid-column');
+        expect(variables).toEqual([]);
+    });
+
     it('preserves legacy auto sizing and centering for direct roots of stretched column sections', () => {
         const stylesheet = createStringStyleSheetAdapter();
         const reader = createReader({
@@ -524,8 +796,8 @@ describe('styleCompiler', () => {
             variable => variable.sourceUid === 'root' && variable.property === 'align'
         );
         expect(elementAlignVariable?.valueNormalizer).toEqual({ type: 'empty-if-falsy' });
-        expect(elementAlignVariable?.fallbackWhenAllValuesEmpty).toEqual({
-            values: [elementAlignFormula],
+        expect(elementAlignVariable?.runtimeFallback).toEqual({
+            type: 'when-empty',
             value: 'var(--ww-section-root-auto-align, unset)',
         });
 
@@ -534,8 +806,9 @@ describe('styleCompiler', () => {
                 variable.sourceUid === 'root' && variable.property === 'width' && variable.outputKey === 'section-root'
         );
         expect(elementWidthVariable?.valueNormalizer).toEqual({ type: 'component-size' });
-        expect(elementWidthVariable?.fallbackWhenAllValuesEmpty).toEqual({
-            values: [widthFormula, elementAlignFormula],
+        expect(elementWidthVariable?.runtimeFallback).toEqual({
+            type: 'when-all-empty',
+            dependencies: [elementAlignFormula],
             value: 'var(--ww-section-root-auto-width, revert-layer)',
         });
     });
@@ -3053,8 +3326,9 @@ describe('styleCompiler', () => {
                     name: '--ww-style-top-positioned-fallback',
                     property: 'top',
                     value: undefined,
-                    fallbackWhenAllValuesEmpty: {
-                        values: [undefined, undefined, bottomFormula, undefined],
+                    runtimeFallback: {
+                        type: 'when-all-empty',
+                        dependencies: [undefined, bottomFormula, undefined],
                         value: '0px',
                     },
                 }),
@@ -3101,8 +3375,9 @@ describe('styleCompiler', () => {
                         value: positionFormula,
                         allowedValues: ['absolute', 'fixed', 'sticky'],
                     },
-                    fallbackWhenAllValuesEmpty: {
-                        values: [undefined, undefined, bottomFormula, undefined],
+                    runtimeFallback: {
+                        type: 'when-all-empty',
+                        dependencies: [undefined, bottomFormula, undefined],
                         value: '0px',
                     },
                 }),
@@ -4247,7 +4522,8 @@ describe('styleCompiler', () => {
         });
         const containerRule = run.result.match(/\.ww-section-sectionA\s*\{[^}]*background-image[^}]*\}/)?.[0] || '';
         const elementRule =
-            run.result.match(/\.ww-section-sectionA > \.ww-section-element\s*\{[^}]*background-image[^}]*\}/)?.[0] || '';
+            run.result.match(/\.ww-section-sectionA > \.ww-section-element\s*\{[^}]*background-image[^}]*\}/)?.[0] ||
+            '';
 
         expect(containerRule).toContain('background-image: linear-gradient(red, blue);');
         expect(containerRule).toContain('background-size: 50px 50px;');

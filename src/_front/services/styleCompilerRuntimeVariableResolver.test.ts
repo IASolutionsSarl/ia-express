@@ -3,6 +3,10 @@ import { describe, expect, it } from 'vitest';
 import type { FormulaExecutor } from '@/_common/helpers/formulaExecutor';
 import type { StyleDynamicVariable } from '@/_common/helpers/styleCompiler';
 import {
+    decodeStyleRuntimeManifest,
+    encodeStyleRuntimeManifest,
+} from '@/_common/helpers/styleCompiler/runtimeManifest';
+import {
     resolveStyleCompilerRuntimeVariable,
     resolveStyleCompilerRuntimeVariableResult,
 } from './styleCompilerRuntimeVariableResolver';
@@ -269,8 +273,9 @@ describe('resolveStyleCompilerRuntimeVariable', () => {
             ...createPositionedVariable('width', widthFormula),
             condition: undefined,
             valueNormalizer: { type: 'component-size' },
-            fallbackWhenAllValuesEmpty: {
-                values: [widthFormula, alignFormula],
+            runtimeFallback: {
+                type: 'when-all-empty',
+                dependencies: [alignFormula],
                 value: 'var(--ww-section-root-auto-width, revert-layer)',
             },
         } satisfies StyleDynamicVariable;
@@ -297,6 +302,62 @@ describe('resolveStyleCompilerRuntimeVariable', () => {
         );
     });
 
+    it('preserves all-empty dependency semantics through JSON manifest transport', () => {
+        const widthFormula = { __wwtype: 'f', code: 'width' };
+        const alignFormula = { __wwtype: 'f', code: 'alignment' };
+        const variable = {
+            ...createPositionedVariable('width', widthFormula),
+            condition: undefined,
+            valueNormalizer: { type: 'component-size' },
+            runtimeFallback: {
+                type: 'when-all-empty',
+                dependencies: [alignFormula],
+                value: 'var(--ww-section-root-auto-width, revert-layer)',
+            },
+        } satisfies StyleDynamicVariable;
+        const manifest = JSON.parse(JSON.stringify(encodeStyleRuntimeManifest([variable])));
+        const [transportedVariable] = decodeStyleRuntimeManifest(manifest) || [];
+        const executions: string[] = [];
+        const executor: FormulaExecutor<Record<string, unknown>> = {
+            execute(formula) {
+                const code = (formula as { code: string }).code;
+                executions.push(code);
+                return { status: 'resolved', value: code === 'width' ? 'auto' : undefined };
+            },
+        };
+
+        expect(transportedVariable).toBeDefined();
+        expect(resolveStyleCompilerRuntimeVariable({ variable: transportedVariable, context: {}, executor })).toBe(
+            'var(--ww-section-root-auto-width, revert-layer)'
+        );
+        expect(executions).toEqual(['width', 'alignment']);
+    });
+
+    it('keeps the static fallback when an all-empty dependency is unresolved', () => {
+        const widthFormula = { __wwtype: 'f', code: 'width' };
+        const alignFormula = { __wwtype: 'f', code: 'alignment' };
+        const variable = {
+            ...createPositionedVariable('width', widthFormula),
+            condition: undefined,
+            valueNormalizer: { type: 'component-size' },
+            runtimeFallback: {
+                type: 'when-all-empty',
+                dependencies: [alignFormula],
+                value: 'var(--ww-section-root-auto-width, revert-layer)',
+            },
+        } satisfies StyleDynamicVariable;
+        const executor: FormulaExecutor<Record<string, unknown>> = {
+            execute(formula) {
+                if (formula === widthFormula) return { status: 'resolved', value: undefined };
+                return { status: 'unresolved', reason: 'missing-context' };
+            },
+        };
+
+        expect(resolveStyleCompilerRuntimeVariableResult({ variable, context: {}, executor })).toEqual({
+            status: 'unresolved',
+        });
+    });
+
     it('uses the legacy top offset when every runtime offset resolves empty', () => {
         const bottomFormula = { __wwtype: 'f', code: 'bottom' };
         const executor = createExecutor(
@@ -308,6 +369,53 @@ describe('resolveStyleCompilerRuntimeVariable', () => {
         const variable = createFallbackTopVariable(bottomFormula);
 
         expect(resolveStyleCompilerRuntimeVariable({ variable, context: {}, executor })).toBe('0px');
+    });
+
+    it('resolves an ordered fallback only after the primary value resolves empty', () => {
+        const placementFormula = { __wwtype: 'f', code: 'placement' };
+        const spanFormula = { __wwtype: 'f', code: 'span' };
+        const values = new Map<string, unknown>([
+            ['placement', '2 / 8'],
+            ['span', '6'],
+        ]);
+        const executions: unknown[] = [];
+        const baseExecutor = createExecutor(values);
+        const executor: FormulaExecutor<Record<string, unknown>> = {
+            execute(formula, context) {
+                executions.push(formula);
+                return baseExecutor.execute(formula, context);
+            },
+        };
+        const variable = {
+            ...createPositionedVariable('gridColumn', placementFormula),
+            condition: undefined,
+            valueNormalizer: { type: 'empty-if-falsy' },
+            runtimeFallback: {
+                type: 'when-empty',
+                value: spanFormula,
+                valueNormalizer: { type: 'prefix-if-truthy', prefix: 'span ' },
+            },
+            cssProperty: 'grid-column',
+        } as StyleDynamicVariable;
+
+        expect(resolveStyleCompilerRuntimeVariableResult({ variable, context: {}, executor })).toEqual({
+            status: 'value',
+            cssValue: '2 / 8',
+        });
+        expect(executions).toEqual([placementFormula]);
+
+        executions.length = 0;
+        values.set('placement', '');
+        expect(resolveStyleCompilerRuntimeVariableResult({ variable, context: {}, executor })).toEqual({
+            status: 'value',
+            cssValue: 'span 6',
+        });
+        expect(executions).toEqual([placementFormula, spanFormula]);
+
+        values.set('span', '');
+        expect(resolveStyleCompilerRuntimeVariableResult({ variable, context: {}, executor })).toEqual({
+            status: 'empty',
+        });
     });
 
     it('does not use the legacy top offset when another runtime offset resolves', () => {
@@ -448,8 +556,9 @@ function createFallbackTopVariable(
     return {
         ...createPositionedVariable('top', undefined, positionFormula),
         name: '--ww-style-top-positioned-fallback',
-        fallbackWhenAllValuesEmpty: {
-            values: [undefined, undefined, bottomFormula, undefined],
+        runtimeFallback: {
+            type: 'when-all-empty',
+            dependencies: [undefined, bottomFormula, undefined],
             value: '0px',
         },
     };

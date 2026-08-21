@@ -171,6 +171,40 @@
         display: flex;
       }
     }
+    .ww-element-35bab648-803e-47bd-90ca-3560c4238171 {
+      margin: 0;
+      padding: 8px;
+      z-index: unset;
+      align-self: unset;
+      display: block;
+      flex: 1 0 auto;
+      max-width: unset;
+      min-width: unset;
+      height: auto;
+      aspect-ratio: unset;
+      max-height: unset;
+      min-height: unset;
+      font-size: 14px;
+      font-family: var(--ww-default-font-family);
+      text-align: left;
+      color: var(--fa0df1f0-674e-4725-b07b-fba23b45c9d6,#111827);
+      white-space-collapse: preserve;
+      background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
+      border: 0 solid #e0e0e0;
+      border-radius: 8px;
+      --ww-text-text-overflow: initial;
+      --placeholder-color: var(--fa0df1f0-674e-4725-b07b-fba23b45c9d6,#111827);
+    }
+    @media (max-width: 991px) {
+      .ww-element-35bab648-803e-47bd-90ca-3560c4238171 {
+        white-space-collapse: preserve;
+      }
+    }
+    @media (max-width: 767px) {
+      .ww-element-35bab648-803e-47bd-90ca-3560c4238171 {
+        white-space-collapse: preserve;
+      }
+    }
     .ww-element-545c14f1-d6a5-46d6-bd78-77a446c5dee1 {
       margin: 0;
       padding: 0;
@@ -555,40 +589,6 @@
       min-height: unset;
       background-color: var(--fa0df1f0-674e-4725-b07b-fba23b45c9d6,#111827);
       border-radius: 5px;
-    }
-    .ww-element-35bab648-803e-47bd-90ca-3560c4238171 {
-      margin: 0;
-      padding: 8px;
-      z-index: unset;
-      align-self: unset;
-      display: block;
-      flex: 1 0 auto;
-      max-width: unset;
-      min-width: unset;
-      height: auto;
-      aspect-ratio: unset;
-      max-height: unset;
-      min-height: unset;
-      font-size: 14px;
-      font-family: var(--ww-default-font-family);
-      text-align: left;
-      color: var(--fa0df1f0-674e-4725-b07b-fba23b45c9d6,#111827);
-      white-space-collapse: preserve;
-      background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
-      border: 0 solid #e0e0e0;
-      border-radius: 8px;
-      --ww-text-text-overflow: initial;
-      --placeholder-color: var(--fa0df1f0-674e-4725-b07b-fba23b45c9d6,#111827);
-    }
-    @media (max-width: 991px) {
-      .ww-element-35bab648-803e-47bd-90ca-3560c4238171 {
-        white-space-collapse: preserve;
-      }
-    }
-    @media (max-width: 767px) {
-      .ww-element-35bab648-803e-47bd-90ca-3560c4238171 {
-        white-space-collapse: preserve;
-      }
     }
     .ww-element-f7a63b34-4c1a-4727-8455-d76a81eef4d0 {
       margin: 0;

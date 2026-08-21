@@ -1,7 +1,17 @@
 import { getCompiledBackgroundDeclarations, getCompiledBackgroundShorthand } from './background';
-import { getStyleBreakpointRangeMediaQuery, type StyleBreakpointName } from './breakpoints';
-import { getFlexDirection as getFlexDirectionCore } from './layout';
 import { rewriteAnimationKeyframes } from './keyframes';
+import {
+    createDeclaration,
+    readDisplayValue as readDisplay,
+    readEffectiveStyleValue as readEffective,
+    readStyleValue as read,
+    shouldEmitDefaultDeclaration,
+    type CompiledStyleDeclaration,
+    type CompiledStyleRuleTarget,
+    type DeclarationScope,
+    type StyleDeclarationResolver,
+} from './declaration';
+import { createLayoutDeclarations } from './layoutDeclarations';
 import {
     DEFAULT_DISPLAY_VALUES,
     getAllowedDisplayValues,
@@ -20,18 +30,13 @@ import {
     isDynamicValue,
     isStyleDynamicVariableReference,
     normalizeStyleRuntimeValue,
-    resolveEffectiveStyleProperty,
     resolveMappedStyleProperty,
     resolveRawStyleProperty,
-    resolveStyleProperty,
     resolveStylePropertyOrigin,
     type StylePropertyOrigin,
-    type StyleSlotContext,
 } from './values';
-import { appendCssSelector, createElementDescendantLayoutSelector } from './selectors';
 import type {
     CssStyleRecord,
-    StyleCompilerInput,
     StyleCssOutput,
     StyleCssPropertyProxy,
     StyleCssValueMap,
@@ -39,9 +44,15 @@ import type {
     StyleDynamicVariableReference,
     StyleElementReader,
     StylePropertyDomain,
-    StyleSectionReader,
     StyleSurface,
 } from './types';
+
+export type {
+    CompiledStyleDeclaration,
+    CompiledStyleRuleTarget,
+    DeclarationScope,
+    StyleDeclarationResolver,
+} from './declaration';
 
 /**
  * Border longhands reset by the `border` shorthand.
@@ -116,25 +127,6 @@ const BACKGROUND_RUNTIME_VALIDATION_PROPERTIES = {
     backgroundRepeat: 'background-repeat',
     backgroundAttachment: 'background-attachment',
 } as const;
-const LAYOUT_FLEX_CONTENT_PROPERTIES = [
-    '_ww-layout_flexDirection',
-    '_ww-layout_justifyContent',
-    '_ww-layout_alignItems',
-    '_ww-layout_alignContent',
-    '_ww-layout_rowGap',
-    '_ww-layout_columnGap',
-    '_ww-layout_flexWrap',
-    '_ww-layout_reverse',
-    '_ww-layout_pushLast',
-];
-const LAYOUT_GRID_CONTENT_PROPERTIES = [
-    '_ww-grid_flowDirection',
-    '_ww-grid_columns',
-    '_ww-grid_rows',
-    '_ww-grid_columnGap',
-    '_ww-grid_rowGap',
-];
-const LAYOUT_TABLE_CONTENT_PROPERTIES = ['_ww-table_layout', '_ww-table_borderCollapse', '_ww-table_borderSpacing'];
 const POSITIONED_VALUES = ['absolute', 'fixed', 'sticky'] as const;
 const NON_STICKY_POSITIONED_VALUES = ['absolute', 'fixed'] as const;
 const LEGACY_ANIMATION_ITERATION_NORMALIZER = {
@@ -151,55 +143,10 @@ const LEGACY_AUTO_COMPONENT_SIZE_NORMALIZER = {
     type: 'component-size',
     fallbackValue: 'auto',
 } as const satisfies StyleCssValueNormalizer;
-const LEGACY_GRID_TRACK_LIST_NORMALIZER = {
-    type: 'space-separated-list',
-    fallbackValue: 'revert-layer',
-} as const satisfies StyleCssValueNormalizer;
 const SECTION_ROOT_AUTO_ALIGN_PROPERTY = '--ww-section-root-auto-align';
 const SECTION_ROOT_AUTO_WIDTH_PROPERTY = '--ww-section-root-auto-width';
 const SECTION_ROOT_AUTO_ALIGN_VALUE = `var(${SECTION_ROOT_AUTO_ALIGN_PROPERTY}, unset)`;
 const SECTION_ROOT_AUTO_WIDTH_VALUE = `var(${SECTION_ROOT_AUTO_WIDTH_PROPERTY}, revert-layer)`;
-
-/**
- * Everything a declaration resolver needs at one surface/state/breakpoint.
- *
- * This is intentionally reader-based so the same resolver can run in static publisher mode or in a
- * reactive editor scope.
- */
-export type DeclarationScope = {
-    input: StyleCompilerInput;
-    surface: StyleSurface;
-    source: StyleElementReader | StyleSectionReader;
-    state: string;
-    breakpoint: StyleBreakpointName;
-    emitDefaultDeclarations: boolean;
-    slot(domain: StylePropertyDomain): StyleSlotContext;
-};
-
-/**
- * Resolves one group of related WeWeb style properties into CSS declarations.
- */
-export type StyleDeclarationResolver = (scope: DeclarationScope) => Array<CompiledStyleDeclaration | null>;
-
-/**
- * One compiled CSS declaration before serialization.
- */
-export type CompiledStyleDeclaration = {
-    property: string;
-    value: unknown;
-    isDefault?: boolean;
-    rule?: CompiledStyleRuleTarget;
-};
-
-/**
- * Optional rule target for declarations that need a child selector instead of the surface selector.
- */
-export type CompiledStyleRuleTarget = {
-    keySuffix: string;
-    selector: string;
-    /** Overrides the current breakpoint container for declarations that need an exclusive range. */
-    mediaQuery?: string;
-};
 
 const declarationResolversBySurfaceKind = new Map<StyleSurface['kind'], StyleDeclarationResolver[]>();
 
@@ -755,488 +702,6 @@ function isCssValueMap(value: unknown): value is StyleCssValueMap {
 }
 
 /**
- * Creates CSS declarations from `wwLayout` content properties.
- *
- * Runtime-only layout behavior stays out of this resolver: repeat rendering, editor drop
- * affordances, and formula resolution are handled by runtime/editor adapters for now.
- */
-function createLayoutDeclarations(scope: DeclarationScope) {
-    const allowedDisplayValues = getAllowedDisplayValues(scope.source);
-    const restrictToAllowedValues = hasConfiguredDisplayAllowedValues(scope.source);
-    const displayValueNormalizer = {
-        type: 'display' as const,
-        allowedValues: allowedDisplayValues,
-        restrictToAllowedValues,
-    };
-    const currentDisplay = readDisplay(scope, allowedDisplayValues, restrictToAllowedValues);
-    const display = hasResolvedValue(currentDisplay)
-        ? currentDisplay
-        : readEffective(scope, 'display', 'style', displayValueNormalizer);
-    const displayValue =
-        display === undefined
-            ? allowedDisplayValues[0] || DEFAULT_DISPLAY_VALUES[0]
-            : getDisplayValue(display, allowedDisplayValues, restrictToAllowedValues);
-
-    if (displayValue === undefined) return [];
-    const layoutDisplayValue = getLayoutDisplayValue(displayValue, allowedDisplayValues, restrictToAllowedValues);
-    if (layoutDisplayValue !== undefined) {
-        return [
-            createDeclaration(scope, 'display', displayValue),
-            ...createLayoutFamilyDeclarations(scope, currentDisplay, layoutDisplayValue),
-        ];
-    }
-
-    if (!isStyleDynamicVariableReference(displayValue) || !restrictToAllowedValues) {
-        return [createDeclaration(scope, 'display', displayValue)];
-    }
-
-    return [
-        createDeclaration(scope, 'display', displayValue),
-        ...createConditionalLayoutFamilyDeclarations(scope, currentDisplay, displayValue, allowedDisplayValues),
-    ];
-}
-
-function createLayoutFamilyDeclarations(scope: DeclarationScope, currentDisplay: unknown, layoutDisplayValue: string) {
-    const contentValues = readLayoutContentValues(scope, getLayoutContentProperties(layoutDisplayValue));
-    const isBlockLayout = layoutDisplayValue === 'block' || layoutDisplayValue === 'inline-block';
-    // The legacy runtime resolved display before applying the complete effective layout. When a
-    // state or breakpoint activates a family, declarations inherited from another slot must be
-    // emitted again because a previous `none` or different family rule cannot carry them.
-    const emitEffectiveValues = hasResolvedValue(currentDisplay);
-    const textAlign = isBlockLayout
-        ? emitEffectiveValues
-            ? readEffective(scope, 'textAlign')
-            : read(scope, 'textAlign')
-        : undefined;
-    const hasCurrentInput = hasCurrentLayoutInput({ currentDisplay, contentValues, textAlign });
-    const isFlexLayout = layoutDisplayValue === 'flex' || layoutDisplayValue === 'inline-flex';
-    const pushLastDeclarations = isFlexLayout
-        ? createPushLastLayoutDeclarations(scope, contentValues, emitEffectiveValues)
-        : [];
-    if (!shouldEmitDefaultDeclaration(scope) && !hasCurrentInput) return pushLastDeclarations;
-
-    const declarations: Array<CompiledStyleDeclaration | null> = [];
-
-    if (isFlexLayout) {
-        declarations.push(...createFlexLayoutDeclarations(scope, contentValues, emitEffectiveValues));
-        declarations.push(...pushLastDeclarations);
-    } else if (layoutDisplayValue === 'grid' || layoutDisplayValue === 'inline-grid') {
-        declarations.push(...createGridLayoutDeclarations(scope, contentValues, emitEffectiveValues));
-    } else if (layoutDisplayValue === 'table') {
-        declarations.push(...createTableLayoutDeclarations(scope, contentValues, emitEffectiveValues));
-    } else if (isBlockLayout) {
-        declarations.push(createBlockLayoutHeightDeclaration(scope));
-        declarations.push(createDeclaration(scope, 'textAlign', textAlign));
-    }
-
-    return declarations;
-}
-
-/**
- * Gates layout-family declarations behind a bound display value.
- *
- * The legacy runtime resolved `display` first and only applied the matching flex/grid/block/table
- * declarations. Conditional CSS variables preserve that behavior while keeping runtime styles out
- * of the DOM. This is required for components such as ww-flexbox whose allowed display values span
- * several layout families.
- */
-function createConditionalLayoutFamilyDeclarations(
-    scope: DeclarationScope,
-    currentDisplay: unknown,
-    display: StyleDynamicVariableReference,
-    allowedDisplayValues: readonly string[]
-) {
-    const declarationsByTarget = new Map<
-        string,
-        { declaration: CompiledStyleDeclaration; references: StyleDynamicVariableReference[] }
-    >();
-    const processedFamilies = new Set<string>();
-
-    for (const allowedDisplayValue of allowedDisplayValues) {
-        const family = getLayoutFamily(allowedDisplayValue);
-        if (!family || processedFamilies.has(family)) continue;
-
-        processedFamilies.add(family);
-        const familyDisplayValues = allowedDisplayValues.filter(value => getLayoutFamily(value) === family);
-        const familyDeclarations = createLayoutFamilyDeclarations(scope, currentDisplay, allowedDisplayValue);
-
-        for (const declaration of familyDeclarations) {
-            if (!declaration) continue;
-
-            const key = createLayoutDeclarationTargetKey(declaration);
-            const reference = createConditionalLayoutDeclarationReference(
-                scope,
-                declaration,
-                display,
-                family,
-                familyDisplayValues
-            );
-            const group = declarationsByTarget.get(key);
-            if (group) {
-                group.references.push(reference);
-            } else {
-                declarationsByTarget.set(key, { declaration, references: [reference] });
-            }
-        }
-    }
-
-    const declarations: CompiledStyleDeclaration[] = [];
-    for (const { declaration, references } of declarationsByTarget.values()) {
-        let value = 'revert-layer';
-        for (let index = references.length - 1; index >= 0; index -= 1) {
-            value = `${references[index].withCssFallback(value)}`;
-        }
-        declarations.push({ ...declaration, value });
-    }
-
-    return declarations;
-}
-
-function createLayoutDeclarationTargetKey(declaration: CompiledStyleDeclaration) {
-    const rule = declaration.rule;
-    return [declaration.property, rule?.keySuffix || '', rule?.selector || '', rule?.mediaQuery || ''].join('\u001f');
-}
-
-function createConditionalLayoutDeclarationReference(
-    scope: DeclarationScope,
-    declaration: CompiledStyleDeclaration,
-    display: StyleDynamicVariableReference,
-    family: string,
-    familyDisplayValues: readonly string[]
-) {
-    const dynamicValue = isStyleDynamicVariableReference(declaration.value) ? declaration.value : null;
-    const existingConditions = dynamicValue?.variable.condition
-        ? Array.isArray(dynamicValue.variable.condition)
-            ? dynamicValue.variable.condition
-            : [dynamicValue.variable.condition]
-        : [];
-
-    return createConditionalDynamicCssVariableReference({
-        input: scope.input,
-        surface: scope.surface,
-        sourceUid: scope.source.uid(),
-        domain: 'content',
-        property: declaration.property,
-        outputKey: `layout-${family}`,
-        valueNormalizer: dynamicValue?.variable.valueNormalizer,
-        state: scope.state,
-        breakpoint: scope.breakpoint,
-        value: dynamicValue?.variable.value ?? declaration.value,
-        condition: [
-            ...existingConditions,
-            {
-                value: display.variable.value,
-                allowedValues: familyDisplayValues,
-                valueNormalizer: display.variable.valueNormalizer,
-            },
-        ],
-        cssFallbackValue: 'revert-layer',
-    });
-}
-
-/**
- * Resolves the layout family behind a display declaration.
- *
- * A dynamic display can still use static layout declarations when the component constrains every
- * runtime value to the same layout family (for example `flex`, `inline-flex`, or `none`). Without
- * those constraints, emitting flex/grid/block declarations would guess how the formula resolves.
- */
-function getLayoutDisplayValue(
-    displayValue: string | StyleDynamicVariableReference,
-    allowedDisplayValues: readonly string[],
-    restrictToAllowedValues: boolean
-) {
-    if (!isDynamicCssVariableReference(displayValue)) return displayValue;
-    if (!restrictToAllowedValues) return undefined;
-
-    const [firstAllowedDisplayValue] = allowedDisplayValues;
-    const layoutFamily = getLayoutFamily(firstAllowedDisplayValue);
-    if (!layoutFamily) return undefined;
-
-    for (const allowedDisplayValue of allowedDisplayValues) {
-        if (getLayoutFamily(allowedDisplayValue) !== layoutFamily) return undefined;
-    }
-
-    return firstAllowedDisplayValue;
-}
-
-function getLayoutFamily(displayValue: string | undefined) {
-    if (displayValue === 'flex' || displayValue === 'inline-flex') return 'flex';
-    if (displayValue === 'grid' || displayValue === 'inline-grid') return 'grid';
-    if (displayValue === 'block' || displayValue === 'inline-block') return 'block';
-    if (displayValue === 'table') return 'table';
-
-    return undefined;
-}
-
-/**
- * Returns whether the current state/breakpoint slot changes the layout surface.
- *
- * `display` is intentionally included even though it comes from style rather than layout content:
- * a more-specific base `.ww-layout` rule would otherwise mask responsive or state display changes
- * emitted only on the element root.
- */
-function hasCurrentLayoutInput({
-    currentDisplay,
-    contentValues,
-    textAlign,
-}: {
-    currentDisplay: unknown;
-    contentValues: LayoutContentValues;
-    textAlign: unknown;
-}) {
-    return (
-        hasResolvedValue(currentDisplay) || hasCurrentLayoutContentValue(contentValues) || hasResolvedValue(textAlign)
-    );
-}
-
-function createBlockLayoutHeightDeclaration(scope: DeclarationScope) {
-    if (scope.surface.kind !== 'element-layout') return createDeclaration(scope, 'height', '100%');
-
-    return createDeclaration(scope, 'height', '100%', undefined, {
-        keySuffix: 'layout-block-height',
-        selector: createElementDescendantLayoutSelector(scope.source.uid(), scope.surface.runtimeScopeSelector),
-    });
-}
-
-function readLayoutContentValues(scope: DeclarationScope, properties: readonly string[]) {
-    const values: LayoutContentValues = {
-        current: {},
-        effective: {},
-    };
-
-    for (const property of properties) {
-        const valueNormalizer =
-            property === '_ww-grid_columns' || property === '_ww-grid_rows'
-                ? LEGACY_GRID_TRACK_LIST_NORMALIZER
-                : undefined;
-        const currentValue = read(scope, property, 'content', valueNormalizer);
-        values.current[property] = currentValue;
-        values.effective[property] = readEffective(scope, property, 'content', valueNormalizer);
-    }
-
-    return values;
-}
-
-function getLayoutContentProperties(displayValue: string) {
-    if (displayValue === 'grid' || displayValue === 'inline-grid') return LAYOUT_GRID_CONTENT_PROPERTIES;
-    if (displayValue === 'table') return LAYOUT_TABLE_CONTENT_PROPERTIES;
-
-    return LAYOUT_FLEX_CONTENT_PROPERTIES;
-}
-
-type LayoutContentValues = {
-    current: Record<string, unknown>;
-    effective: Record<string, unknown>;
-};
-
-function hasCurrentLayoutContentValue(values: LayoutContentValues) {
-    for (const value of Object.values(values.current)) {
-        if (hasLayoutSlotValue(value)) return true;
-    }
-
-    return false;
-}
-
-function createFlexLayoutDeclarations(
-    scope: DeclarationScope,
-    contentValues: LayoutContentValues,
-    emitEffectiveValues: boolean
-) {
-    const { current, effective } = contentValues;
-    const flexDirection = effective['_ww-layout_flexDirection'];
-    const justifyContent = getLayoutContentValue(contentValues, '_ww-layout_justifyContent', emitEffectiveValues);
-    const alignItems = getLayoutContentValue(contentValues, '_ww-layout_alignItems', emitEffectiveValues);
-    const alignContent = effective['_ww-layout_alignContent'];
-    const rowGap = getLayoutContentValue(contentValues, '_ww-layout_rowGap', emitEffectiveValues);
-    const columnGap = getLayoutContentValue(contentValues, '_ww-layout_columnGap', emitEffectiveValues);
-    const flexWrap = effective['_ww-layout_flexWrap'];
-    const isReversed = effective['_ww-layout_reverse'];
-    const declarations: Array<CompiledStyleDeclaration | null> = [];
-    const hasFlexDirectionInput = emitEffectiveValues
-        ? hasLayoutSlotValue(flexDirection) || hasLayoutSlotValue(isReversed)
-        : hasLayoutSlotValue(current['_ww-layout_flexDirection']) || hasLayoutSlotValue(current['_ww-layout_reverse']);
-
-    if (hasFlexDirectionInput) {
-        declarations.push(
-            createDeclaration(
-                scope,
-                'flexDirection',
-                getLegacyLayoutDeclarationValue(getFlexDirection(flexDirection, isReversed), true)
-            )
-        );
-    }
-
-    declarations.push(createDeclaration(scope, 'justifyContent', getLegacyLayoutDeclarationValue(justifyContent)));
-    declarations.push(createDeclaration(scope, 'alignItems', getLegacyLayoutDeclarationValue(alignItems)));
-
-    const hasAlignContentInput = emitEffectiveValues
-        ? hasLayoutSlotValue(alignContent) || hasLayoutSlotValue(flexWrap)
-        : hasLayoutSlotValue(current['_ww-layout_alignContent']) || hasLayoutSlotValue(current['_ww-layout_flexWrap']);
-    if (hasAlignContentInput) {
-        declarations.push(
-            createDeclaration(
-                scope,
-                'alignContent',
-                flexWrap ? getLegacyLayoutDeclarationValue(alignContent, true) : 'revert-layer'
-            )
-        );
-    }
-
-    declarations.push(createDeclaration(scope, 'rowGap', getLegacyLayoutDeclarationValue(rowGap)));
-    declarations.push(createDeclaration(scope, 'columnGap', getLegacyLayoutDeclarationValue(columnGap)));
-
-    const hasFlexWrapInput = emitEffectiveValues
-        ? hasLayoutSlotValue(flexDirection) || hasLayoutSlotValue(flexWrap)
-        : hasLayoutSlotValue(current['_ww-layout_flexDirection']) || hasLayoutSlotValue(current['_ww-layout_flexWrap']);
-    if (hasFlexWrapInput) {
-        const flexWrapValue = getFlexWrap(flexDirection, flexWrap);
-        declarations.push(createDeclaration(scope, 'flexWrap', getLegacyLayoutDeclarationValue(flexWrapValue, true)));
-    }
-
-    return declarations;
-}
-
-function createGridLayoutDeclarations(
-    scope: DeclarationScope,
-    contentValues: LayoutContentValues,
-    emitEffectiveValues: boolean
-) {
-    const gridFlowDirection = getLayoutContentValue(contentValues, '_ww-grid_flowDirection', emitEffectiveValues);
-    const gridTemplateColumns = getGridTemplateValue(
-        getLayoutContentValue(contentValues, '_ww-grid_columns', emitEffectiveValues)
-    );
-    const gridTemplateRows = getGridTemplateValue(
-        getLayoutContentValue(contentValues, '_ww-grid_rows', emitEffectiveValues)
-    );
-    const gridColumnGap = getLayoutContentValue(contentValues, '_ww-grid_columnGap', emitEffectiveValues);
-    const gridRowGap = getLayoutContentValue(contentValues, '_ww-grid_rowGap', emitEffectiveValues);
-
-    return [
-        createDeclaration(scope, 'gridAutoFlow', getLegacyLayoutDeclarationValue(gridFlowDirection)),
-        createDeclaration(scope, 'gridTemplateColumns', gridTemplateColumns),
-        createDeclaration(scope, 'gridTemplateRows', gridTemplateRows),
-        createDeclaration(scope, 'columnGap', getLegacyLayoutDeclarationValue(gridColumnGap)),
-        createDeclaration(scope, 'rowGap', getLegacyLayoutDeclarationValue(gridRowGap)),
-    ];
-}
-
-function createTableLayoutDeclarations(
-    scope: DeclarationScope,
-    contentValues: LayoutContentValues,
-    emitEffectiveValues: boolean
-) {
-    return [
-        createDeclaration(
-            scope,
-            'tableLayout',
-            getLegacyLayoutDeclarationValue(
-                getLayoutContentValue(contentValues, '_ww-table_layout', emitEffectiveValues)
-            )
-        ),
-        createDeclaration(
-            scope,
-            'borderCollapse',
-            getLegacyLayoutDeclarationValue(
-                getLayoutContentValue(contentValues, '_ww-table_borderCollapse', emitEffectiveValues)
-            )
-        ),
-        createDeclaration(
-            scope,
-            'borderSpacing',
-            getLegacyLayoutDeclarationValue(
-                getLayoutContentValue(contentValues, '_ww-table_borderSpacing', emitEffectiveValues)
-            )
-        ),
-    ];
-}
-
-function createPushLastLayoutDeclarations(
-    scope: DeclarationScope,
-    contentValues: LayoutContentValues,
-    emitEffectiveValues: boolean
-) {
-    const { current, effective } = contentValues;
-    const pushLast = effective['_ww-layout_pushLast'];
-    const hasCurrentPushLast = hasResolvedValue(current['_ww-layout_pushLast']);
-    const hasCurrentDirection = hasResolvedValue(current['_ww-layout_flexDirection']);
-    const hasCurrentReverse = hasResolvedValue(current['_ww-layout_reverse']);
-
-    // `pushLast` chooses a child selector, so a runtime CSS variable cannot represent it alone.
-    if (isDynamicCssVariableReference(pushLast)) return [];
-    if (!pushLast) return [];
-    if (
-        !emitEffectiveValues &&
-        scope.state !== 'base' &&
-        !hasCurrentPushLast &&
-        !hasCurrentDirection &&
-        !hasCurrentReverse
-    ) {
-        return [];
-    }
-
-    const isColumn = effective['_ww-layout_flexDirection'] === 'column';
-    const targetRule = createPushLastRuleTarget(scope, effective['_ww-layout_reverse'] ? 'first' : 'last');
-
-    return [createDeclaration(scope, isColumn ? 'marginTop' : 'marginLeft', 'auto', undefined, targetRule)];
-}
-
-function getLayoutContentValue(contentValues: LayoutContentValues, property: string, emitEffectiveValues: boolean) {
-    return emitEffectiveValues ? contentValues.effective[property] : contentValues.current[property];
-}
-
-function createPushLastRuleTarget(scope: DeclarationScope, position: 'first' | 'last'): CompiledStyleRuleTarget {
-    return {
-        keySuffix: `layout-push-last-${position}`,
-        selector: appendCssSelector(
-            scope.surface.selector,
-            position === 'first' ? ' > :nth-child(1 of .ww-element)' : ' > :nth-last-child(1 of .ww-element)'
-        ),
-        mediaQuery: getStyleBreakpointRangeMediaQuery(scope.breakpoint),
-    };
-}
-
-function getFlexDirection(flexDirection: unknown, isReversed: unknown) {
-    if (isDynamicCssVariableReference(isReversed)) return undefined;
-    if (isDynamicCssVariableReference(flexDirection)) return isReversed ? undefined : flexDirection;
-
-    // Shared reverse logic (also used by wwLayout drag direction).
-    return getFlexDirectionCore(flexDirection, isReversed);
-}
-
-function getFlexWrap(flexDirection: unknown, flexWrap: unknown) {
-    if (isDynamicCssVariableReference(flexWrap)) return flexWrap;
-
-    if (flexDirection === 'column') return 'nowrap';
-    if (flexWrap) return 'wrap';
-    if (flexWrap === false) return 'nowrap';
-
-    return undefined;
-}
-
-function getGridTemplateValue(value: unknown) {
-    if (isDynamicCssVariableReference(value)) return value;
-    if (value === undefined) return undefined;
-    if (!Array.isArray(value)) return 'revert-layer';
-
-    return value.join(' ') || 'revert-layer';
-}
-
-function getLegacyLayoutDeclarationValue(value: unknown, hasInput = hasLayoutSlotValue(value)) {
-    if (isDynamicCssVariableReference(value) || value) return value;
-
-    return hasInput ? 'revert-layer' : undefined;
-}
-
-function hasLayoutSlotValue(value: unknown) {
-    return value !== undefined;
-}
-
-function hasResolvedValue(value: unknown) {
-    return value !== undefined && value !== null && value !== '';
-}
-
-/**
  * Creates a resolver for the common "read one style property, emit one declaration" case.
  */
 function createPropertyDeclarationResolver(property: string, defaultValue?: unknown): StyleDeclarationResolver {
@@ -1420,32 +885,6 @@ export function createKeyframesRule(scope: DeclarationScope): { name: string; cs
     if (!css) return null;
 
     return { name, css };
-}
-
-/**
- * Creates a compiled declaration from a resolved style value and optional default.
- */
-function createDeclaration(
-    scope: DeclarationScope,
-    property: string,
-    value: unknown,
-    defaultValue?: unknown,
-    rule?: CompiledStyleRuleTarget
-): CompiledStyleDeclaration | null {
-    // No value and no explicit default means no declaration.
-    const hasDefaultValue = defaultValue !== undefined;
-    if (value === undefined && (!hasDefaultValue || !shouldEmitDefaultDeclaration(scope))) return null;
-
-    const isDefault = value === undefined;
-    const declarationValue = isDefault ? defaultValue : value;
-    if (declarationValue === undefined || declarationValue === null || declarationValue === '') return null;
-
-    return {
-        property,
-        value: declarationValue,
-        isDefault,
-        rule,
-    };
 }
 
 /**
@@ -1946,84 +1385,8 @@ function isTypographyTokenReference(value: unknown) {
     return typeof value === 'string' && value.trimStart().startsWith('var(');
 }
 
-function shouldEmitDefaultDeclaration(scope: DeclarationScope) {
-    return scope.emitDefaultDeclarations && scope.state === 'base' && scope.breakpoint === 'default';
-}
-
-/**
- * Reads one style property from the current state+breakpoint slot.
- */
-function read(
-    scope: DeclarationScope,
-    property: string,
-    domain: StylePropertyDomain = 'style',
-    valueNormalizer?: StyleCssValueNormalizer
-) {
-    // Centralize style reads so every declaration follows the same class/subclass/source cascade.
-    return resolveStyleProperty({
-        input: scope.input,
-        surface: scope.surface,
-        source: scope.source,
-        property,
-        state: scope.state,
-        breakpoint: scope.breakpoint,
-        slot: scope.slot(domain),
-        domain,
-        valueNormalizer,
-    });
-}
-
-/**
- * Reads display with the runtime normalizer needed for boolean formula compatibility.
- */
-function readDisplay(scope: DeclarationScope, allowedValues: readonly string[], restrictToAllowedValues: boolean) {
-    const display = resolveStyleProperty({
-        input: scope.input,
-        surface: scope.surface,
-        source: scope.source,
-        property: 'display',
-        state: scope.state,
-        breakpoint: scope.breakpoint,
-        slot: scope.slot('style'),
-        valueNormalizer: {
-            type: 'display',
-            allowedValues,
-            restrictToAllowedValues,
-        },
-    });
-
-    if (isStyleDynamicVariableReference(display) && scope.source.capabilities?.().omitUndefinedDynamicValues) {
-        return display.withCssFallback(allowedValues[0] || DEFAULT_DISPLAY_VALUES[0]);
-    }
-
-    return display;
-}
-
-/**
- * Reads one style property through inherited state/breakpoint slots.
- *
- * Normal declarations should not use this. It is reserved for composite declarations that need a
- * complete effective value to serialize one CSS property from multiple WeWeb properties.
- */
-function readEffective(
-    scope: DeclarationScope,
-    property: string,
-    domain: StylePropertyDomain = 'style',
-    valueNormalizer?: StyleCssValueNormalizer,
-    validationProperty?: string
-) {
-    return resolveEffectiveStyleProperty({
-        input: scope.input,
-        surface: scope.surface,
-        source: scope.source,
-        property,
-        state: scope.state,
-        breakpoint: scope.breakpoint,
-        slot: scope.slot(domain),
-        domain,
-        valueNormalizer,
-        validationProperty,
-    });
+function hasResolvedValue(value: unknown) {
+    return value !== undefined && value !== null && value !== '';
 }
 
 /**

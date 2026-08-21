@@ -55,6 +55,7 @@ export type StyleSurface = {
 export const STYLE_RESET_LAYER = 'ww-style-reset';
 export const STYLE_CORE_LAYER = 'ww-style-core';
 export const STYLE_COMPONENT_LAYER = 'ww-style-component';
+export const STYLE_LAYOUT_OVERRIDE_LAYER = 'ww-style-layout-override';
 export const STYLE_RUNTIME_LAYER = 'ww-style-runtime';
 
 export const STYLE_RULE_GROUPS = ['library', 'section', 'element'] as const;
@@ -81,6 +82,7 @@ export const STYLE_LAYER_ORDER = [
     STYLE_RULE_GROUP_LAYERS.library,
     STYLE_RULE_GROUP_LAYERS.section,
     STYLE_RULE_GROUP_LAYERS.element,
+    STYLE_LAYOUT_OVERRIDE_LAYER,
     STYLE_RUNTIME_LAYER,
 ] as const;
 
@@ -389,6 +391,13 @@ export type StyleElementReader = StyleSourceReader & {
     /** Whether this source is a renderless library component instance. */
     isLibraryComponentInstance?(): boolean;
     /**
+     * Source whose effective values are inherited before this element's sparse overrides.
+     *
+     * This is intentionally consumed only by composite declaration resolution. Normal property
+     * declarations stay sparse and rely on the definition/instance CSS cascade.
+     */
+    effectiveFallbackSource?(): StyleElementReader | null;
+    /**
      * Whether the element is listed directly in its containing section's root slot.
      *
      * `parentRef()` cannot answer this: serialized descendants also retain their containing
@@ -565,6 +574,10 @@ export type StyleSheetAdapter<TResult = unknown> = {
      * Static adapters serialize this as `@property`; DOM adapters insert it before generated layers.
      */
     registerProperty?(property: StyleRegisteredProperty): StyleScopeStop | void;
+    /**
+     * Groups synchronous stylesheet mutations so adapters can coalesce expensive cleanup work.
+     */
+    batch?(callback: () => void): void;
     result(): TResult;
 };
 
@@ -696,12 +709,15 @@ export type StyleDynamicVariableCondition =
           allowedValues: readonly string[];
           /** Normalize the resolved condition value before comparing it with `allowedValues`. */
           valueNormalizer?: StyleCssValueNormalizer;
+          /** New runtimes use exclusion semantics; `allowedValues` remains as an older-runtime fallback. */
+          disallowedValues?: readonly string[];
           truthy?: never;
       }
     | {
           value: unknown;
           truthy: true;
           allowedValues?: never;
+          disallowedValues?: never;
           valueNormalizer?: never;
       };
 

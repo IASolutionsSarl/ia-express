@@ -25,6 +25,7 @@ import { mapStyleValue } from './valueNormalization';
 type RawStyleSlotValue = {
     value: unknown;
     originBreakpoint?: StyleBreakpointName;
+    source: StyleElementReader | StyleSectionReader;
 };
 
 type CustomCssMap = Record<string, unknown>;
@@ -650,18 +651,7 @@ function hasImportantPriority(property: string, value: unknown) {
  * ordered background layers, where one serialized CSS declaration may need inherited source pieces
  * to stay layer-aligned.
  */
-export function resolveEffectiveStyleProperty({
-    input,
-    surface,
-    source,
-    property,
-    state,
-    breakpoint,
-    slot,
-    domain = 'style',
-    valueNormalizer,
-    validationProperty,
-}: {
+type ResolveEffectiveStylePropertyInput = {
     input: StyleCompilerInput;
     surface: StyleSurface;
     source: StyleElementReader | StyleSectionReader;
@@ -672,33 +662,160 @@ export function resolveEffectiveStyleProperty({
     domain?: StylePropertyDomain;
     valueNormalizer?: StyleCssValueNormalizer;
     validationProperty?: string;
-}): unknown {
-    const rawValue = resolveEffectiveRawStyleProperty({
-        input,
-        source,
-        property,
-        state,
-        breakpoint,
-        slot,
-        domain,
-    });
+    includeSourceFallback?: boolean;
+};
+
+export type EffectiveStylePropertyResolution = {
+    value: unknown;
+    source: StyleElementReader | StyleSectionReader;
+};
+
+export function resolveEffectiveStyleProperty(input: ResolveEffectiveStylePropertyInput): unknown {
+    return resolveEffectiveStylePropertyWithSource(input)?.value;
+}
+
+/**
+ * Resolves an effective property together with the source that owns its runtime context.
+ *
+ * Most declarations only need the value. Composite declarations that recompute a concrete-root
+ * value in a renderless instance layer also need the owner to decide whether that recomposition is
+ * required at inherited state and breakpoint slots.
+ */
+export function resolveEffectiveStylePropertyWithSource({
+    input,
+    surface,
+    source,
+    property,
+    state,
+    breakpoint,
+    slot,
+    domain = 'style',
+    valueNormalizer,
+    validationProperty,
+    includeSourceFallback = false,
+}: ResolveEffectiveStylePropertyInput): EffectiveStylePropertyResolution | undefined {
+    const rawValue = includeSourceFallback
+        ? resolveEffectiveRawStylePropertyWithFallback({
+              input,
+              source,
+              property,
+              state,
+              breakpoint,
+              slot,
+              domain,
+          })
+        : resolveEffectiveRawStyleProperty({ input, source, property, state, breakpoint, slot, domain });
 
     if (!rawValue) return undefined;
-    if (!isDynamicStylePropertyValue(rawValue.value, valueNormalizer)) return rawValue.value;
+    if (!isDynamicStylePropertyValue(rawValue.value, valueNormalizer)) {
+        return { value: rawValue.value, source: rawValue.source };
+    }
 
-    return createDynamicCssVariableReference({
-        input,
-        surface,
-        sourceUid: source.uid(),
-        property,
-        state,
-        breakpoint: rawValue.originBreakpoint || breakpoint,
-        domain,
-        valueNormalizer,
-        validationProperty,
-        omitWhenUndefined: source.capabilities?.().omitUndefinedDynamicValues,
-        value: rawValue.value,
-    });
+    const valueSource = rawValue.source;
+    return {
+        source: valueSource,
+        value: createDynamicCssVariableReference({
+            input,
+            surface,
+            sourceUid: valueSource.uid(),
+            property,
+            state,
+            breakpoint: rawValue.originBreakpoint || breakpoint,
+            domain,
+            valueNormalizer,
+            validationProperty,
+            omitWhenUndefined: valueSource.capabilities?.().omitUndefinedDynamicValues,
+            value: rawValue.value,
+        }),
+    };
+}
+
+/**
+ * Resolves the merged style value seen by the legacy inline engine across renderless library instances.
+ *
+ * Instance style was forwarded to the mounted root and overrode its definition style. Preserve the
+ * source that must evaluate a dynamic value while resolving the root chain first and then letting
+ * each sparse instance replace it. Layout content uses the separate concrete-root-only branch below.
+ * The cached slot belongs only to the original source and must not be reused for fallbacks.
+ */
+function resolveEffectiveRawStylePropertyWithFallback({
+    input,
+    source,
+    property,
+    state,
+    breakpoint,
+    slot,
+    domain = 'style',
+}: {
+    input: StyleCompilerInput;
+    source: StyleElementReader | StyleSectionReader;
+    property: string;
+    state: string;
+    breakpoint: StyleBreakpointName;
+    slot?: StyleSlotContext;
+    domain?: StylePropertyDomain;
+}): RawStyleSlotValue | undefined {
+    if (domain === 'content') {
+        const contentSource = getDeepestEffectiveFallbackSource(source);
+        return resolveEffectiveRawStyleProperty({
+            input,
+            source: contentSource,
+            property,
+            state,
+            breakpoint,
+            slot: contentSource === source ? slot : undefined,
+            domain,
+        });
+    }
+
+    let result: RawStyleSlotValue | undefined;
+    const visitedSourceUids = new Set<string>();
+
+    resolveSource(source, slot);
+    return result;
+
+    function resolveSource(
+        currentSource: StyleElementReader | StyleSectionReader,
+        currentSlot?: StyleSlotContext
+    ) {
+        const sourceUid = currentSource.uid();
+        if (visitedSourceUids.has(sourceUid)) return;
+
+        visitedSourceUids.add(sourceUid);
+
+        if (currentSource.kind() === 'element') {
+            const fallbackSource = (currentSource as StyleElementReader).effectiveFallbackSource?.();
+            if (fallbackSource) resolveSource(fallbackSource);
+        }
+
+        const currentValue = resolveEffectiveRawStyleProperty({
+            input,
+            source: currentSource,
+            property,
+            state,
+            breakpoint,
+            slot: currentSlot,
+            domain,
+        });
+        if (currentValue) result = currentValue;
+    }
+}
+
+function getDeepestEffectiveFallbackSource(source: StyleElementReader | StyleSectionReader) {
+    let currentSource = source;
+    const visitedSourceUids = new Set<string>();
+
+    while (currentSource.kind() === 'element') {
+        const sourceUid = currentSource.uid();
+        if (visitedSourceUids.has(sourceUid)) break;
+
+        visitedSourceUids.add(sourceUid);
+        const fallbackSource = (currentSource as StyleElementReader).effectiveFallbackSource?.();
+        if (!fallbackSource || visitedSourceUids.has(fallbackSource.uid())) break;
+        currentSource = fallbackSource;
+    }
+
+    return currentSource;
 }
 
 /**
@@ -1357,6 +1474,7 @@ function resolveEffectiveRawStyleProperty({
             result = {
                 value: nextValue,
                 originBreakpoint: inheritedBreakpoint,
+                source,
             };
         }
     }
@@ -1380,6 +1498,7 @@ function resolveEffectiveRawStyleProperty({
             result = {
                 value: nextValue,
                 originBreakpoint: inheritedBreakpoint,
+                source,
             };
         }
     }
@@ -1398,6 +1517,7 @@ function resolveEffectiveRawStyleProperty({
             result = {
                 value: nextValue,
                 originBreakpoint: inheritedBreakpoint,
+                source,
             };
         }
     }

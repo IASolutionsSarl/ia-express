@@ -14,6 +14,7 @@ import { useBackTableViewsStore } from '@/pinia/backTableViews.js';
 import { useBackAuthStore } from '@/pinia/backAuth.js';
 import { getRuntimeEnvironment } from '@/helpers/frontEnv.js';
 import { useEnvVariablesStore } from '@/pinia/envVariables.js';
+import { createEnvironmentVariablesContext } from './services/environmentVariables';
 
 export default {
     ...services,
@@ -109,10 +110,7 @@ wwLib.wwPluginHelper.registerPlugin('plugin-2bd1c688-31c5-443e-ae25-59aa5b6431fb
             const envVariablesStore = useEnvVariablesStore(wwLib.$pinia);
             let env = wwLib.getEnvironment();
             if (env === 'preview') env = 'production';
-            return Object.values(envVariablesStore.values).reduce((acc, envVariable) => {
-                acc[envVariable.name] = envVariable[`${env}Value`];
-                return acc;
-            }, {});
+            return createEnvironmentVariablesContext(Object.values(envVariablesStore.values), env);
         }),
         tableViews: computed(() => {
             const backTableViewsStore = useBackTableViewsStore(wwLib.$pinia);

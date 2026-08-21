@@ -283,6 +283,59 @@ for (const benchCase of REACTIVE_CASES) {
     });
 }
 
+describe('style compiler reactive GoodNow structural updates', () => {
+    let popupHarness: StructuralHarness | null = null;
+    const popupMemory = createMemoryRecorder('reactive-popup GoodNow 14.5k / 3.7k active');
+    bench(
+        'popup-like open and close with 14.5k project elements',
+        async () => {
+            const current = getStructuralHarness(popupHarness);
+            const uid = `popup-element-${current.nextUid++}`;
+
+            popupMemory.beforeSample();
+            current.data.elements[uid] = createMinimalElementData(uid);
+            current.data.scope.elementUids.push(uid);
+            await nextTick();
+            current.data.scope.elementUids.pop();
+            delete current.data.elements[uid];
+            await nextTick();
+            popupMemory.afterSample();
+        },
+        createGoodNowStructuralBenchOptions({
+            memory: popupMemory,
+            getHarness: () => popupHarness,
+            setHarness: harness => {
+                popupHarness = harness;
+            },
+        })
+    );
+
+    let pasteHarness: StructuralHarness | null = null;
+    const pasteMemory = createMemoryRecorder('reactive-paste GoodNow 14.5k / 3.7k active');
+    bench(
+        'paste three elements with 14.5k project elements',
+        async () => {
+            const current = getStructuralHarness(pasteHarness);
+
+            pasteMemory.beforeSample();
+            for (let index = 0; index < 3; index += 1) {
+                const uid = `pasted-element-${current.nextUid++}`;
+                current.data.elements[uid] = createMinimalElementData(uid);
+                current.data.scope.elementUids.push(uid);
+            }
+            await nextTick();
+            pasteMemory.afterSample();
+        },
+        createGoodNowStructuralBenchOptions({
+            memory: pasteMemory,
+            getHarness: () => pasteHarness,
+            setHarness: harness => {
+                pasteHarness = harness;
+            },
+        })
+    );
+});
+
 function getFullRenderBenchOptions(benchCase: BenchCase) {
     if (benchCase.elements >= 1_000) {
         return { iterations: 2, time: 100, warmupIterations: 0, warmupTime: 0 };
@@ -393,6 +446,36 @@ function createStructuralBenchOptions({
     };
 }
 
+function createGoodNowStructuralBenchOptions({
+    memory,
+    getHarness,
+    setHarness,
+}: {
+    memory: MemoryRecorder;
+    getHarness(): StructuralHarness | null;
+    setHarness(harness: StructuralHarness | null): void;
+}) {
+    return {
+        iterations: 5,
+        time: 10,
+        warmupIterations: 1,
+        warmupTime: 0,
+        async setup(_task: unknown, mode: 'warmup' | 'run') {
+            runGc();
+            setHarness(createGoodNowStructuralHarness());
+            await nextTick();
+            memory.recordSetup(mode);
+        },
+        async teardown(_task: unknown, mode: 'warmup' | 'run') {
+            getHarness()?.run.stop();
+            setHarness(null);
+            await nextTick();
+            runGc();
+            memory.print(mode);
+        },
+    };
+}
+
 function createHotUpdateHarness(benchCase: BenchCase): HotUpdateHarness {
     const data = reactive(createBenchData(benchCase)) as BenchData;
     const stylesheet = createCountingStyleSheetAdapter();
@@ -425,6 +508,38 @@ function createStructuralHarness(benchCase: BenchCase): StructuralHarness {
     });
 
     return { data, run, nextUid: benchCase.elements };
+}
+
+function createGoodNowStructuralHarness(): StructuralHarness {
+    const projectElementCount = 14_500;
+    const activeElementCount = 3_718;
+    const data: BenchData = reactive({
+        elements: {},
+        sections: {},
+        classes: {},
+        scope: {
+            elementUids: [],
+            sectionUids: [],
+            libraryComponentIds: [],
+        },
+    }) as BenchData;
+
+    for (let index = 0; index < projectElementCount; index += 1) {
+        const uid = `element-${index}`;
+        data.elements[uid] = createMinimalElementData(uid);
+        if (index < activeElementCount) data.scope.elementUids.push(uid);
+    }
+
+    const stylesheet = createCountingStyleSheetAdapter();
+    const run = createStyleCompiler().compileStylesheet({
+        scope: data.scope,
+        reader: createReader(data),
+        stylesheet,
+        runtime: createVueBenchmarkRuntime(),
+        mode: 'editor',
+    });
+
+    return { data, run, nextUid: projectElementCount };
 }
 
 function getHotUpdateHarness(harness: HotUpdateHarness | null) {
@@ -604,6 +719,16 @@ function createElementData(uid: string, index: number, classId: string, subClass
         classIds: { base: [classId], _wwHover: [classId] },
         subClassIds: { base: { [classId]: [subClassId] }, _wwHover: { [classId]: [subClassId] } },
         styles: createStyleRecord(index),
+    };
+}
+
+function createMinimalElementData(uid: string): SourceData {
+    return {
+        uid,
+        states: [],
+        classIds: { base: [] },
+        subClassIds: { base: {} },
+        styles: {},
     };
 }
 

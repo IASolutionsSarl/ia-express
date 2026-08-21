@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { effectScope, nextTick, reactive, watchEffect } from 'vue';
+import { nextTick, reactive } from 'vue';
 
 import {
     createStringStyleSheetAdapter,
@@ -9,23 +9,94 @@ import {
     splitCssSelectorList,
     STATIC_STYLE_RUNTIME,
     STYLE_RULE_GROUP_LAYERS,
-    type StyleBreakpointPropertyReader,
-    type StyleClassReader,
-    type StyleComponentCapabilities,
     type StyleDiagnostic,
     type StyleDynamicVariable,
-    type StyleElementReader,
-    type StyleParentRef,
     type StyleReader,
-    type StyleReactivityRuntime,
-    type StyleScopeDispose,
-    type StyleSectionReader,
-    type StyleStateDescriptor,
-    type StyleStateReader,
-    type StyleSurface,
 } from './index';
+import {
+    createDiagnosticStringStyleSheetAdapter,
+    createDynamicVariableCleanupStyleSheetAdapter,
+    createDynamicVariableStringStyleSheetAdapter,
+    createManualStyleReactivityRuntime,
+    createReader,
+    createTestStyleSurface,
+    createVueStyleCompilerTestRuntime,
+    createWidthElement,
+    expectTargetChunkOrder,
+} from './styleCompiler.testUtils';
 
 describe('styleCompiler', () => {
+    it('batches each structural target reconciliation through the stylesheet adapter', () => {
+        const baseStylesheet = createStringStyleSheetAdapter();
+        const manualRuntime = createManualStyleReactivityRuntime();
+        const scope = { elementUids: ['elementA'], sectionUids: [], libraryComponentIds: [] };
+        let batches = 0;
+        const run = createStyleCompiler().compileStylesheet({
+            scope,
+            reader: createReader({
+                elements: {
+                    elementA: createWidthElement('elementA', '100px'),
+                    elementB: createWidthElement('elementB', '200px'),
+                },
+            }),
+            stylesheet: {
+                ...baseStylesheet,
+                batch(callback) {
+                    batches += 1;
+                    callback();
+                },
+            },
+            runtime: manualRuntime.runtime,
+        });
+
+        expect(batches).toBe(1);
+
+        scope.elementUids.push('elementB');
+        manualRuntime.scopes[0].rerun();
+
+        expect(batches).toBe(2);
+        run.stop();
+        expect(batches).toBe(3);
+    });
+
+    it('reads component capabilities once per reactive compiler pass', () => {
+        const baseReader = createReader({
+            elements: {
+                elementA: {
+                    uid: 'elementA',
+                    capabilities: { inherits: ['ww-layout', 'ww-text'] },
+                    styles: { base: { default: { display: 'flex', color: 'red' } } },
+                },
+            },
+        });
+        let capabilityReads = 0;
+        const source = baseReader.element('elementA');
+        if (!source) throw new Error('Missing test source.');
+        const readCapabilities = source.capabilities;
+        source.capabilities = () => {
+            capabilityReads += 1;
+            return readCapabilities?.() || {};
+        };
+        const reader: StyleReader = {
+            ...baseReader,
+            element: () => source,
+        };
+        const manualRuntime = createManualStyleReactivityRuntime();
+        const run = createStyleCompiler().compileStylesheet({
+            scope: { elementUids: ['elementA'], sectionUids: [], libraryComponentIds: [] },
+            reader,
+            stylesheet: createStringStyleSheetAdapter(),
+            runtime: manualRuntime.runtime,
+        });
+
+        expect(capabilityReads).toBe(1);
+
+        manualRuntime.scopes[1].rerun();
+
+        expect(capabilityReads).toBe(2);
+        run.stop();
+    });
+
     it('uses legacy grid spans when explicit grid placement is empty', () => {
         const stylesheet = createStringStyleSheetAdapter();
         const reader = createReader({
@@ -2942,6 +3013,7 @@ describe('styleCompiler', () => {
                                 parent: {
                                     uid: 'parent',
                                     stateId: '_wwHover',
+                                    selectors: ['&:hover'],
                                 },
                             },
                         ],
@@ -2959,6 +3031,7 @@ describe('styleCompiler', () => {
         });
 
         expect(run.result).toContain('.scoped-parent:hover .ww-element-child');
+        expect(run.result).not.toContain('.scoped-parent[data-ww-states~="_wwHover"] .ww-element-child');
         expect(run.result).toContain('opacity: 0.5;');
     });
 
@@ -3042,6 +3115,7 @@ describe('styleCompiler', () => {
 
         expect(run.result).toContain(':where(#app.-ww-preview) .scoped-parent:focus-within .ww-element-child');
         expect(run.result).toContain(':where(#app.-ww-preview) .scoped-parent:has(input:focus) .ww-element-child');
+        expect(run.result).toContain('.scoped-parent[data-ww-states~="stored-focus-id"] .ww-element-child');
         expect(run.result).toContain('.scoped-parent[data-ww-forced-states~="stored-focus-id"] .ww-element-child');
         expect(run.result).toContain('opacity: 0.5;');
     });
@@ -3659,8 +3733,70 @@ describe('styleCompiler', () => {
 
         expect(run.result).toContain(':where(#app.-ww-preview) .element-a:focus-within');
         expect(run.result).toContain(':where(#app.-ww-preview) .element-a:has(input:focus)');
+        expect(run.result).toContain('.element-a[data-ww-states~="stored-focus-id"]');
         expect(run.result).toContain('.element-a[data-ww-forced-states~="stored-focus-id"]');
-        expect(run.result).not.toContain('.element-a[data-ww-states~="stored-focus-id"]');
+        expect(run.result).toContain('opacity: 0.5;');
+    });
+
+    it('uses configured selectors or formula-driven runtime states', () => {
+        const run = createStyleCompiler().compileStylesheet({
+            scope: {
+                elementUids: ['elementA'],
+                sectionUids: [],
+                libraryComponentIds: [],
+            },
+            reader: createReader({
+                elements: {
+                    elementA: {
+                        uid: 'elementA',
+                        selector: '.element-a',
+                        states: [{ id: 'stored-active-id', label: 'active', selectors: ['&:active'] }],
+                        styles: {
+                            'stored-active-id': {
+                                default: {
+                                    opacity: '0.5',
+                                },
+                            },
+                        },
+                    },
+                },
+            }),
+            stylesheet: createStringStyleSheetAdapter(),
+        });
+
+        expect(run.result).toContain('.element-a:active');
+        expect(run.result).toContain('.element-a[data-ww-states~="stored-active-id"]');
+        expect(run.result).toContain('opacity: 0.5;');
+    });
+
+    it('keeps configured internal native states pseudo-class-only at runtime', () => {
+        const run = createStyleCompiler().compileStylesheet({
+            scope: {
+                elementUids: ['elementA'],
+                sectionUids: [],
+                libraryComponentIds: [],
+            },
+            reader: createReader({
+                elements: {
+                    elementA: {
+                        uid: 'elementA',
+                        selector: '.element-a',
+                        states: [{ id: '_wwActive', selectors: ['&:active'] }],
+                        styles: {
+                            _wwActive: {
+                                default: {
+                                    opacity: '0.5',
+                                },
+                            },
+                        },
+                    },
+                },
+            }),
+            stylesheet: createStringStyleSheetAdapter(),
+        });
+
+        expect(run.result).toContain('.element-a:active');
+        expect(run.result).not.toContain('.element-a[data-ww-states~="_wwActive"]');
         expect(run.result).toContain('opacity: 0.5;');
     });
 
@@ -4172,9 +4308,116 @@ describe('styleCompiler', () => {
 
         expect(rerunCss.indexOf('.ww-element-libraryRootB')).toBeLessThan(rerunCss.indexOf('.ww-element-libraryRootA'));
         expect(manualRuntime.scopes[1].stopCount).toBe(1);
+        expect(manualRuntime.scopes[2].stopCount).toBe(0);
+        expect(manualRuntime.scopes).toHaveLength(4);
+
+        run.stop();
+    });
+
+    it('keeps existing library target scopes when a target is appended', () => {
+        const manualRuntime = createManualStyleReactivityRuntime();
+        const scope = {
+            elementUids: [],
+            sectionUids: [],
+            libraryComponentIds: ['libraryA', 'libraryB'],
+        };
+        const run = createStyleCompiler().compileStylesheet({
+            scope,
+            reader: createReader({
+                elements: {
+                    libraryRootA: createWidthElement('libraryRootA', '100px'),
+                    libraryRootB: createWidthElement('libraryRootB', '200px'),
+                    libraryRootC: createWidthElement('libraryRootC', '300px'),
+                },
+                libraryComponents: {
+                    libraryA: { rootElementUid: 'libraryRootA' },
+                    libraryB: { rootElementUid: 'libraryRootB' },
+                    libraryC: { rootElementUid: 'libraryRootC' },
+                },
+            }),
+            stylesheet: createStringStyleSheetAdapter(),
+            runtime: manualRuntime.runtime,
+        });
+
+        scope.libraryComponentIds.push('libraryC');
+        manualRuntime.scopes[0].rerun();
+
+        expect(manualRuntime.scopes[1].stopCount).toBe(0);
+        expect(manualRuntime.scopes[2].stopCount).toBe(0);
+        expect(manualRuntime.scopes).toHaveLength(4);
+        run.stop();
+    });
+
+    it('stops only a removed library target when retained targets keep their order', () => {
+        const manualRuntime = createManualStyleReactivityRuntime();
+        const scope = {
+            elementUids: [],
+            sectionUids: [],
+            libraryComponentIds: ['libraryA', 'libraryB', 'libraryC'],
+        };
+        const run = createStyleCompiler().compileStylesheet({
+            scope,
+            reader: createReader({
+                elements: {
+                    libraryRootA: createWidthElement('libraryRootA', '100px'),
+                    libraryRootB: createWidthElement('libraryRootB', '200px'),
+                    libraryRootC: createWidthElement('libraryRootC', '300px'),
+                },
+                libraryComponents: {
+                    libraryA: { rootElementUid: 'libraryRootA' },
+                    libraryB: { rootElementUid: 'libraryRootB' },
+                    libraryC: { rootElementUid: 'libraryRootC' },
+                },
+            }),
+            stylesheet: createStringStyleSheetAdapter(),
+            runtime: manualRuntime.runtime,
+        });
+
+        scope.libraryComponentIds.splice(1, 1);
+        manualRuntime.scopes[0].rerun();
+
+        expect(manualRuntime.scopes[1].stopCount).toBe(0);
+        expect(manualRuntime.scopes[2].stopCount).toBe(1);
+        expect(manualRuntime.scopes[3].stopCount).toBe(0);
+        expect(manualRuntime.scopes).toHaveLength(4);
+        run.stop();
+    });
+
+    it('rebuilds only the suffix after a library target is inserted', () => {
+        const stylesheet = createStringStyleSheetAdapter();
+        const manualRuntime = createManualStyleReactivityRuntime();
+        const scope = {
+            elementUids: [],
+            sectionUids: [],
+            libraryComponentIds: ['libraryA', 'libraryC'],
+        };
+        const run = createStyleCompiler().compileStylesheet({
+            scope,
+            reader: createReader({
+                elements: {
+                    libraryRootA: createWidthElement('libraryRootA', '100px'),
+                    libraryRootB: createWidthElement('libraryRootB', '200px'),
+                    libraryRootC: createWidthElement('libraryRootC', '300px'),
+                },
+                libraryComponents: {
+                    libraryA: { rootElementUid: 'libraryRootA' },
+                    libraryB: { rootElementUid: 'libraryRootB' },
+                    libraryC: { rootElementUid: 'libraryRootC' },
+                },
+            }),
+            stylesheet,
+            runtime: manualRuntime.runtime,
+        });
+
+        scope.libraryComponentIds.splice(1, 0, 'libraryB');
+        manualRuntime.scopes[0].rerun();
+
+        const css = stylesheet.result();
+        expect(css.indexOf('.ww-element-libraryRootA')).toBeLessThan(css.indexOf('.ww-element-libraryRootB'));
+        expect(css.indexOf('.ww-element-libraryRootB')).toBeLessThan(css.indexOf('.ww-element-libraryRootC'));
+        expect(manualRuntime.scopes[1].stopCount).toBe(0);
         expect(manualRuntime.scopes[2].stopCount).toBe(1);
         expect(manualRuntime.scopes).toHaveLength(5);
-
         run.stop();
     });
 
@@ -5280,908 +5523,6 @@ describe('styleCompiler', () => {
         expect(run.result).toContain('background-attachment: scroll, scroll;');
     });
 
-    it('compiles wwLayout flex CSS from content properties', () => {
-        const stylesheet = createStringStyleSheetAdapter();
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: ['elementA'],
-                sectionUids: [],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                elements: {
-                    elementA: {
-                        uid: 'elementA',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                        },
-                        styles: {
-                            base: {
-                                default: {
-                                    display: 'flex',
-                                },
-                            },
-                        },
-                        content: {
-                            base: {
-                                default: {
-                                    '_ww-layout_flexDirection': 'row',
-                                    '_ww-layout_reverse': true,
-                                    '_ww-layout_justifyContent': 'space-between',
-                                    '_ww-layout_alignItems': 'center',
-                                    '_ww-layout_rowGap': '8px',
-                                    '_ww-layout_columnGap': '12px',
-                                    '_ww-layout_flexWrap': true,
-                                    '_ww-layout_alignContent': 'stretch',
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet,
-        });
-
-        expect(run.result).toContain('.ww-element-elementA.ww-layout');
-        expect(run.result).toContain('.ww-element-elementA [data-ww-layout-style-scopes~="elementA"]');
-        expect(run.result).not.toContain('.ww-element-elementA .ww-layout');
-        expect(run.result).toContain('display: flex;');
-        expect(run.result).toContain('flex-direction: row-reverse;');
-        expect(run.result).toContain('justify-content: space-between;');
-        expect(run.result).toContain('align-items: center;');
-        expect(run.result).toContain('row-gap: 8px;');
-        expect(run.result).toContain('column-gap: 12px;');
-        expect(run.result).toContain('flex-wrap: wrap;');
-        expect(run.result).toContain('align-content: stretch;');
-    });
-
-    it('uses the component default display when compiling wwLayout content CSS', () => {
-        const stylesheet = createStringStyleSheetAdapter();
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: ['elementA'],
-                sectionUids: [],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                elements: {
-                    elementA: {
-                        uid: 'elementA',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                            displayAllowedValues: ['flex', 'inline-flex'],
-                        },
-                        styles: {
-                            base: {
-                                default: {},
-                            },
-                        },
-                        content: {
-                            base: {
-                                default: {
-                                    '_ww-layout_flexDirection': 'column',
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet,
-        });
-
-        const layoutRule =
-            run.result.match(
-                /\.ww-element-elementA\.ww-layout,\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]\s*\{[^}]*\}/
-            )?.[0] || '';
-
-        expect(layoutRule).toContain('display: flex;');
-        expect(layoutRule).toContain('flex-direction: column;');
-    });
-
-    it('uses the component display when responsive wwLayout content changes without an explicit display', () => {
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: ['elementA'],
-                sectionUids: [],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                elements: {
-                    elementA: {
-                        uid: 'elementA',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                            displayAllowedValues: ['flex'],
-                        },
-                        styles: {
-                            base: {
-                                default: {},
-                            },
-                        },
-                        content: {
-                            base: {
-                                default: {
-                                    '_ww-layout_flexDirection': 'row',
-                                },
-                                tablet: {
-                                    '_ww-layout_flexDirection': 'column',
-                                    '_ww-layout_justifyContent': 'space-between',
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet: createStringStyleSheetAdapter(),
-        });
-        const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
-
-        expect(tabletCss).toContain('display: flex;');
-        expect(tabletCss).toContain('flex-direction: column;');
-        expect(tabletCss).toContain('justify-content: space-between;');
-    });
-
-    it('clears inherited grid layout values when a responsive slot explicitly empties them', () => {
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: ['elementA'],
-                sectionUids: [],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                elements: {
-                    elementA: {
-                        uid: 'elementA',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                            displayAllowedValues: ['grid'],
-                        },
-                        styles: {
-                            base: {
-                                default: { display: 'grid' },
-                            },
-                        },
-                        content: {
-                            base: {
-                                default: {
-                                    '_ww-grid_columns': ['1fr', '0.5fr', '0.3fr'],
-                                    '_ww-grid_rows': ['auto', '1fr'],
-                                    '_ww-grid_columnGap': '10px',
-                                    '_ww-grid_rowGap': '12px',
-                                },
-                                mobile: {
-                                    '_ww-grid_columns': [],
-                                    '_ww-grid_rows': [],
-                                    '_ww-grid_columnGap': null,
-                                    '_ww-grid_rowGap': 0,
-                                    '_ww-grid_flowDirection': 'row',
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet: createStringStyleSheetAdapter(),
-        });
-        const mobileCss = run.result.slice(run.result.indexOf('@media (max-width: 767px)'));
-
-        expect(mobileCss).toContain('grid-template-columns: revert-layer;');
-        expect(mobileCss).toContain('grid-template-rows: revert-layer;');
-        expect(mobileCss).toContain('column-gap: revert-layer;');
-        expect(mobileCss).toContain('row-gap: revert-layer;');
-    });
-
-    it('clears inherited flex and table values with legacy falsy semantics', () => {
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: ['flexElement', 'tableElement'],
-                sectionUids: [],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                elements: {
-                    flexElement: {
-                        uid: 'flexElement',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                            displayAllowedValues: ['flex'],
-                        },
-                        styles: { base: { default: { display: 'flex' } } },
-                        content: {
-                            base: {
-                                default: {
-                                    '_ww-layout_justifyContent': 'center',
-                                    '_ww-layout_alignItems': 'center',
-                                    '_ww-layout_alignContent': 'space-between',
-                                    '_ww-layout_rowGap': '10px',
-                                    '_ww-layout_columnGap': '12px',
-                                    '_ww-layout_flexWrap': true,
-                                },
-                                tablet: {
-                                    '_ww-layout_justifyContent': null,
-                                    '_ww-layout_alignItems': '',
-                                    '_ww-layout_rowGap': 0,
-                                    '_ww-layout_columnGap': null,
-                                    '_ww-layout_flexWrap': false,
-                                },
-                            },
-                        },
-                    },
-                    tableElement: {
-                        uid: 'tableElement',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                            displayAllowedValues: ['table'],
-                        },
-                        styles: { base: { default: { display: 'table' } } },
-                        content: {
-                            base: {
-                                default: {
-                                    '_ww-table_layout': 'fixed',
-                                    '_ww-table_borderCollapse': 'collapse',
-                                    '_ww-table_borderSpacing': '2px',
-                                },
-                                tablet: {
-                                    '_ww-table_layout': null,
-                                    '_ww-table_borderCollapse': '',
-                                    '_ww-table_borderSpacing': 0,
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet: createStringStyleSheetAdapter(),
-        });
-        const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
-
-        expect(tabletCss).toContain('justify-content: revert-layer;');
-        expect(tabletCss).toContain('align-items: revert-layer;');
-        expect(tabletCss).toContain('align-content: revert-layer;');
-        expect(tabletCss).toContain('row-gap: revert-layer;');
-        expect(tabletCss).toContain('column-gap: revert-layer;');
-        expect(tabletCss).toContain('flex-wrap: nowrap;');
-        expect(tabletCss).toContain('table-layout: revert-layer;');
-        expect(tabletCss).toContain('border-collapse: revert-layer;');
-        expect(tabletCss).toContain('border-spacing: revert-layer;');
-    });
-
-    it('applies content classes and subclasses to wwLayout declarations', () => {
-        const stylesheet = createStringStyleSheetAdapter();
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: ['elementA'],
-                sectionUids: [],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                elements: {
-                    elementA: {
-                        uid: 'elementA',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                        },
-                        classIds: { base: ['classA'] },
-                        subClassIds: { base: { classA: ['subA'] } },
-                        styles: {
-                            base: {
-                                default: {
-                                    display: 'flex',
-                                },
-                            },
-                        },
-                        content: {
-                            base: {
-                                default: {
-                                    '_ww-layout_columnGap': '16px',
-                                },
-                            },
-                        },
-                    },
-                },
-                classes: {
-                    classA: {
-                        uid: 'classA',
-                        content: {
-                            base: {
-                                default: {
-                                    '_ww-layout_rowGap': '8px',
-                                },
-                            },
-                        },
-                        subClasses: {
-                            subA: {
-                                uid: 'subA',
-                                content: {
-                                    base: {
-                                        default: {
-                                            '_ww-layout_rowGap': '12px',
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet,
-        });
-
-        expect(run.result).toContain('row-gap: 12px;');
-        expect(run.result).toContain('column-gap: 16px;');
-        expect(run.result.indexOf('row-gap: 8px;')).toBeLessThan(run.result.indexOf('row-gap: 12px;'));
-    });
-
-    it('resolves class wwLayout content in the source layout rule', () => {
-        const stylesheet = createStringStyleSheetAdapter();
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: ['elementA'],
-                sectionUids: [],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                elements: {
-                    elementA: {
-                        uid: 'elementA',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                        },
-                        classIds: { base: ['classA'] },
-                        styles: {
-                            base: {
-                                default: {
-                                    display: 'flex',
-                                },
-                            },
-                        },
-                    },
-                },
-                classes: {
-                    classA: {
-                        uid: 'classA',
-                        content: {
-                            base: {
-                                default: {
-                                    '_ww-layout_rowGap': '8px',
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet,
-        });
-        const layoutRule =
-            run.result.match(
-                /\.ww-element-elementA\.ww-layout,\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]\s*\{[^}]*\}/
-            )?.[0] || '';
-
-        expect(layoutRule).toContain('display: flex;');
-        expect(layoutRule).toContain('row-gap: 8px;');
-        expect(run.result).not.toContain('ww-style-class');
-    });
-
-    it('compiles responsive and stateful wwLayout content CSS', () => {
-        const stylesheet = createStringStyleSheetAdapter();
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: ['elementA'],
-                sectionUids: [],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                elements: {
-                    elementA: {
-                        uid: 'elementA',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                        },
-                        styles: {
-                            base: {
-                                default: {
-                                    display: 'flex',
-                                },
-                            },
-                        },
-                        content: {
-                            base: {
-                                tablet: {
-                                    '_ww-layout_rowGap': '20px',
-                                },
-                            },
-                            _wwHover: {
-                                default: {
-                                    '_ww-layout_alignItems': 'flex-end',
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet,
-        });
-        const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
-
-        expect(tabletCss).toContain('.ww-element-elementA.ww-layout');
-        expect(tabletCss).toContain('row-gap: 20px;');
-        expect(run.result).toMatch(
-            /\.ww-element-elementA\.ww-layout:hover,\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]:hover/
-        );
-        expect(run.result).toContain('align-items: flex-end;');
-    });
-
-    it('emits effective layout declarations when responsive and state changes activate layout families', () => {
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: ['elementA'],
-                sectionUids: [],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                elements: {
-                    elementA: {
-                        uid: 'elementA',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                            displayAllowedValues: ['flex', 'block', 'grid', 'inline-flex'],
-                        },
-                        stateNames: ['_wwHover'],
-                        styles: {
-                            base: {
-                                default: {
-                                    display: 'none',
-                                },
-                                tablet: {
-                                    display: 'flex',
-                                },
-                            },
-                            _wwHover: {
-                                default: {
-                                    display: 'grid',
-                                },
-                            },
-                        },
-                        content: {
-                            base: {
-                                default: {
-                                    '_ww-layout_flexDirection': 'column',
-                                    '_ww-layout_alignItems': 'flex-start',
-                                    '_ww-grid_columns': ['1fr', '2fr'],
-                                    '_ww-grid_rowGap': '12px',
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet: createStringStyleSheetAdapter(),
-        });
-        const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
-        const baseLayoutRule =
-            run.result.match(
-                /\.ww-element-elementA\.ww-layout,\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]\s*\{[^}]*\}/
-            )?.[0] || '';
-        const tabletLayoutRule =
-            [
-                ...tabletCss.matchAll(
-                    /\.ww-element-elementA\.ww-layout,\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]\s*\{[^}]*\}/g
-                ),
-            ]
-                .map(match => match[0])
-                .find(rule => rule.includes('display: flex;')) || '';
-        const hoverLayoutRule =
-            run.result.match(
-                /\.ww-element-elementA\.ww-layout:hover,\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]:hover\s*\{[^}]*\}/
-            )?.[0] || '';
-
-        expect(baseLayoutRule).toContain('display: none;');
-        expect(tabletLayoutRule).toContain('display: flex;');
-        expect(tabletLayoutRule).toContain('flex-direction: column;');
-        expect(tabletLayoutRule).toContain('align-items: flex-start;');
-        expect(hoverLayoutRule).toContain('display: grid;');
-        expect(hoverLayoutRule).toContain('grid-template-columns: 1fr 2fr;');
-        expect(hoverLayoutRule).toContain('row-gap: 12px;');
-    });
-
-    it('emits inherited flex declarations when a state activates the flex layout family', () => {
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: ['elementA'],
-                sectionUids: [],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                elements: {
-                    elementA: {
-                        uid: 'elementA',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                            displayAllowedValues: ['flex', 'block', 'grid', 'inline-flex'],
-                        },
-                        stateNames: ['open'],
-                        styles: {
-                            base: {
-                                default: {
-                                    display: false,
-                                },
-                            },
-                            open: {
-                                default: {
-                                    display: true,
-                                },
-                            },
-                        },
-                        content: {
-                            base: {
-                                default: {
-                                    '_ww-layout_flexDirection': 'column',
-                                    '_ww-layout_alignItems': 'flex-start',
-                                    '_ww-layout_flexWrap': true,
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet: createStringStyleSheetAdapter(),
-        });
-        const openLayoutRule =
-            run.result.match(
-                /\.ww-element-elementA\.ww-layout\[data-ww-states~="open"\],\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]\[data-ww-states~="open"\][^{]*\{[^}]*\}/
-            )?.[0] || '';
-
-        expect(openLayoutRule).toContain('display: flex;');
-        expect(openLayoutRule).toContain('flex-direction: column;');
-        expect(openLayoutRule).toContain('align-items: flex-start;');
-        expect(openLayoutRule).toContain('flex-wrap: nowrap;');
-    });
-
-    it('emits display-only responsive changes on the section layout surface', () => {
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: [],
-                sectionUids: ['sectionA'],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                sections: {
-                    sectionA: {
-                        uid: 'sectionA',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                        },
-                        styles: {
-                            base: {
-                                default: {
-                                    display: 'none',
-                                },
-                                tablet: {
-                                    display: 'flex',
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet: createStringStyleSheetAdapter(),
-        });
-        const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
-        const baseLayoutRule =
-            run.result.match(/\.ww-section-sectionA > \.ww-section-element\.ww-layout\s*\{[^}]*\}/)?.[0] || '';
-        const tabletLayoutRule =
-            [...tabletCss.matchAll(/\.ww-section-sectionA > \.ww-section-element\.ww-layout\s*\{[^}]*\}/g)]
-                .map(match => match[0])
-                .find(rule => rule.includes('display: flex;')) || '';
-
-        expect(baseLayoutRule).toContain('display: none;');
-        expect(tabletLayoutRule).toContain('display: flex;');
-    });
-
-    it('uses effective content pieces for responsive flex layout composites', () => {
-        const stylesheet = createStringStyleSheetAdapter();
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: ['elementA'],
-                sectionUids: [],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                elements: {
-                    elementA: {
-                        uid: 'elementA',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                        },
-                        styles: {
-                            base: {
-                                default: {
-                                    display: 'flex',
-                                },
-                            },
-                        },
-                        content: {
-                            base: {
-                                default: {
-                                    '_ww-layout_flexDirection': 'row',
-                                    '_ww-layout_flexWrap': true,
-                                },
-                                tablet: {
-                                    '_ww-layout_reverse': true,
-                                    '_ww-layout_alignContent': 'space-between',
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet,
-        });
-        const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
-
-        expect(tabletCss).toContain('flex-direction: row-reverse;');
-        expect(tabletCss).toContain('align-content: space-between;');
-    });
-
-    it('compiles text-align-only block wwLayout CSS', () => {
-        const stylesheet = createStringStyleSheetAdapter();
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: ['elementA'],
-                sectionUids: [],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                elements: {
-                    elementA: {
-                        uid: 'elementA',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                        },
-                        styles: {
-                            base: {
-                                default: {
-                                    display: 'block',
-                                    textAlign: 'center',
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet,
-        });
-
-        expect(run.result).toContain('.ww-element-elementA.ww-layout');
-        expect(run.result).toContain('display: block;');
-        expect(run.result).toContain('height: 100%;');
-        expect(run.result).toContain('text-align: center;');
-    });
-
-    it('does not let internal block layout height override the element root height', () => {
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: ['elementA'],
-                sectionUids: [],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                elements: {
-                    elementA: {
-                        uid: 'elementA',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                        },
-                        styles: {
-                            base: {
-                                default: {
-                                    display: 'block',
-                                    height: '240px',
-                                },
-                                tablet: {
-                                    height: '120px',
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet: createStringStyleSheetAdapter(),
-        });
-        const rootRule = run.result.match(/\.ww-element-elementA\s*\{[^}]*\}/)?.[0] || '';
-        const layoutRule =
-            run.result.match(
-                /\.ww-element-elementA\.ww-layout,\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]\s*\{[^}]*\}/
-            )?.[0] || '';
-        const internalLayoutRule =
-            [...run.result.matchAll(/\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]\s*\{[^}]*\}/g)]
-                .map(match => match[0])
-                .find(rule => rule.includes('height: 100%;')) || '';
-        const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
-
-        expect(rootRule).toContain('height: 240px;');
-        expect(layoutRule).toContain('display: block;');
-        expect(layoutRule).not.toContain('height: 100%;');
-        expect(internalLayoutRule).toContain('height: 100%;');
-        expect(tabletCss).toContain('height: 120px;');
-    });
-
-    it('does not override child margins when wwLayout push-last is disabled', () => {
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: ['elementA'],
-                sectionUids: [],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                elements: {
-                    elementA: {
-                        uid: 'elementA',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                            displayAllowedValues: ['flex'],
-                        },
-                        content: {
-                            base: {
-                                default: {
-                                    '_ww-layout_flexDirection': 'column',
-                                    '_ww-layout_pushLast': false,
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet: createStringStyleSheetAdapter(),
-        });
-
-        expect(run.result).not.toContain('margin-left: unset;');
-        expect(run.result).not.toContain('margin-top: unset;');
-        expect(run.result).not.toContain('margin-left: auto;');
-        expect(run.result).not.toContain('margin-top: auto;');
-    });
-
-    it('scopes wwLayout push-last to mutually exclusive responsive ranges', () => {
-        const stylesheet = createStringStyleSheetAdapter();
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: ['elementA'],
-                sectionUids: [],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                elements: {
-                    elementA: {
-                        uid: 'elementA',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                        },
-                        styles: {
-                            base: {
-                                default: {
-                                    display: 'flex',
-                                },
-                            },
-                        },
-                        content: {
-                            base: {
-                                default: {
-                                    '_ww-layout_flexDirection': 'row',
-                                    '_ww-layout_pushLast': true,
-                                },
-                                tablet: {
-                                    '_ww-layout_flexDirection': 'column',
-                                    '_ww-layout_pushLast': false,
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet,
-        });
-
-        expect(run.result).toContain('@media (min-width: 992px)');
-        expect(run.result).toContain('margin-left: auto;');
-        expect(run.result).not.toContain('margin-top: auto;');
-        expect(run.result).not.toContain('margin-left: unset;');
-        expect(run.result).not.toContain('margin-top: unset;');
-    });
-
-    it('emits inherited wwLayout push-last behavior for every responsive range', () => {
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: ['elementA'],
-                sectionUids: [],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                elements: {
-                    elementA: {
-                        uid: 'elementA',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                            displayAllowedValues: ['flex'],
-                        },
-                        content: {
-                            base: {
-                                default: {
-                                    '_ww-layout_flexDirection': 'row',
-                                    '_ww-layout_pushLast': true,
-                                },
-                                tablet: {
-                                    '_ww-layout_flexDirection': 'column',
-                                },
-                                mobile: {
-                                    '_ww-layout_reverse': true,
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet: createStringStyleSheetAdapter(),
-        });
-
-        expect(run.result).toContain('@media (min-width: 992px)');
-        expect(run.result).toContain('@media (min-width: 768px) and (max-width: 991px)');
-        expect(run.result).toContain('@media (max-width: 767px)');
-        expect(run.result.match(/margin-left: auto;/g)).toHaveLength(1);
-        expect(run.result.match(/margin-top: auto;/g)).toHaveLength(2);
-        expect(run.result).toContain('> :nth-child(1 of .ww-element)');
-    });
-
-    it('emits CSS variables for dynamic wwLayout content values', () => {
-        const variables: StyleDynamicVariable[] = [];
-        const stylesheet = createDynamicVariableStringStyleSheetAdapter(variables);
-        const run = createStyleCompiler().compileStylesheet({
-            scope: {
-                elementUids: ['elementA'],
-                sectionUids: [],
-                libraryComponentIds: [],
-            },
-            reader: createReader({
-                elements: {
-                    elementA: {
-                        uid: 'elementA',
-                        capabilities: {
-                            inherits: ['ww-layout'],
-                        },
-                        styles: {
-                            base: {
-                                default: {
-                                    display: 'flex',
-                                },
-                            },
-                        },
-                        content: {
-                            base: {
-                                default: {
-                                    '_ww-layout_rowGap': { __wwtype: 'f', code: 'variables.gap' },
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            stylesheet,
-        });
-
-        expect(run.result).not.toContain('[object Object]');
-        expect(run.result).toContain('@property --ww-content-ww-layout-row-gap');
-        expect(run.result).toContain('row-gap: var(--ww-content-ww-layout-row-gap);');
-        expect(variables).toEqual([
-            expect.objectContaining({
-                name: '--ww-content-ww-layout-row-gap',
-                property: '_ww-layout_rowGap',
-                cssProperty: 'row-gap',
-                domain: 'content',
-                state: 'base',
-                breakpoint: 'default',
-            }),
-        ]);
-    });
-
     it('emits CSS variables for dynamic style values without serializing formula objects', () => {
         const variables: StyleDynamicVariable[] = [];
         const stylesheet = createDynamicVariableStringStyleSheetAdapter(variables);
@@ -6978,344 +6319,3 @@ describe('styleCompiler', () => {
         ).toEqual(['.element-a:is(.is-active, .is-focused)', '[data-label=","][data-state="open"]', '.element-b']);
     });
 });
-
-type TestSourceData = {
-    uid: string;
-    baseId?: string;
-    libraryComponentBaseId?: string;
-    parentLibraryComponentId?: string;
-    stateNames?: string[];
-    states?: StyleStateDescriptor[];
-    selector?: string;
-    parentRef?: StyleParentRef;
-    isDirectSectionChild?: boolean;
-    capabilities?: StyleComponentCapabilities;
-    emitDefaultDeclarations?: boolean;
-    classIds?: Record<string, string[]>;
-    subClassIds?: Record<string, Record<string, string[]>>;
-    styles?: Record<string, Record<string, Record<string, unknown>>>;
-    content?: Record<string, Record<string, Record<string, unknown>>>;
-};
-
-type TestClassData = TestSourceData & {
-    subClasses?: Record<string, TestClassData>;
-};
-
-type ManualStyleScope = {
-    runCount: number;
-    stopCount: number;
-    run<TResult>(callback: () => TResult): TResult | undefined;
-    addEffect(effect: ManualStyleEffect): void;
-    rerun(): void;
-    stop(): void;
-};
-
-type ManualStyleEffect = {
-    callback: (onDispose: StyleScopeDispose) => void;
-    cleanups: Array<() => void>;
-    stopped: boolean;
-};
-
-function createManualStyleReactivityRuntime() {
-    const scopes: ManualStyleScope[] = [];
-    const activeScopes: ManualStyleScope[] = [];
-    const runtime: StyleReactivityRuntime = {
-        createScope() {
-            const scope = createManualStyleScope(activeScopes);
-            scopes.push(scope);
-            return scope;
-        },
-        effect(callback) {
-            const activeScope = activeScopes[activeScopes.length - 1];
-            const effect: ManualStyleEffect = {
-                callback,
-                cleanups: [],
-                stopped: false,
-            };
-
-            activeScope?.addEffect(effect);
-            runManualStyleEffect(activeScope, effect);
-
-            return () => {
-                stopManualStyleEffect(effect);
-            };
-        },
-    };
-
-    return { runtime, scopes };
-}
-
-function createManualStyleScope(activeScopes: ManualStyleScope[]): ManualStyleScope {
-    const effects: ManualStyleEffect[] = [];
-    let stopped = false;
-    const scope: ManualStyleScope = {
-        runCount: 0,
-        stopCount: 0,
-        run(callback) {
-            if (stopped) return undefined;
-
-            activeScopes.push(scope);
-            try {
-                return callback();
-            } finally {
-                removeManualActiveScope(activeScopes, scope);
-            }
-        },
-        addEffect(effect) {
-            if (stopped) {
-                stopManualStyleEffect(effect);
-                return;
-            }
-
-            effects.push(effect);
-        },
-        rerun() {
-            if (stopped) return;
-
-            for (const effect of effects) {
-                runManualStyleEffect(scope, effect);
-            }
-        },
-        stop() {
-            if (stopped) return;
-
-            stopped = true;
-            scope.stopCount++;
-            for (let index = effects.length - 1; index >= 0; index--) {
-                stopManualStyleEffect(effects[index]);
-            }
-        },
-    };
-
-    return scope;
-}
-
-function runManualStyleEffect(scope: ManualStyleScope | undefined, effect: ManualStyleEffect) {
-    if (effect.stopped) return;
-
-    cleanupScope(effect.cleanups);
-    if (scope) {
-        scope.runCount++;
-    }
-    effect.callback(cleanup => {
-        effect.cleanups.push(cleanup);
-    });
-}
-
-function stopManualStyleEffect(effect: ManualStyleEffect) {
-    if (effect.stopped) return;
-
-    effect.stopped = true;
-    cleanupScope(effect.cleanups);
-}
-
-function cleanupScope(cleanups: Array<() => void>) {
-    for (let index = cleanups.length - 1; index >= 0; index--) {
-        cleanups[index]();
-    }
-    cleanups.length = 0;
-}
-
-function removeManualActiveScope(activeScopes: ManualStyleScope[], scope: ManualStyleScope) {
-    for (let index = activeScopes.length - 1; index >= 0; index--) {
-        if (activeScopes[index] !== scope) continue;
-
-        activeScopes.splice(index, 1);
-        return;
-    }
-}
-
-function createVueStyleCompilerTestRuntime(): StyleReactivityRuntime {
-    return {
-        createScope() {
-            return effectScope();
-        },
-        effect: watchEffect,
-    };
-}
-
-function createWidthElement(uid: string, width: string): TestSourceData {
-    return {
-        uid,
-        styles: {
-            base: {
-                default: {
-                    width,
-                },
-            },
-        },
-    };
-}
-
-function expectTargetChunkOrder(css: string, uid: string) {
-    const baseIndex = css.indexOf(`.ww-element-${uid} {`);
-    const tabletIndex = css.indexOf('@media (max-width: 991px)', baseIndex);
-    const hoverIndex = css.indexOf(`.ww-element-${uid}:hover {`);
-
-    expect(baseIndex).toBeGreaterThanOrEqual(0);
-    expect(tabletIndex).toBeGreaterThan(baseIndex);
-    expect(hoverIndex).toBeGreaterThan(tabletIndex);
-}
-
-function createReader({
-    elements = {},
-    sections = {},
-    libraryComponents = {},
-    classes = {},
-}: {
-    elements?: Record<string, TestSourceData>;
-    sections?: Record<string, TestSourceData>;
-    libraryComponents?: Record<string, { rootElementUid?: string; childLibraryComponentIds?: readonly string[] }>;
-    classes?: Record<string, TestClassData>;
-}): StyleReader {
-    return {
-        element(uid) {
-            const data = elements[uid];
-            return data ? createElementReader(data) : null;
-        },
-        section(uid) {
-            const data = sections[uid];
-            return data ? createSectionReader(data) : null;
-        },
-        libraryComponent(id) {
-            const data = libraryComponents[id];
-            return data
-                ? {
-                      rootElementUid: () => data.rootElementUid,
-                      childLibraryComponentIds: () => data.childLibraryComponentIds || [],
-                  }
-                : null;
-        },
-        styleClass(id) {
-            const data = classes[id];
-            return data ? createClassReader(data) : null;
-        },
-    };
-}
-
-function createElementReader(data: TestSourceData): StyleElementReader {
-    return {
-        ...createSourceReader(data),
-        kind: () => 'element',
-        isLibraryComponentInstance: () => !!data.libraryComponentBaseId,
-        isDirectSectionChild: () => data.isDirectSectionChild ?? false,
-    };
-}
-
-function createSectionReader(data: TestSourceData): StyleSectionReader {
-    return {
-        ...createSourceReader(data),
-        kind: () => 'section',
-    };
-}
-
-function createSourceReader(data: TestSourceData) {
-    return {
-        uid: () => data.uid,
-        baseId: () => data.baseId,
-        capabilities: () => data.capabilities || {},
-        states: () => data.states || (data.stateNames || inferStateNames(data)).map(id => ({ id })),
-        emitDefaultDeclarations: () => data.emitDefaultDeclarations ?? true,
-        parentRef: () => data.parentRef,
-        selector: () => data.selector,
-        style: () => createPropertyTreeReader(data, 'styles'),
-        content: () => createPropertyTreeReader(data, 'content'),
-    };
-}
-
-function createClassReader(data: TestClassData): StyleClassReader {
-    return {
-        style: () => createPropertyTreeReader(data, 'styles'),
-        content: () => createPropertyTreeReader(data, 'content'),
-        subClass(id) {
-            const subClassData = data.subClasses?.[id];
-            return subClassData ? createClassReader(subClassData) : null;
-        },
-    };
-}
-
-function createPropertyTreeReader(data: TestSourceData, domain: 'styles' | 'content') {
-    return {
-        state: (name: string) => createStateReader(data, domain, name),
-    };
-}
-
-function createStateReader(data: TestSourceData, domain: 'styles' | 'content', state: string): StyleStateReader {
-    return {
-        classIds: () => data.classIds?.[state] || [],
-        subClassIds: classId => data.subClassIds?.[state]?.[classId] || [],
-        breakpoint: breakpoint => createBreakpointReader(data[domain]?.[state]?.[breakpoint] || {}),
-    };
-}
-
-function createBreakpointReader(style: Record<string, unknown>): StyleBreakpointPropertyReader {
-    return {
-        property: name => style[name],
-        customCss: () => style.customCss,
-        customCssProperty(name) {
-            const customCss = style.customCss;
-            if (!customCss || typeof customCss !== 'object' || Array.isArray(customCss)) return undefined;
-            return (customCss as Record<string, unknown>)[name];
-        },
-        customCssEntries() {
-            const customCss = style.customCss;
-            if (!customCss || typeof customCss !== 'object' || Array.isArray(customCss) || '__wwtype' in customCss) {
-                return [];
-            }
-
-            return Object.entries(customCss as Record<string, unknown>);
-        },
-    };
-}
-
-function inferStateNames(data: TestSourceData) {
-    return [...new Set([...Object.keys(data.styles || {}), ...Object.keys(data.content || {})])].filter(
-        state => state !== 'base'
-    );
-}
-
-function createDiagnosticStringStyleSheetAdapter(diagnostics: StyleDiagnostic[]) {
-    const stylesheet = createStringStyleSheetAdapter();
-    return {
-        ...stylesheet,
-        diagnostic(diagnostic: StyleDiagnostic) {
-            diagnostics.push(diagnostic);
-        },
-    };
-}
-
-function createDynamicVariableStringStyleSheetAdapter(variables: StyleDynamicVariable[]) {
-    const stylesheet = createStringStyleSheetAdapter();
-    return {
-        ...stylesheet,
-        dynamicVariable(variable: StyleDynamicVariable) {
-            variables.push(variable);
-        },
-    };
-}
-
-function createDynamicVariableCleanupStyleSheetAdapter(
-    variables: Map<string, StyleDynamicVariable>,
-    onCleanup: () => void
-) {
-    const stylesheet = createStringStyleSheetAdapter();
-    return {
-        ...stylesheet,
-        dynamicVariable(variable: StyleDynamicVariable) {
-            variables.set(variable.name, variable);
-            return () => {
-                onCleanup();
-                variables.delete(variable.name);
-            };
-        },
-    };
-}
-
-function createTestStyleSurface(uid: string): StyleSurface {
-    return {
-        key: `element:${uid}`,
-        group: 'element',
-        kind: 'element',
-        selector: `.ww-element-${uid}`,
-    };
-}

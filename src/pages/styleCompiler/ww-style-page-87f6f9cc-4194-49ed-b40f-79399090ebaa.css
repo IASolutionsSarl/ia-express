@@ -480,9 +480,6 @@
     .ww-element-42f2f42f-19f4-49f7-9a48-e53276ae7674.ww-layout, .ww-element-42f2f42f-19f4-49f7-9a48-e53276ae7674 [data-ww-layout-style-scopes~="42f2f42f-19f4-49f7-9a48-e53276ae7674"] {
       display: block;
     }
-    .ww-element-42f2f42f-19f4-49f7-9a48-e53276ae7674 [data-ww-layout-style-scopes~="42f2f42f-19f4-49f7-9a48-e53276ae7674"] {
-      height: 100%;
-    }
     @media (max-width: 991px) {
       .ww-element-42f2f42f-19f4-49f7-9a48-e53276ae7674.ww-layout, .ww-element-42f2f42f-19f4-49f7-9a48-e53276ae7674 [data-ww-layout-style-scopes~="42f2f42f-19f4-49f7-9a48-e53276ae7674"] {
         display: flex;
@@ -1332,5 +1329,367 @@
     }
   }
   @layer custom {
+  }
+}
+@layer ww-style-layout-override {
+  @media (min-width: 992px) {
+    :where(.ww-section-2c3562bc-521b-46a6-8348-73c48e3ca935 > .ww-section-element.ww-layout) {
+      height: revert-layer;
+    }
+    :where(.ww-section-2c3562bc-521b-46a6-8348-73c48e3ca935 > .ww-section-element.ww-layout) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-section-2c3562bc-521b-46a6-8348-73c48e3ca935 > .ww-section-element.ww-layout) {
+      height: revert-layer;
+    }
+    :where(.ww-section-2c3562bc-521b-46a6-8348-73c48e3ca935 > .ww-section-element.ww-layout) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-section-2c3562bc-521b-46a6-8348-73c48e3ca935 > .ww-section-element.ww-layout) {
+      height: revert-layer;
+    }
+    :where(.ww-section-2c3562bc-521b-46a6-8348-73c48e3ca935 > .ww-section-element.ww-layout) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-3de9dbdb-8bf7-4b65-885f-4c20a931c7cc [data-ww-layout-style-scopes~="3de9dbdb-8bf7-4b65-885f-4c20a931c7cc"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-3de9dbdb-8bf7-4b65-885f-4c20a931c7cc.ww-layout), :where(.ww-element-3de9dbdb-8bf7-4b65-885f-4c20a931c7cc [data-ww-layout-style-scopes~="3de9dbdb-8bf7-4b65-885f-4c20a931c7cc"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-3de9dbdb-8bf7-4b65-885f-4c20a931c7cc [data-ww-layout-style-scopes~="3de9dbdb-8bf7-4b65-885f-4c20a931c7cc"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-3de9dbdb-8bf7-4b65-885f-4c20a931c7cc.ww-layout), :where(.ww-element-3de9dbdb-8bf7-4b65-885f-4c20a931c7cc [data-ww-layout-style-scopes~="3de9dbdb-8bf7-4b65-885f-4c20a931c7cc"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-3de9dbdb-8bf7-4b65-885f-4c20a931c7cc [data-ww-layout-style-scopes~="3de9dbdb-8bf7-4b65-885f-4c20a931c7cc"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-3de9dbdb-8bf7-4b65-885f-4c20a931c7cc.ww-layout), :where(.ww-element-3de9dbdb-8bf7-4b65-885f-4c20a931c7cc [data-ww-layout-style-scopes~="3de9dbdb-8bf7-4b65-885f-4c20a931c7cc"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-b699571b-2df3-4772-9ef0-3335cc9116d8 [data-ww-layout-style-scopes~="b699571b-2df3-4772-9ef0-3335cc9116d8"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-b699571b-2df3-4772-9ef0-3335cc9116d8.ww-layout), :where(.ww-element-b699571b-2df3-4772-9ef0-3335cc9116d8 [data-ww-layout-style-scopes~="b699571b-2df3-4772-9ef0-3335cc9116d8"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-b699571b-2df3-4772-9ef0-3335cc9116d8 [data-ww-layout-style-scopes~="b699571b-2df3-4772-9ef0-3335cc9116d8"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-b699571b-2df3-4772-9ef0-3335cc9116d8.ww-layout), :where(.ww-element-b699571b-2df3-4772-9ef0-3335cc9116d8 [data-ww-layout-style-scopes~="b699571b-2df3-4772-9ef0-3335cc9116d8"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-b699571b-2df3-4772-9ef0-3335cc9116d8 [data-ww-layout-style-scopes~="b699571b-2df3-4772-9ef0-3335cc9116d8"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-b699571b-2df3-4772-9ef0-3335cc9116d8.ww-layout), :where(.ww-element-b699571b-2df3-4772-9ef0-3335cc9116d8 [data-ww-layout-style-scopes~="b699571b-2df3-4772-9ef0-3335cc9116d8"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-026b859c-8cb6-42ed-9fb7-23db8d1a7843 [data-ww-layout-style-scopes~="026b859c-8cb6-42ed-9fb7-23db8d1a7843"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-026b859c-8cb6-42ed-9fb7-23db8d1a7843.ww-layout), :where(.ww-element-026b859c-8cb6-42ed-9fb7-23db8d1a7843 [data-ww-layout-style-scopes~="026b859c-8cb6-42ed-9fb7-23db8d1a7843"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-026b859c-8cb6-42ed-9fb7-23db8d1a7843 [data-ww-layout-style-scopes~="026b859c-8cb6-42ed-9fb7-23db8d1a7843"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-026b859c-8cb6-42ed-9fb7-23db8d1a7843.ww-layout), :where(.ww-element-026b859c-8cb6-42ed-9fb7-23db8d1a7843 [data-ww-layout-style-scopes~="026b859c-8cb6-42ed-9fb7-23db8d1a7843"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-026b859c-8cb6-42ed-9fb7-23db8d1a7843 [data-ww-layout-style-scopes~="026b859c-8cb6-42ed-9fb7-23db8d1a7843"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-026b859c-8cb6-42ed-9fb7-23db8d1a7843.ww-layout), :where(.ww-element-026b859c-8cb6-42ed-9fb7-23db8d1a7843 [data-ww-layout-style-scopes~="026b859c-8cb6-42ed-9fb7-23db8d1a7843"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-42f2f42f-19f4-49f7-9a48-e53276ae7674 [data-ww-layout-style-scopes~="42f2f42f-19f4-49f7-9a48-e53276ae7674"]) {
+      height: 100%;
+    }
+    :where(.ww-element-42f2f42f-19f4-49f7-9a48-e53276ae7674.ww-layout), :where(.ww-element-42f2f42f-19f4-49f7-9a48-e53276ae7674 [data-ww-layout-style-scopes~="42f2f42f-19f4-49f7-9a48-e53276ae7674"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-42f2f42f-19f4-49f7-9a48-e53276ae7674 [data-ww-layout-style-scopes~="42f2f42f-19f4-49f7-9a48-e53276ae7674"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-42f2f42f-19f4-49f7-9a48-e53276ae7674.ww-layout), :where(.ww-element-42f2f42f-19f4-49f7-9a48-e53276ae7674 [data-ww-layout-style-scopes~="42f2f42f-19f4-49f7-9a48-e53276ae7674"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-42f2f42f-19f4-49f7-9a48-e53276ae7674 [data-ww-layout-style-scopes~="42f2f42f-19f4-49f7-9a48-e53276ae7674"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-42f2f42f-19f4-49f7-9a48-e53276ae7674.ww-layout), :where(.ww-element-42f2f42f-19f4-49f7-9a48-e53276ae7674 [data-ww-layout-style-scopes~="42f2f42f-19f4-49f7-9a48-e53276ae7674"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-3f20bba4-09ff-43e3-a11f-ecc97859ddfe [data-ww-layout-style-scopes~="3f20bba4-09ff-43e3-a11f-ecc97859ddfe"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-3f20bba4-09ff-43e3-a11f-ecc97859ddfe.ww-layout), :where(.ww-element-3f20bba4-09ff-43e3-a11f-ecc97859ddfe [data-ww-layout-style-scopes~="3f20bba4-09ff-43e3-a11f-ecc97859ddfe"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-3f20bba4-09ff-43e3-a11f-ecc97859ddfe [data-ww-layout-style-scopes~="3f20bba4-09ff-43e3-a11f-ecc97859ddfe"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-3f20bba4-09ff-43e3-a11f-ecc97859ddfe.ww-layout), :where(.ww-element-3f20bba4-09ff-43e3-a11f-ecc97859ddfe [data-ww-layout-style-scopes~="3f20bba4-09ff-43e3-a11f-ecc97859ddfe"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-3f20bba4-09ff-43e3-a11f-ecc97859ddfe [data-ww-layout-style-scopes~="3f20bba4-09ff-43e3-a11f-ecc97859ddfe"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-3f20bba4-09ff-43e3-a11f-ecc97859ddfe.ww-layout), :where(.ww-element-3f20bba4-09ff-43e3-a11f-ecc97859ddfe [data-ww-layout-style-scopes~="3f20bba4-09ff-43e3-a11f-ecc97859ddfe"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-1a526e01-4967-4aeb-9142-e1c937a90e35 [data-ww-layout-style-scopes~="1a526e01-4967-4aeb-9142-e1c937a90e35"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-1a526e01-4967-4aeb-9142-e1c937a90e35.ww-layout), :where(.ww-element-1a526e01-4967-4aeb-9142-e1c937a90e35 [data-ww-layout-style-scopes~="1a526e01-4967-4aeb-9142-e1c937a90e35"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-1a526e01-4967-4aeb-9142-e1c937a90e35 [data-ww-layout-style-scopes~="1a526e01-4967-4aeb-9142-e1c937a90e35"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-1a526e01-4967-4aeb-9142-e1c937a90e35.ww-layout), :where(.ww-element-1a526e01-4967-4aeb-9142-e1c937a90e35 [data-ww-layout-style-scopes~="1a526e01-4967-4aeb-9142-e1c937a90e35"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-1a526e01-4967-4aeb-9142-e1c937a90e35 [data-ww-layout-style-scopes~="1a526e01-4967-4aeb-9142-e1c937a90e35"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-1a526e01-4967-4aeb-9142-e1c937a90e35.ww-layout), :where(.ww-element-1a526e01-4967-4aeb-9142-e1c937a90e35 [data-ww-layout-style-scopes~="1a526e01-4967-4aeb-9142-e1c937a90e35"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-77c17be6-4b9c-4337-bdd8-25a710cb42a1 [data-ww-layout-style-scopes~="77c17be6-4b9c-4337-bdd8-25a710cb42a1"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-77c17be6-4b9c-4337-bdd8-25a710cb42a1.ww-layout), :where(.ww-element-77c17be6-4b9c-4337-bdd8-25a710cb42a1 [data-ww-layout-style-scopes~="77c17be6-4b9c-4337-bdd8-25a710cb42a1"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-77c17be6-4b9c-4337-bdd8-25a710cb42a1 [data-ww-layout-style-scopes~="77c17be6-4b9c-4337-bdd8-25a710cb42a1"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-77c17be6-4b9c-4337-bdd8-25a710cb42a1.ww-layout), :where(.ww-element-77c17be6-4b9c-4337-bdd8-25a710cb42a1 [data-ww-layout-style-scopes~="77c17be6-4b9c-4337-bdd8-25a710cb42a1"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-77c17be6-4b9c-4337-bdd8-25a710cb42a1 [data-ww-layout-style-scopes~="77c17be6-4b9c-4337-bdd8-25a710cb42a1"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-77c17be6-4b9c-4337-bdd8-25a710cb42a1.ww-layout), :where(.ww-element-77c17be6-4b9c-4337-bdd8-25a710cb42a1 [data-ww-layout-style-scopes~="77c17be6-4b9c-4337-bdd8-25a710cb42a1"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-7449ba81-9dea-4b6a-a6aa-d0e58c9b81f0 [data-ww-layout-style-scopes~="7449ba81-9dea-4b6a-a6aa-d0e58c9b81f0"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-7449ba81-9dea-4b6a-a6aa-d0e58c9b81f0.ww-layout), :where(.ww-element-7449ba81-9dea-4b6a-a6aa-d0e58c9b81f0 [data-ww-layout-style-scopes~="7449ba81-9dea-4b6a-a6aa-d0e58c9b81f0"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-7449ba81-9dea-4b6a-a6aa-d0e58c9b81f0 [data-ww-layout-style-scopes~="7449ba81-9dea-4b6a-a6aa-d0e58c9b81f0"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-7449ba81-9dea-4b6a-a6aa-d0e58c9b81f0.ww-layout), :where(.ww-element-7449ba81-9dea-4b6a-a6aa-d0e58c9b81f0 [data-ww-layout-style-scopes~="7449ba81-9dea-4b6a-a6aa-d0e58c9b81f0"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-7449ba81-9dea-4b6a-a6aa-d0e58c9b81f0 [data-ww-layout-style-scopes~="7449ba81-9dea-4b6a-a6aa-d0e58c9b81f0"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-7449ba81-9dea-4b6a-a6aa-d0e58c9b81f0.ww-layout), :where(.ww-element-7449ba81-9dea-4b6a-a6aa-d0e58c9b81f0 [data-ww-layout-style-scopes~="7449ba81-9dea-4b6a-a6aa-d0e58c9b81f0"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-1440c690-fbaf-4845-a3d7-4311f031e896 [data-ww-layout-style-scopes~="1440c690-fbaf-4845-a3d7-4311f031e896"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-1440c690-fbaf-4845-a3d7-4311f031e896.ww-layout), :where(.ww-element-1440c690-fbaf-4845-a3d7-4311f031e896 [data-ww-layout-style-scopes~="1440c690-fbaf-4845-a3d7-4311f031e896"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-1440c690-fbaf-4845-a3d7-4311f031e896 [data-ww-layout-style-scopes~="1440c690-fbaf-4845-a3d7-4311f031e896"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-1440c690-fbaf-4845-a3d7-4311f031e896.ww-layout), :where(.ww-element-1440c690-fbaf-4845-a3d7-4311f031e896 [data-ww-layout-style-scopes~="1440c690-fbaf-4845-a3d7-4311f031e896"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-1440c690-fbaf-4845-a3d7-4311f031e896 [data-ww-layout-style-scopes~="1440c690-fbaf-4845-a3d7-4311f031e896"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-1440c690-fbaf-4845-a3d7-4311f031e896.ww-layout), :where(.ww-element-1440c690-fbaf-4845-a3d7-4311f031e896 [data-ww-layout-style-scopes~="1440c690-fbaf-4845-a3d7-4311f031e896"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-a4a946b1-0287-4a37-b935-753218108f42 [data-ww-layout-style-scopes~="a4a946b1-0287-4a37-b935-753218108f42"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-a4a946b1-0287-4a37-b935-753218108f42.ww-layout), :where(.ww-element-a4a946b1-0287-4a37-b935-753218108f42 [data-ww-layout-style-scopes~="a4a946b1-0287-4a37-b935-753218108f42"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-a4a946b1-0287-4a37-b935-753218108f42 [data-ww-layout-style-scopes~="a4a946b1-0287-4a37-b935-753218108f42"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-a4a946b1-0287-4a37-b935-753218108f42.ww-layout), :where(.ww-element-a4a946b1-0287-4a37-b935-753218108f42 [data-ww-layout-style-scopes~="a4a946b1-0287-4a37-b935-753218108f42"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-a4a946b1-0287-4a37-b935-753218108f42 [data-ww-layout-style-scopes~="a4a946b1-0287-4a37-b935-753218108f42"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-a4a946b1-0287-4a37-b935-753218108f42.ww-layout), :where(.ww-element-a4a946b1-0287-4a37-b935-753218108f42 [data-ww-layout-style-scopes~="a4a946b1-0287-4a37-b935-753218108f42"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-08ac1fc0-db20-46f5-af67-5e745b6a0585 [data-ww-layout-style-scopes~="08ac1fc0-db20-46f5-af67-5e745b6a0585"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-08ac1fc0-db20-46f5-af67-5e745b6a0585.ww-layout), :where(.ww-element-08ac1fc0-db20-46f5-af67-5e745b6a0585 [data-ww-layout-style-scopes~="08ac1fc0-db20-46f5-af67-5e745b6a0585"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-08ac1fc0-db20-46f5-af67-5e745b6a0585 [data-ww-layout-style-scopes~="08ac1fc0-db20-46f5-af67-5e745b6a0585"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-08ac1fc0-db20-46f5-af67-5e745b6a0585.ww-layout), :where(.ww-element-08ac1fc0-db20-46f5-af67-5e745b6a0585 [data-ww-layout-style-scopes~="08ac1fc0-db20-46f5-af67-5e745b6a0585"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-08ac1fc0-db20-46f5-af67-5e745b6a0585 [data-ww-layout-style-scopes~="08ac1fc0-db20-46f5-af67-5e745b6a0585"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-08ac1fc0-db20-46f5-af67-5e745b6a0585.ww-layout), :where(.ww-element-08ac1fc0-db20-46f5-af67-5e745b6a0585 [data-ww-layout-style-scopes~="08ac1fc0-db20-46f5-af67-5e745b6a0585"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-425a10ce-293c-4dfc-af8d-4363f1c330f2 [data-ww-layout-style-scopes~="425a10ce-293c-4dfc-af8d-4363f1c330f2"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-425a10ce-293c-4dfc-af8d-4363f1c330f2.ww-layout), :where(.ww-element-425a10ce-293c-4dfc-af8d-4363f1c330f2 [data-ww-layout-style-scopes~="425a10ce-293c-4dfc-af8d-4363f1c330f2"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-425a10ce-293c-4dfc-af8d-4363f1c330f2 [data-ww-layout-style-scopes~="425a10ce-293c-4dfc-af8d-4363f1c330f2"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-425a10ce-293c-4dfc-af8d-4363f1c330f2.ww-layout), :where(.ww-element-425a10ce-293c-4dfc-af8d-4363f1c330f2 [data-ww-layout-style-scopes~="425a10ce-293c-4dfc-af8d-4363f1c330f2"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-425a10ce-293c-4dfc-af8d-4363f1c330f2 [data-ww-layout-style-scopes~="425a10ce-293c-4dfc-af8d-4363f1c330f2"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-425a10ce-293c-4dfc-af8d-4363f1c330f2.ww-layout), :where(.ww-element-425a10ce-293c-4dfc-af8d-4363f1c330f2 [data-ww-layout-style-scopes~="425a10ce-293c-4dfc-af8d-4363f1c330f2"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb [data-ww-layout-style-scopes~="bda4e351-1aef-4bdf-9614-24c3e6ac25cb"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb.ww-layout), :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb [data-ww-layout-style-scopes~="bda4e351-1aef-4bdf-9614-24c3e6ac25cb"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb [data-ww-layout-style-scopes~="bda4e351-1aef-4bdf-9614-24c3e6ac25cb"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb.ww-layout), :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb [data-ww-layout-style-scopes~="bda4e351-1aef-4bdf-9614-24c3e6ac25cb"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb [data-ww-layout-style-scopes~="bda4e351-1aef-4bdf-9614-24c3e6ac25cb"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb.ww-layout), :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb [data-ww-layout-style-scopes~="bda4e351-1aef-4bdf-9614-24c3e6ac25cb"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb [data-ww-layout-style-scopes~="bda4e351-1aef-4bdf-9614-24c3e6ac25cb"]:hover) {
+      height: revert-layer;
+    }
+    :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb.ww-layout:hover), :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb [data-ww-layout-style-scopes~="bda4e351-1aef-4bdf-9614-24c3e6ac25cb"]:hover) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb [data-ww-layout-style-scopes~="bda4e351-1aef-4bdf-9614-24c3e6ac25cb"]:hover) {
+      height: revert-layer;
+    }
+    :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb.ww-layout:hover), :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb [data-ww-layout-style-scopes~="bda4e351-1aef-4bdf-9614-24c3e6ac25cb"]:hover) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb [data-ww-layout-style-scopes~="bda4e351-1aef-4bdf-9614-24c3e6ac25cb"]:hover) {
+      height: revert-layer;
+    }
+    :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb.ww-layout:hover), :where(.ww-element-bda4e351-1aef-4bdf-9614-24c3e6ac25cb [data-ww-layout-style-scopes~="bda4e351-1aef-4bdf-9614-24c3e6ac25cb"]:hover) {
+      text-align: revert-layer;
+    }
   }
 }

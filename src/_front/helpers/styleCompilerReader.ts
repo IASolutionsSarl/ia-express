@@ -1,4 +1,3 @@
-import { get } from 'lodash-es';
 import { computed } from 'vue';
 
 import {
@@ -37,84 +36,162 @@ const BREAKPOINT_NAMES: StyleBreakpointName[] = ['default', 'tablet', 'mobile'];
 
 type StyleSourceData = Record<string, any>;
 type EditorLibraryComponentSourceIndex = {
-    elements: StyleSourceData[];
+    elementUids: string[];
     childLibraryComponentIds: string[];
 };
+type EditorStyleSourceOwnership = {
+    uid: string;
+    parentSectionId: string | null;
+    parentLibraryComponentId: string | null;
+    libraryComponentBaseId: string | null;
+    componentBaseId: string | null;
+};
 type EditorStyleSourceIndex = {
-    allWwObjects: StyleSourceData[];
-    popupInstances: StyleSourceData[];
+    ownershipByUid: Map<string, EditorStyleSourceOwnership>;
+    popupOwnershipByUid: Map<string, EditorStyleSourceOwnership>;
+    elementUidsBySectionId: Map<string, string[]>;
+    popupInstanceUids: string[];
     libraryComponentsById: Map<string, EditorLibraryComponentSourceIndex>;
-    knownParentStateUids: string[];
+    sectionUids: string[];
 };
 type EditorStyleSourceIndexAccessor = () => EditorStyleSourceIndex;
+type EditorParentStateReference = { uid: string; stateId: string };
+type EditorParentStateReferenceResolver = (id: string) => EditorParentStateReference | null;
 
 /**
  * Creates the reactive editor scope and reader over one shared source index.
  */
 export function createEditorStyleCompilerSources() {
-    const sourceIndex = computed(createEditorStyleSourceIndex);
+    const sourceIndex = computed<EditorStyleSourceIndex>(previous => createEditorStyleSourceIndex(previous));
 
     return {
-        scope: computed(() => createEditorStyleCompileScope(sourceIndex.value)),
-        reader: createEditorStyleReader(() => sourceIndex.value),
+        scope: computed<StyleCompileScope>(previous =>
+            reuseUnchangedCompileScope(previous, createEditorStyleCompileScope(sourceIndex.value))
+        ),
+        reader: createEditorStyleReader(() => sourceIndex.value, parseParentStateReference),
     };
 }
 
-function createEditorStyleSourceIndex(): EditorStyleSourceIndex {
+function createEditorStyleSourceIndex(previous?: EditorStyleSourceIndex): EditorStyleSourceIndex {
     const wwObjectsByUid = getWwObjects();
     const popupInstancesByUid = usePopupStore().instances || {};
     const sections = getSections();
-    const wwObjectEntries = Object.entries(wwObjectsByUid) as [string, StyleSourceData][];
-    const allWwObjects = wwObjectEntries.map(([, element]) => element);
-    const popupInstances = Object.values(popupInstancesByUid) as StyleSourceData[];
+    const wwObjectUids = Object.keys(wwObjectsByUid);
+    const popupInstanceUids = Object.keys(popupInstancesByUid);
+    const sectionUids = Object.keys(sections);
+
+    // History synchronization replaces complete reactive source objects even when their ownership
+    // is unchanged. Preserve the structural index in that common case so the compiler only wakes
+    // the changed target instead of reconciling every target on the active page.
+    if (
+        previous &&
+        sourceOwnershipIsUnchanged(previous.ownershipByUid, wwObjectsByUid, wwObjectUids) &&
+        sourceOwnershipIsUnchanged(previous.popupOwnershipByUid, popupInstancesByUid, popupInstanceUids) &&
+        stringArraysAreEqual(previous.sectionUids, sectionUids)
+    ) {
+        return previous;
+    }
+
+    const ownershipByUid = createSourceOwnershipMap(wwObjectsByUid, wwObjectUids);
+    const popupOwnershipByUid = createSourceOwnershipMap(popupInstancesByUid, popupInstanceUids);
+    const elementUidsBySectionId = new Map<string, string[]>();
     const libraryComponentsById = new Map<string, EditorLibraryComponentSourceIndex>();
 
-    for (const element of allWwObjects) {
-        const parentLibraryComponentId = element.parentLibraryComponentId;
-        if (!parentLibraryComponentId) continue;
+    for (const ownership of ownershipByUid.values()) {
+        if (ownership.parentSectionId) {
+            const elementUids = elementUidsBySectionId.get(ownership.parentSectionId) || [];
+            elementUids.push(ownership.uid);
+            elementUidsBySectionId.set(ownership.parentSectionId, elementUids);
+        }
 
-        const libraryComponent = libraryComponentsById.get(parentLibraryComponentId) || {
-            elements: [],
+        if (!ownership.parentLibraryComponentId) continue;
+
+        const libraryComponent = libraryComponentsById.get(ownership.parentLibraryComponentId) || {
+            elementUids: [],
             childLibraryComponentIds: [],
         };
-        libraryComponent.elements.push(element);
-        libraryComponentsById.set(parentLibraryComponentId, libraryComponent);
+        libraryComponent.elementUids.push(ownership.uid);
+        libraryComponentsById.set(ownership.parentLibraryComponentId, libraryComponent);
 
-        if (!element.libraryComponentBaseId) continue;
+        if (!ownership.libraryComponentBaseId) continue;
 
-        if (!libraryComponent.childLibraryComponentIds.includes(element.libraryComponentBaseId)) {
-            libraryComponent.childLibraryComponentIds.push(element.libraryComponentBaseId);
+        if (!libraryComponent.childLibraryComponentIds.includes(ownership.libraryComponentBaseId)) {
+            libraryComponent.childLibraryComponentIds.push(ownership.libraryComponentBaseId);
         }
     }
 
     return {
-        allWwObjects,
-        popupInstances,
+        ownershipByUid,
+        popupOwnershipByUid,
+        elementUidsBySectionId,
+        popupInstanceUids: [...popupOwnershipByUid.keys()],
         libraryComponentsById,
-        knownParentStateUids: uniqueStrings([
-            ...wwObjectEntries.map(([uid]) => uid),
-            ...Object.keys(popupInstancesByUid),
-            ...Object.keys(sections),
-        ]).sort((uidA, uidB) => uidB.length - uidA.length),
+        sectionUids,
     };
+}
+
+function createSourceOwnershipMap(sources: Record<string, StyleSourceData>, uids: string[]) {
+    return new Map(uids.map(uid => [uid, createSourceOwnership(uid, sources[uid])]));
+}
+
+function createSourceOwnership(uid: string, source: StyleSourceData): EditorStyleSourceOwnership {
+    return {
+        uid: source.uid || uid,
+        parentSectionId: source.parentSectionId || null,
+        parentLibraryComponentId: source.parentLibraryComponentId || null,
+        libraryComponentBaseId: source.libraryComponentBaseId || null,
+        componentBaseId: source.wwObjectBaseId || source.libraryComponentBaseId || null,
+    };
+}
+
+function sourceOwnershipIsUnchanged(
+    previous: Map<string, EditorStyleSourceOwnership>,
+    sources: Record<string, StyleSourceData>,
+    uids: string[]
+) {
+    if (previous.size !== uids.length) return false;
+
+    const previousUids = previous.keys();
+    for (const uid of uids) {
+        if (previousUids.next().value !== uid) return false;
+
+        const oldOwnership = previous.get(uid);
+        if (!oldOwnership) return false;
+        const source = sources[uid];
+
+        if (
+            oldOwnership.uid !== (source.uid || uid) ||
+            oldOwnership.parentSectionId !== (source.parentSectionId || null) ||
+            oldOwnership.parentLibraryComponentId !== (source.parentLibraryComponentId || null) ||
+            oldOwnership.libraryComponentBaseId !== (source.libraryComponentBaseId || null) ||
+            oldOwnership.componentBaseId !== (source.wwObjectBaseId || source.libraryComponentBaseId || null)
+        ) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 /**
  * Creates the editor reader used by the shared compiler.
  */
-function createEditorStyleReader(getSourceIndex: EditorStyleSourceIndexAccessor): StyleReader {
+function createEditorStyleReader(
+    getSourceIndex: EditorStyleSourceIndexAccessor,
+    resolveParentStateReference: EditorParentStateReferenceResolver
+): StyleReader {
     return {
         element(uid) {
             const data = getElementData(uid);
             if (!data) return null;
 
-            return createSourceReader(data, 'element', getSourceIndex);
+            return createSourceReader(data, 'element', resolveParentStateReference);
         },
         section(uid) {
             const data = getSections()[uid];
             if (!data) return null;
 
-            return createSourceReader(data, 'section', getSourceIndex);
+            return createSourceReader(data, 'section', resolveParentStateReference);
         },
         libraryComponent(id) {
             return createLibraryComponentReader(id, getSourceIndex);
@@ -134,52 +211,77 @@ function createEditorStyleReader(getSourceIndex: EditorStyleSourceIndexAccessor)
 function createEditorStyleCompileScope(sourceIndex: EditorStyleSourceIndex): StyleCompileScope {
     const page = wwLib.$store.getters['websiteData/getPage'];
     const pageSectionUids = (page?.sections || []).map((section: { uid: string }) => section.uid).filter(Boolean);
-    const pageSectionUidSet = new Set(pageSectionUids);
     const componentBasesStore = useComponentBasesStore(wwLib.$pinia);
     const sections = getSections();
-    const { allWwObjects, popupInstances, libraryComponentsById } = sourceIndex;
-    const pageElements = allWwObjects.filter(element => pageSectionUidSet.has(element.parentSectionId));
-    const rootElements = [...pageElements, ...popupInstances];
-    const libraryElements = collectDeepLibraryComponentElements(libraryComponentsById, rootElements);
-    const scopedElements = [...libraryElements, ...rootElements];
-    const readyRootElements = rootElements.filter(element => isElementStyleSourceReady(element, componentBasesStore));
-    const readyLibraryElements = libraryElements.filter(element =>
-        isElementStyleSourceReady(element, componentBasesStore)
+    const { elementUidsBySectionId, popupInstanceUids, libraryComponentsById } = sourceIndex;
+    const pageElementUids = pageSectionUids.flatMap(uid => elementUidsBySectionId.get(uid) || []);
+    const rootElementUids = uniqueStrings([...pageElementUids, ...popupInstanceUids]);
+    const { elementUids: libraryElementUids, libraryComponentIds } = collectDeepLibraryComponentElements(
+        libraryComponentsById,
+        rootElementUids
+    );
+    const readyRootElementUids = rootElementUids.filter(uid =>
+        isElementStyleSourceReady(getElementData(uid), componentBasesStore)
+    );
+    const readyLibraryElementUids = libraryElementUids.filter(uid =>
+        isElementStyleSourceReady(getElementData(uid), componentBasesStore)
     );
 
     return {
         sectionUids: pageSectionUids.filter(uid => isSectionStyleSourceReady(sections[uid], componentBasesStore)),
-        elementUids: uniqueStrings(readyRootElements.map(element => element.uid)),
-        libraryElementUids: uniqueStrings(readyLibraryElements.map(element => element.uid)),
-        libraryComponentIds: uniqueStrings(scopedElements.map(element => element.libraryComponentBaseId)).filter(
-            libraryComponentId => isLibraryComponentStyleSourceReady(libraryComponentId, componentBasesStore)
+        elementUids: readyRootElementUids,
+        libraryElementUids: readyLibraryElementUids,
+        libraryComponentIds: libraryComponentIds.filter(libraryComponentId =>
+            isLibraryComponentStyleSourceReady(libraryComponentId, componentBasesStore)
         ),
     };
+}
+
+function reuseUnchangedCompileScope(previous: StyleCompileScope | undefined, next: StyleCompileScope) {
+    if (!previous) return next;
+    if (!stringArraysAreEqual(previous.sectionUids, next.sectionUids)) return next;
+    if (!stringArraysAreEqual(previous.elementUids, next.elementUids)) return next;
+    if (!stringArraysAreEqual(previous.libraryElementUids || [], next.libraryElementUids || [])) return next;
+    if (!stringArraysAreEqual(previous.libraryComponentIds || [], next.libraryComponentIds || [])) return next;
+
+    return previous;
+}
+
+function stringArraysAreEqual(left: readonly string[], right: readonly string[]) {
+    return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
 function createSourceReader(
     data: StyleSourceData,
     kind: 'element',
-    getSourceIndex: EditorStyleSourceIndexAccessor
+    resolveParentStateReference: EditorParentStateReferenceResolver
 ): StyleElementReader;
 function createSourceReader(
     data: StyleSourceData,
     kind: 'section',
-    getSourceIndex: EditorStyleSourceIndexAccessor
+    resolveParentStateReference: EditorParentStateReferenceResolver
 ): StyleSectionReader;
 function createSourceReader(
     data: StyleSourceData,
     kind: 'element' | 'section',
-    getSourceIndex: EditorStyleSourceIndexAccessor
+    resolveParentStateReference: EditorParentStateReferenceResolver
 ): StyleElementReader | StyleSectionReader {
     if (kind === 'element') {
         return {
-            ...createBaseSourceReader(data, kind, getSourceIndex),
+            ...createBaseSourceReader(data, kind, resolveParentStateReference),
             kind() {
                 return 'element' as const;
             },
             isLibraryComponentInstance() {
                 return isLibraryComponentInstance(data);
+            },
+            effectiveFallbackSource() {
+                if (!isLibraryComponentInstance(data)) return null;
+
+                const fallbackData = getLibraryComponentRootElement(data.libraryComponentBaseId);
+                return fallbackData
+                    ? createSourceReader(fallbackData, 'element', resolveParentStateReference)
+                    : null;
             },
             isDirectSectionChild() {
                 return isDirectSectionChild(data);
@@ -188,7 +290,7 @@ function createSourceReader(
     }
 
     return {
-        ...createBaseSourceReader(data, kind, getSourceIndex),
+        ...createBaseSourceReader(data, kind, resolveParentStateReference),
         kind() {
             return 'section' as const;
         },
@@ -198,7 +300,7 @@ function createSourceReader(
 function createBaseSourceReader(
     data: StyleSourceData,
     kind: 'element' | 'section',
-    getSourceIndex: EditorStyleSourceIndexAccessor
+    resolveParentStateReference: EditorParentStateReferenceResolver
 ) {
     return {
         uid() {
@@ -211,7 +313,7 @@ function createBaseSourceReader(
             return createSourceCapabilities(data, kind);
         },
         states() {
-            return getSourceStates(data, kind, getSourceIndex);
+            return getSourceStates(data, kind, resolveParentStateReference);
         },
         emitDefaultDeclarations() {
             return shouldEmitSourceDefaultDeclarations(data, kind);
@@ -334,8 +436,7 @@ function getConcreteLibraryComponentRootSource(
 
     visitedLibraryComponentIds.add(libraryComponentId);
 
-    const rootElementUid = getLibraryComponents()[libraryComponentId]?.rootElementId;
-    const rootElement = rootElementUid ? getElementData(rootElementUid) : undefined;
+    const rootElement = getLibraryComponentRootElement(libraryComponentId);
     if (!rootElement) return null;
 
     if (rootElement.wwObjectBaseId) {
@@ -348,6 +449,11 @@ function getConcreteLibraryComponentRootSource(
     if (!isLibraryComponentInstance(rootElement)) return null;
 
     return getConcreteLibraryComponentRootSource(rootElement.libraryComponentBaseId, visitedLibraryComponentIds);
+}
+
+function getLibraryComponentRootElement(libraryComponentId: string): StyleSourceData | null {
+    const rootElementUid = getLibraryComponents()[libraryComponentId]?.rootElementId;
+    return rootElementUid ? getElementData(rootElementUid) || null : null;
 }
 
 function getDefaultContentSlot(data: StyleSourceData) {
@@ -472,7 +578,7 @@ function getPropertySlot(
     breakpoint: StyleBreakpointName
 ) {
     const slotKey = createSlotKey(state, breakpoint);
-    return domain === 'style' ? get(data, `_state.style.${slotKey}`) : get(data, `content.${slotKey}`);
+    return domain === 'style' ? data._state?.style?.[slotKey] : data.content?.[slotKey];
 }
 
 function createSlotKey(state: string, breakpoint: StyleBreakpointName) {
@@ -489,7 +595,7 @@ function toStorageState(state: string) {
 function getSourceStates(
     data: StyleSourceData,
     kind: 'element' | 'section',
-    getSourceIndex: EditorStyleSourceIndexAccessor
+    resolveParentStateReference: EditorParentStateReferenceResolver
 ) {
     const states = new Map<string, StyleStateDescriptor>();
     const selectorsByLabel = getConfiguredSelectorsByStateLabel(data, kind);
@@ -498,17 +604,32 @@ function getSourceStates(
         if (!state?.id) continue;
 
         const label = typeof state.label === 'string' ? state.label : undefined;
-        states.set(state.id, createStateDescriptor(state.id, selectorsByLabel, getSourceIndex, label));
+        states.set(state.id, createStateDescriptor(state.id, selectorsByLabel, resolveParentStateReference, label));
     }
 
-    collectStateNamesFromSlotKeys(states, Object.keys(data._state?.style || {}), selectorsByLabel, getSourceIndex);
-    collectStateNamesFromSlotKeys(states, Object.keys(data.content || {}), selectorsByLabel, getSourceIndex);
-    collectStateNamesFromClassKeys(states, Object.keys(data._state?.classes || {}), selectorsByLabel, getSourceIndex);
+    collectStateNamesFromSlotKeys(
+        states,
+        Object.keys(data._state?.style || {}),
+        selectorsByLabel,
+        resolveParentStateReference
+    );
+    collectStateNamesFromSlotKeys(
+        states,
+        Object.keys(data.content || {}),
+        selectorsByLabel,
+        resolveParentStateReference
+    );
+    collectStateNamesFromClassKeys(
+        states,
+        Object.keys(data._state?.classes || {}),
+        selectorsByLabel,
+        resolveParentStateReference
+    );
     collectStateNamesFromClassKeys(
         states,
         Object.keys(data._state?.subClasses || {}),
         selectorsByLabel,
-        getSourceIndex
+        resolveParentStateReference
     );
 
     states.delete(BASE_STATE);
@@ -531,7 +652,7 @@ function collectStateNamesFromSlotKeys(
     states: Map<string, StyleStateDescriptor>,
     keys: string[],
     selectorsByLabel: Map<string, readonly string[]>,
-    getSourceIndex: EditorStyleSourceIndexAccessor
+    resolveParentStateReference: EditorParentStateReferenceResolver
 ) {
     for (const key of keys) {
         for (const breakpoint of BREAKPOINT_NAMES) {
@@ -540,7 +661,7 @@ function collectStateNamesFromSlotKeys(
 
             const state = key.slice(0, -suffix.length);
             if (state && !states.has(state)) {
-                states.set(state, createStateDescriptor(state, selectorsByLabel, getSourceIndex));
+                states.set(state, createStateDescriptor(state, selectorsByLabel, resolveParentStateReference));
             }
         }
     }
@@ -550,11 +671,11 @@ function collectStateNamesFromClassKeys(
     states: Map<string, StyleStateDescriptor>,
     keys: string[],
     selectorsByLabel: Map<string, readonly string[]>,
-    getSourceIndex: EditorStyleSourceIndexAccessor
+    resolveParentStateReference: EditorParentStateReferenceResolver
 ) {
     for (const key of keys) {
         if (key !== DEFAULT_STATE && key !== BASE_STATE && !states.has(key)) {
-            states.set(key, createStateDescriptor(key, selectorsByLabel, getSourceIndex));
+            states.set(key, createStateDescriptor(key, selectorsByLabel, resolveParentStateReference));
         }
     }
 }
@@ -562,10 +683,10 @@ function collectStateNamesFromClassKeys(
 function createStateDescriptor(
     id: string,
     selectorsByLabel: Map<string, readonly string[]>,
-    getSourceIndex: EditorStyleSourceIndexAccessor,
+    resolveParentStateReference: EditorParentStateReferenceResolver,
     label?: string
 ): StyleStateDescriptor {
-    const parent = createParentStateDescriptor(id, getSourceIndex);
+    const parent = createParentStateDescriptor(id, resolveParentStateReference);
     if (parent) return { id, parent };
 
     const stateLabel = label || id;
@@ -576,9 +697,9 @@ function createStateDescriptor(
 
 function createParentStateDescriptor(
     id: string,
-    getSourceIndex: EditorStyleSourceIndexAccessor
+    resolveParentStateReference: EditorParentStateReferenceResolver
 ): StyleParentStateDescriptor | null {
-    const parentStateReference = parseParentStateReference(id, () => getSourceIndex().knownParentStateUids);
+    const parentStateReference = resolveParentStateReference(id);
     if (!parentStateReference) return null;
 
     const parentSource = getParentStateSource(parentStateReference.uid);
@@ -603,16 +724,19 @@ function createParentStateDescriptor(
     };
 }
 
-function parseParentStateReference(id: string, getKnownParentStateUids: () => string[]) {
+function parseParentStateReference(id: string): EditorParentStateReference | null {
     if (!id.startsWith(PARENT_STYLE_STATE_PREFIX)) return null;
 
     const payload = id.slice(PARENT_STYLE_STATE_PREFIX.length);
-    for (const uid of getKnownParentStateUids()) {
-        const prefix = `${uid}_`;
-        if (!payload.startsWith(prefix)) continue;
+    let separatorIndex = payload.lastIndexOf('_');
+    while (separatorIndex > 0) {
+        const uid = payload.slice(0, separatorIndex);
+        if (getParentStateSource(uid)) {
+            const stateId = payload.slice(separatorIndex + 1);
+            return stateId ? { uid, stateId } : null;
+        }
 
-        const stateId = payload.slice(prefix.length);
-        return stateId ? { uid, stateId } : null;
+        separatorIndex = payload.lastIndexOf('_', separatorIndex - 1);
     }
 
     return null;
@@ -652,11 +776,11 @@ function getSourceStateLabel(state: StyleSourceData | undefined, fallback: strin
 
 function collectDeepLibraryComponentElements(
     libraryComponentsById: Map<string, EditorLibraryComponentSourceIndex>,
-    rootElements: StyleSourceData[]
+    rootElementUids: string[]
 ) {
-    const result: StyleSourceData[] = [];
+    const elementUids: string[] = [];
     const seenElementUids = new Set<string>();
-    const pendingLibraryIds = uniqueStrings(rootElements.map(element => element.libraryComponentBaseId));
+    const pendingLibraryIds = uniqueStrings(rootElementUids.map(uid => getElementData(uid)?.libraryComponentBaseId));
     const seenLibraryIds = new Set<string>();
 
     while (pendingLibraryIds.length) {
@@ -665,17 +789,18 @@ function collectDeepLibraryComponentElements(
 
         seenLibraryIds.add(libraryComponentId);
 
-        for (const element of libraryComponentsById.get(libraryComponentId)?.elements || []) {
-            if (seenElementUids.has(element.uid)) continue;
+        const libraryComponent = libraryComponentsById.get(libraryComponentId);
+        for (const elementUid of libraryComponent?.elementUids || []) {
+            if (seenElementUids.has(elementUid)) continue;
 
-            seenElementUids.add(element.uid);
-            result.push(element);
-
-            if (element.libraryComponentBaseId) pendingLibraryIds.push(element.libraryComponentBaseId);
+            seenElementUids.add(elementUid);
+            elementUids.push(elementUid);
         }
+
+        pendingLibraryIds.push(...(libraryComponent?.childLibraryComponentIds || []));
     }
 
-    return result;
+    return { elementUids, libraryComponentIds: [...seenLibraryIds] };
 }
 
 function getWwObjects(): Record<string, StyleSourceData> {

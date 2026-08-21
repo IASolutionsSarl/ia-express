@@ -7,6 +7,24 @@ export default {
         /* wwFront:end */
      },
 
+    startInfrastructureWakePolling(projectId, commitId) {
+        clearInterval(this.infrastructureWakePollingTimer);
+        this.infrastructureWakePollingTimer = setInterval(async () => {
+            try {
+                await api.projects.load(projectId, commitId);
+                clearInterval(this.infrastructureWakePollingTimer);
+                window.location.reload();
+            } catch (error) {
+                if (error?.response?.status !== 425 || error?.response?.data?.code !== 'PROJECT_WAKING') {
+                    clearInterval(this.infrastructureWakePollingTimer);
+                    this.infrastructureWakePollingTimer = null;
+                    return;
+                }
+                wwLib.$store.dispatch('manager/setEnvironmentInfrastructureWake', error.response.data);
+            }
+        }, 30000);
+    },
+
     async fetchPage(pageId) {
  
  

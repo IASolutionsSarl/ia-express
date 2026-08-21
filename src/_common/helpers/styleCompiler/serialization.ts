@@ -50,6 +50,7 @@ export function registerCssDeclarationDynamicReferences(
             selector: options.selector,
             directDeclaration: true,
         });
+        registerNestedDynamicReferences(cssProperty, value, options);
         return;
     }
     if (!options.dynamicReferences?.length) return;
@@ -57,6 +58,39 @@ export function registerCssDeclarationDynamicReferences(
     const registeredReferences = new Set<string>();
     for (const occurrence of options.dynamicReferences) {
         if (!cssValue.includes(occurrence.cssText)) continue;
+
+        const key = createStringifiedDynamicReferenceKey(occurrence.reference);
+        if (registeredReferences.has(key)) continue;
+
+        registeredReferences.add(key);
+        occurrence.reference.register({ cssProperty, selector: options.selector });
+    }
+}
+
+/** Registers concrete-root variables referenced by a renderless instance's conditional layout gate. */
+function registerNestedDynamicReferences(
+    cssProperty: string,
+    value: StyleDynamicVariableReference,
+    options: { selector?: string; dynamicReferences?: readonly StyleStringifiedDynamicVariableReference[] }
+) {
+    if (
+        value.variable.domain !== 'content' ||
+        !value.variable.outputKey?.startsWith('layout-') ||
+        !options.dynamicReferences?.length ||
+        typeof value.variable.value !== 'string'
+    ) {
+        return;
+    }
+
+    const registeredReferences = new Set<string>();
+    for (const occurrence of options.dynamicReferences) {
+        const variablePrefix = `var(${occurrence.reference.name}`;
+        if (
+            !value.variable.value.includes(`${variablePrefix},`) &&
+            !value.variable.value.includes(`${variablePrefix})`)
+        ) {
+            continue;
+        }
 
         const key = createStringifiedDynamicReferenceKey(occurrence.reference);
         if (registeredReferences.has(key)) continue;

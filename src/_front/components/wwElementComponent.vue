@@ -9,6 +9,7 @@
         class="ww-element"
         :class="[state.class || '', ...styleClasses]"
         v-bind="componentAttributes"
+        v-bind:[LAYOUT_ITEM_ATTRIBUTE]="wwLayoutItemAttribute"
         :content="content"
         :uid="uid"
         :ww-front-state="wwFrontState"
@@ -43,6 +44,8 @@ import { useComponentStates } from '@/_front/use/useComponentStates';
 import { useComponentActions } from '@/_common/use/useActions';
 import { useElementLocalContext } from '@/_front/use/useElementLocalContext';
 import { useStyleCompilerDynamicVariables } from '@/_front/use/useStyleCompilerDynamicVariables';
+import { useLayoutItemAttribute, useLayoutItemIndex } from '@/_front/use/useLayoutItemMarker';
+import { LAYOUT_ITEM_ATTRIBUTE } from '@/_common/helpers/styleCompiler/layoutContract';
 import { createComponentId } from '@/_front/services/componentIds';
 import { getElementStyleResetClasses } from '@/_front/helpers/elementStyleReset';
 
@@ -84,6 +87,8 @@ export default {
         const component = shallowRef(null);
 
         const wwLayoutContext = inject('wwLayoutContext', {});
+        const wwLayoutIndex = useLayoutItemIndex();
+        const wwLayoutItemAttribute = useLayoutItemAttribute(wwLayoutIndex);
         const bindingContext = inject('bindingContext', null);
         const sectionId = inject('sectionId', null);
         const wwLibraryComponentUid_ = inject('wwLibraryComponentUid_', null);
@@ -257,7 +262,7 @@ export default {
             configuration: config,
             bindingContext,
             rawContent,
-            context,
+             context,
             elementName,
             addInternalState,
             removeInternalState,
@@ -273,6 +278,9 @@ export default {
             wwTechnicalAttributes,
             currentStatesAttribute,
             forcedStatesAttribute,
+            wwLayoutIndex,
+            wwLayoutItemAttribute,
+            LAYOUT_ITEM_ATTRIBUTE,
          };
     },
     computed: {

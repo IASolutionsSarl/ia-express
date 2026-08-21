@@ -1,5 +1,11 @@
 <template>
-    <component :is="tag" class="ww-layout" :data-ww-layout-style-scopes="layoutStyleScopes">
+    <component
+        :is="tag"
+        class="ww-layout"
+        :data-ww-layout-owner-type="parentElementUid ? 'element' : sectionId ? 'section' : undefined"
+        :data-ww-layout-owner-uid="parentElementUid || sectionId || undefined"
+        :data-ww-layout-style-scopes="layoutStyleScopes"
+    >
         <slot></slot>
     </component>
 </template>
@@ -13,5 +19,6 @@ withDefaults(defineProps<{ tag?: string }>(), {
 });
 
 const parentElementUid = inject<string | null>('_wwElementUid', null);
+const sectionId = inject<string | null>('sectionId', null);
 const layoutStyleScopes = useLayoutStyleScopeAttribute(() => parentElementUid);
 </script>

@@ -15,6 +15,11 @@ import {
     type StyleStyleRuleAdapter,
 } from '@/_common/helpers/styleCompiler';
 import { registerStyleDynamicVariable } from './styleCompilerRuntimeVariables';
+import {
+    batchCssRuleMutations,
+    deleteCssRuleFromParent,
+    type CssRuleParent,
+} from './styleCompilerCssRuleDeletionBatch';
 
 const styleSheetsByDocument = new WeakMap<Document, LayeredStyleSheetState>();
 const styleValidationProbesByDocument = new WeakMap<Document, CSSStyleDeclaration>();
@@ -25,8 +30,6 @@ type LayeredStyleSheetState = {
     registeredProperties: Map<string, CSSRule>;
     failedRegisteredProperties: Set<string>;
 };
-
-type CssRuleParent = CSSStyleSheet | CSSGroupingRule;
 
 type DomRuleNode = DomLayerStatementNode | DomGroupingNode | DomKeyframesNode;
 
@@ -70,6 +73,7 @@ export function createDomStyleSheetAdapter(): StyleSheetAdapter<readonly CSSStyl
         registerProperty(property) {
             registerDomStyleProperty(property);
         },
+        batch: batchCssRuleMutations,
         result: getStyleSheets,
     };
 }
@@ -123,7 +127,7 @@ function createDomLayerStatementRuleAdapter(
             const container = getContainer();
             if (!container) return;
 
-            deleteRuleFromParent(container.parent, node.rule);
+            deleteCssRuleFromParent(container.parent, node.rule);
             container.children.delete(getRuleNodeKey(rule));
         },
     };
@@ -142,7 +146,7 @@ function createDomKeyframesRuleAdapter(
             const container = getContainer();
             if (!container) return;
 
-            deleteRuleFromParent(container.parent, node.rule);
+            deleteCssRuleFromParent(container.parent, node.rule);
             container.children.delete(getRuleNodeKey(rule));
         },
     };
@@ -161,7 +165,7 @@ function createDomGroupingRuleAdapter(
             const container = getContainer();
             if (!container) return;
 
-            deleteRuleFromParent(container.parent, node.rule);
+            deleteCssRuleFromParent(container.parent, node.rule);
             container.children.delete(getRuleNodeKey(rule));
         }
     );
@@ -241,7 +245,7 @@ function createDomStyleRuleAdapter(
         }
 
         try {
-            deleteRuleFromParent(container.parent, topRule);
+            deleteCssRuleFromParent(container.parent, topRule);
         } catch (error) {
             wwLib.wwLog.warn('[style-compiler] failed to delete CSS rule', { rule, error });
         } finally {
@@ -413,11 +417,6 @@ function ensureDomKeyframesNode(getContainer: () => DomRuleContainerState | null
         wwLib.wwLog.warn('[style-compiler] failed to insert CSS rule', { rule, error });
         return null;
     }
-}
-
-function deleteRuleFromParent(parent: CssRuleParent, rule: CSSRule) {
-    const index = Array.prototype.indexOf.call(parent.cssRules, rule);
-    if (index !== -1) parent.deleteRule(index);
 }
 
 function createNoopDomRuleContainerAdapter(): StyleRuleContainerAdapter {

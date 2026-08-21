@@ -99,6 +99,13 @@ export function getStateRuleSelectors({
     if (parentState) {
         const parentSelector = parentState.selector || resolveParentSelector(parentState.uid, source);
         if (parentSelector) {
+            const nativePseudoClass = getNativeStyleStatePseudoClass(parentState.stateId);
+            if (!nativePseudoClass) {
+                selectors.push(
+                    prependParentStateAttribute(surface.selector, parentSelector, 'data-ww-states', parentState.stateId)
+                );
+            }
+
             if (parentState.selectors?.length) {
                 selectors.push(
                     ...parentState.selectors.flatMap(selector =>
@@ -113,19 +120,12 @@ export function getStateRuleSelectors({
                 );
             }
 
-            const nativePseudoClass = getNativeStyleStatePseudoClass(parentState.stateId);
             if (nativePseudoClass) {
                 selectors.push(
                     gateSelectorInEditorPreview(
                         prependParentPseudoClass(surface.selector, parentSelector, nativePseudoClass),
                         mode
                     )
-                );
-            }
-
-            if (!parentState.selectors?.length && !nativePseudoClass) {
-                selectors.push(
-                    prependParentStateAttribute(surface.selector, parentSelector, 'data-ww-states', parentState.stateId)
                 );
             }
 
@@ -141,6 +141,12 @@ export function getStateRuleSelectors({
             }
         }
     } else {
+        const nativePseudoClass = getNativeStyleStatePseudoClass(state.id);
+        if (!nativePseudoClass) {
+            // Persisted states can also be activated by a formula at runtime.
+            selectors.push(appendStateAttribute(surface.selector, state.id));
+        }
+
         if (state.selectors?.length) {
             selectors.push(
                 ...state.selectors.flatMap(selector =>
@@ -157,15 +163,9 @@ export function getStateRuleSelectors({
             );
         }
 
-        const nativePseudoClass = getNativeStyleStatePseudoClass(state.id);
         if (nativePseudoClass) {
             selectors.push(gateSelectorInEditorPreview(appendPseudoClass(surface.selector, nativePseudoClass), mode));
         }
-    }
-
-    if (!selectors.length && !parentState) {
-        // Custom states still depend on the runtime state attribute.
-        selectors.push(appendStateAttribute(surface.selector, state.id));
     }
 
     if (selectors.length && !parentState && includeForcedStateSelectors) {

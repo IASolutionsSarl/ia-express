@@ -22,6 +22,25 @@ export const usePopupStore = defineStore('popups', () => {
     const instances = ref({});
 
     async function open(libraryComponentBaseId, content, { waitClosing = false } = {}) {
+        if (!wwLib.$store.getters['libraries/getComponents'][libraryComponentBaseId]?.configuration?.popup?.isStacked) {
+            const existingInstance = Object.values(instances.value).find(
+                instance => instance.libraryComponentBaseId === libraryComponentBaseId
+            );
+            if (existingInstance) {
+                // Reuse the already-open instance and wait for its close result.
+                if (waitClosing) {
+                    return new Promise(resolve => {
+                        const previousResolve = onClosePromises[existingInstance.uid];
+                        onClosePromises[existingInstance.uid] = data => {
+                            previousResolve?.(data);
+                            resolve(data);
+                        };
+                    });
+                }
+                return Promise.resolve(existingInstance.uid);
+            }
+        }
+
         const uid = `popup-${createId.rnd()}`;
         instances.value[uid] = {
             uid,

@@ -131,5 +131,9 @@ function matchesCondition(result: FormulaExecutionResult, condition: StyleDynami
         ? normalizeStyleRuntimeValue(result.value, condition.valueNormalizer)
         : result.value;
 
+    if (condition.disallowedValues) {
+        return typeof value !== 'string' || !condition.disallowedValues.includes(value);
+    }
+
     return typeof value === 'string' && condition.allowedValues.includes(value);
 }

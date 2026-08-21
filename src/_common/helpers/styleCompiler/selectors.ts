@@ -85,6 +85,18 @@ export function appendCssSelector(selector: string, suffix: string) {
 }
 
 /**
+ * Keeps selector matching intact while removing its specificity contribution.
+ *
+ * This is useful for behavioral rules whose precedence is owned by compiler source order rather
+ * than by the shape of a state, library definition, or instance selector.
+ */
+export function zeroCssSelectorSpecificity(selector: string) {
+    return splitCssSelectorList(selector)
+        .map(selectorPart => `:where(${selectorPart})`)
+        .join(',\n');
+}
+
+/**
  * Splits a CSS selector list on top-level commas only.
  *
  * Selectors can contain commas inside functional pseudo-classes or attribute values, for example

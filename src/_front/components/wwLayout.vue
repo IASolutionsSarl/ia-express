@@ -3,6 +3,8 @@
         :is="tag"
         class="ww-layout"
         :data-ww-layout-id="layoutId"
+        :data-ww-layout-owner-type="parentElementUid ? 'element' : sectionId ? 'section' : undefined"
+        :data-ww-layout-owner-uid="parentElementUid || sectionId || undefined"
         :data-ww-layout-style-scopes="layoutStyleScopes"
         :class="{
          }"
@@ -10,27 +12,30 @@
     >
         <slot name="header"></slot>
          <template v-if="internalList[0]">
-            <wwLayoutItemContext
+            <template
                 v-for="index in restrictedLength"
                 :key="isBound ? `${internalList[0].uid}_${index - 1}` : `${internalList[index - 1].uid}`"
-                :index="offset + index - 1"
-                :item="isBound ? internalList[0] : internalList[index - 1]"
-                :is-repeat="isBound"
-                :data="isBound && boundData ? boundData[offset + index - 1] : null"
-                :repeated-items="boundData"
             >
-                <slot
-                    v-bind="{
-                        item: isBound ? internalList[0] : internalList[index - 1],
-                        index: offset + index - 1,
-                        data: isBound && boundData ? boundData[offset + index - 1] : null,
-                        layoutId,
-                     }"
+                 <wwLayoutItemContext
+                    :index="offset + index - 1"
+                    :item="isBound ? internalList[0] : internalList[index - 1]"
+                    :is-repeat="isBound"
+                    :data="isBound && boundData ? boundData[offset + index - 1] : null"
+                    :repeated-items="boundData"
                 >
-                    <wwElement v-bind="isBound ? internalList[0] : internalList[index - 1]"></wwElement>
-                </slot>
-            </wwLayoutItemContext>
-        </template>
+                    <slot
+                        v-bind="{
+                            item: isBound ? internalList[0] : internalList[index - 1],
+                            index: offset + index - 1,
+                            data: isBound && boundData ? boundData[offset + index - 1] : null,
+                            layoutId,
+                         }"
+                    >
+                        <wwElement v-bind="isBound ? internalList[0] : internalList[index - 1]"></wwElement>
+                    </slot>
+                </wwLayoutItemContext>
+            </template>
+         </template>
      </component>
 </template>
 
@@ -41,6 +46,7 @@ import { useParentContentProperty } from '@/_common/use/useComponent.js';
  
 import { useRestoreContext } from '@/_front/use/useRestoreContext.js';
 import { useLayoutStyleScopeAttribute } from '@/_front/use/useLayoutStyleScopes';
+import { resetLayoutItemIndex } from '@/_front/use/useLayoutItemMarker';
 
 import wwLayoutItem from './wwLayoutItem.vue';
 import wwLayoutItemContext from './wwLayoutItemContext.vue';
@@ -65,6 +71,7 @@ export default {
     emits: ['update:list'],
     setup(props, { emit }) {
         const id = layoutId++;
+        resetLayoutItemIndex();
         const parentElementUid = inject('_wwElementUid', null);
         const layoutStyleScopes = useLayoutStyleScopeAttribute(() => parentElementUid);
         const parentElementComponentId = inject('_wwElementComponentId', null);

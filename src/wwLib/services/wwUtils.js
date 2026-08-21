@@ -1,5 +1,6 @@
 import { v4 as uuid, validate as isValidUUID } from 'uuid';
 import { getValue } from '@/_common/helpers/code/customCode.js';
+import { splitAuthoredLength } from '@/_common/helpers/css/authoredLength';
 
 export default {
     /**
@@ -37,32 +38,7 @@ export default {
      * @PUBLIC_API
      */
     getLengthUnit(value, { defaultLength, defaultUnit, round = true } = {}) {
-        if (typeof value !== 'string') {
-            return [0, 'auto'];
-        }
-
-        value = value || '';
-
-        if (typeof value !== 'string') {
-            return [0, 'auto'];
-        }
-
-        if (value === 'auto') {
-            return [0, 'auto'];
-        }
-        if (value === 'unset') {
-            return [0, 'unset'];
-        }
-        if (value === 'normal') {
-            return [0, 'normal'];
-        }
-
-        const LENGTH_REGEX = new RegExp(/^(-?[\d.]+)(.*)$/);
-        let [, _l, _u] = value.match(LENGTH_REGEX) || [null, defaultLength || 0, defaultUnit || 'auto'];
-
-        _u = _u || defaultUnit || 'auto';
-
-        return [round ? Math.round(_l) : _l, _u];
+        return splitAuthoredLength(value, { defaultLength, defaultUnit, round });
     },
 
     /**

@@ -1,10 +1,16 @@
 import type { BetterFetchOption } from '@better-fetch/fetch';
 import type { AxiosInstance } from 'axios';
+import type { EditorDragStore } from '@/_common/editor/store/editorDragStore';
 
 // Global type declarations for WeWeb
 
 declare global {
-    const wwLib: any;
+    interface WwLib {
+        editorDragStore: EditorDragStore;
+        [key: string]: any;
+    }
+
+    const wwLib: WwLib;
     const userflow: any;
     const wwAxios: AxiosInstance;
     type WwServerRequestOptions<T = unknown> = BetterFetchOption<

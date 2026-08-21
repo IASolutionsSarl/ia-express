@@ -4,7 +4,7 @@
         <!-- __WW_PAGE_MADE_WITH_WEWEB__ -->
         <div v-if="page && page.pageLoaded" class="sections-wrapper">
             <template v-for="(section, index) in sections" :key="section.uid">
-                <!-- wwFront:start -->
+                 <!-- wwFront:start -->
                 <div class="placeholder-section" :data-placeholder-section-uid="section.uid"></div>
                 <!-- wwFront:end -->
                 <wwSection
@@ -14,7 +14,7 @@
                     :ww-responsive="`ww-section-${index}`"
                 />
             </template>
-         </div>
+          </div>
          <!-- POPUPS -->
         <transition name="ww-front-popups" tag="div">
             <wwLinkPopup
@@ -196,6 +196,17 @@ export default {
         .sections-wrapper {
             position: relative;
             isolation: isolate;
+        }
+
+        .ww-section-drag-placeholder {
+            position: relative;
+            box-sizing: border-box;
+            min-height: 80px;
+            border: 1px dashed var(--ww-color-border-brand);
+            border-radius: var(--ww-border-radius-02);
+            background: transparent;
+            overflow: hidden;
+            pointer-events: none;
         }
     }
 

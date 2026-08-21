@@ -82,6 +82,27 @@ describe('resolveStyleCompilerRuntimeVariable', () => {
         expect(resolveStyleCompilerRuntimeVariable({ variable, context: {}, executor })).toBeNull();
     });
 
+    it('supports runtime conditions that exclude exact legacy values', () => {
+        const values = new Map<string, unknown>([['direction', 'column']]);
+        const executor = createExecutor(values);
+        const variable = {
+            ...createPositionedVariable('margin-left', 'auto'),
+            condition: {
+                value: { __wwtype: 'f', code: 'direction' },
+                allowedValues: ['row', 'row-reverse', 'column-reverse'],
+                disallowedValues: ['column'],
+            },
+        } satisfies StyleDynamicVariable;
+
+        expect(resolveStyleCompilerRuntimeVariable({ variable, context: {}, executor })).toBeNull();
+
+        values.set('direction', 'row-reverse');
+        expect(resolveStyleCompilerRuntimeVariable({ variable, context: {}, executor })).toBe('auto');
+
+        values.set('direction', undefined);
+        expect(resolveStyleCompilerRuntimeVariable({ variable, context: {}, executor })).toBe('auto');
+    });
+
     it('supports truthy runtime conditions', () => {
         const values = new Map<string, unknown>([['alignment', undefined]]);
         const executor = createExecutor(values);

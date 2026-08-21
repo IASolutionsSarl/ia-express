@@ -584,3 +584,317 @@
   @layer custom {
   }
 }
+@layer ww-style-layout-override {
+  @media (min-width: 992px) {
+    :where(.ww-section-17febb87-bcfb-4162-a637-0864f1fc508c > .ww-section-element.ww-layout) {
+      height: revert-layer;
+    }
+    :where(.ww-section-17febb87-bcfb-4162-a637-0864f1fc508c > .ww-section-element.ww-layout) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-section-17febb87-bcfb-4162-a637-0864f1fc508c > .ww-section-element.ww-layout) {
+      height: revert-layer;
+    }
+    :where(.ww-section-17febb87-bcfb-4162-a637-0864f1fc508c > .ww-section-element.ww-layout) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-section-17febb87-bcfb-4162-a637-0864f1fc508c > .ww-section-element.ww-layout) {
+      height: revert-layer;
+    }
+    :where(.ww-section-17febb87-bcfb-4162-a637-0864f1fc508c > .ww-section-element.ww-layout) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-b8ce495d-2447-44d4-bb6c-b2c8ba1f99b0 [data-ww-layout-style-scopes~="b8ce495d-2447-44d4-bb6c-b2c8ba1f99b0"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-b8ce495d-2447-44d4-bb6c-b2c8ba1f99b0.ww-layout), :where(.ww-element-b8ce495d-2447-44d4-bb6c-b2c8ba1f99b0 [data-ww-layout-style-scopes~="b8ce495d-2447-44d4-bb6c-b2c8ba1f99b0"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-b8ce495d-2447-44d4-bb6c-b2c8ba1f99b0 [data-ww-layout-style-scopes~="b8ce495d-2447-44d4-bb6c-b2c8ba1f99b0"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-b8ce495d-2447-44d4-bb6c-b2c8ba1f99b0.ww-layout), :where(.ww-element-b8ce495d-2447-44d4-bb6c-b2c8ba1f99b0 [data-ww-layout-style-scopes~="b8ce495d-2447-44d4-bb6c-b2c8ba1f99b0"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-b8ce495d-2447-44d4-bb6c-b2c8ba1f99b0 [data-ww-layout-style-scopes~="b8ce495d-2447-44d4-bb6c-b2c8ba1f99b0"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-b8ce495d-2447-44d4-bb6c-b2c8ba1f99b0.ww-layout), :where(.ww-element-b8ce495d-2447-44d4-bb6c-b2c8ba1f99b0 [data-ww-layout-style-scopes~="b8ce495d-2447-44d4-bb6c-b2c8ba1f99b0"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]) {
+      text-align: revert-layer;
+    }
+    :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]) {
+      text-align: revert-layer;
+    }
+    :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]) {
+      text-align: revert-layer;
+    }
+    :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)), :where(.ww-element-4edc2645-cdac-427f-8e74-626b4863c295 [data-ww-layout-style-scopes~="4edc2645-cdac-427f-8e74-626b4863c295"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]) {
+      text-align: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]) {
+      text-align: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]) {
+      text-align: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover) {
+      height: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover) {
+      text-align: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover) {
+      height: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover) {
+      text-align: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover) {
+      height: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover) {
+      text-align: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)), :where(.ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-a92ef1db-a03f-41ca-9d1a-4b4a323228ac [data-ww-layout-style-scopes~="a92ef1db-a03f-41ca-9d1a-4b4a323228ac"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-a92ef1db-a03f-41ca-9d1a-4b4a323228ac.ww-layout), :where(.ww-element-a92ef1db-a03f-41ca-9d1a-4b4a323228ac [data-ww-layout-style-scopes~="a92ef1db-a03f-41ca-9d1a-4b4a323228ac"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-a92ef1db-a03f-41ca-9d1a-4b4a323228ac [data-ww-layout-style-scopes~="a92ef1db-a03f-41ca-9d1a-4b4a323228ac"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-a92ef1db-a03f-41ca-9d1a-4b4a323228ac.ww-layout), :where(.ww-element-a92ef1db-a03f-41ca-9d1a-4b4a323228ac [data-ww-layout-style-scopes~="a92ef1db-a03f-41ca-9d1a-4b4a323228ac"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-a92ef1db-a03f-41ca-9d1a-4b4a323228ac [data-ww-layout-style-scopes~="a92ef1db-a03f-41ca-9d1a-4b4a323228ac"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-a92ef1db-a03f-41ca-9d1a-4b4a323228ac.ww-layout), :where(.ww-element-a92ef1db-a03f-41ca-9d1a-4b4a323228ac [data-ww-layout-style-scopes~="a92ef1db-a03f-41ca-9d1a-4b4a323228ac"]) {
+      text-align: revert-layer;
+    }
+  }
+  @media (min-width: 992px) {
+    :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]) {
+      text-align: revert-layer;
+    }
+    :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 991px) {
+    :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]) {
+      text-align: revert-layer;
+    }
+    :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+  }
+  @media (max-width: 767px) {
+    :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]) {
+      height: revert-layer;
+    }
+    :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]) {
+      text-align: revert-layer;
+    }
+    :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):not(:nth-last-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-last-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]) > :nth-last-child(1 of .ww-element[data-ww-layout-item]):not(:nth-child(1 of .ww-element[data-ww-layout-item])), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)):not(:nth-child(1 of .ww-element:not(.ww-drag-placeholder))) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+    :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]) > :nth-child(1 of .ww-element[data-ww-layout-item]):nth-last-child(1 of .ww-element[data-ww-layout-item]), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76.ww-layout):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)), :where(.ww-element-a0c0fb60-eab1-450b-a0b2-6d3644369a76 [data-ww-layout-style-scopes~="a0c0fb60-eab1-450b-a0b2-6d3644369a76"]):not(:has( > .ww-element[data-ww-layout-item])) > :nth-child(1 of .ww-element:not(.ww-drag-placeholder)):nth-last-child(1 of .ww-element:not(.ww-drag-placeholder)) {
+      margin-left: revert-layer;
+      margin-top: revert-layer;
+    }
+  }
+}

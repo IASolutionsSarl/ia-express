@@ -27,11 +27,13 @@ import {
     createStyleSlotContext,
     isStyleDynamicVariableReference,
     resolveCustomCssProperties,
+    resolveRawStyleProperty,
 } from './values';
 import type {
     StyleCompiler,
     StyleCompilerInput,
     StyleDynamicVariable,
+    StyleElementReader,
     StyleLibraryLayer,
     StyleStringifiedDynamicVariableReference,
     StylePropertyDomain,
@@ -46,14 +48,30 @@ import type {
     StyleStyleRuleAdapter,
     StyleSurface,
     StyleRuntime,
+    StyleStateDescriptor,
 } from './types';
-import { STATIC_STYLE_RUNTIME, STYLE_LIBRARY_LAYER_ORDER, STYLE_RULE_GROUP_LAYERS, STYLE_RULE_GROUPS } from './types';
+import {
+    STATIC_STYLE_RUNTIME,
+    STYLE_LAYOUT_OVERRIDE_LAYER,
+    STYLE_LIBRARY_LAYER_ORDER,
+    STYLE_RULE_GROUP_LAYERS,
+    STYLE_RULE_GROUPS,
+} from './types';
 
 const ORDER_SENSITIVE_TARGET_GROUPS: readonly StyleRuleGroup[] = ['library'];
+const RENDERLESS_LAYOUT_STYLE_OVERRIDE_PROPERTIES = ['display', 'textAlign'] as const;
 const STYLE_DECLARATION_LAYER_ORDER = ['normal', 'custom'] as const;
 type StyleDeclarationLayer = (typeof STYLE_DECLARATION_LAYER_ORDER)[number];
-type StyleLayerContainerKey = Exclude<StyleRuleGroup, 'library'> | `library:${StyleLibraryLayer}`;
+type StyleRuleEmissionLayer = StyleDeclarationLayer | 'layout-override';
+type StyleSurfaceLayerContainerKey = Exclude<StyleRuleGroup, 'library'> | `library:${StyleLibraryLayer}`;
 type StyleDeclarationLayerContainers = Record<StyleDeclarationLayer, StyleRuleContainerAdapter>;
+type StyleCompilerLayerContainers = {
+    declarations: Map<StyleSurfaceLayerContainerKey, StyleDeclarationLayerContainers>;
+    layoutOverride: StyleRuleContainerAdapter;
+};
+type StyleTargetLayoutOverrideContainer = StyleRuleContainerAdapter & {
+    reserve(): void;
+};
 
 /**
  * Creates the shared stylesheet compiler.
@@ -72,14 +90,21 @@ class StyleCompilerImpl implements StyleCompiler {
         const layerContainers =
             input.mode === 'runtime' ? createNoopLayerContainers() : createGeneratedLayerContainers(input.stylesheet);
         const targetStops = new Map<string, StyleScopeStop>();
-        const targetOrderSignatures = new Map<StyleRuleGroup, string>();
+        const targetOrders = new Map<StyleRuleGroup, string[]>();
         const stopRoot = createStyleEffectScope(runtime, () => {
-            this.reconcileStyleTargets(input, runtime, targetStops, targetOrderSignatures, layerContainers);
+            const reconcile = () =>
+                this.reconcileStyleTargets(input, runtime, targetStops, targetOrders, layerContainers);
+
+            if (input.stylesheet.batch) {
+                input.stylesheet.batch(reconcile);
+            } else {
+                reconcile();
+            }
         });
 
         return {
             result: input.stylesheet.result(),
-            stop: createStylesheetStop(stopRoot, targetStops),
+            stop: createStylesheetStop(stopRoot, targetStops, input.stylesheet.batch),
         };
     }
 
@@ -87,22 +112,30 @@ class StyleCompilerImpl implements StyleCompiler {
         input: StyleCompilerInput,
         runtime: StyleRuntime,
         targetStops: Map<string, StyleScopeStop>,
-        targetOrderSignatures: Map<StyleRuleGroup, string>,
-        layerContainers: Map<StyleLayerContainerKey, StyleDeclarationLayerContainers>
+        targetOrders: Map<StyleRuleGroup, string[]>,
+        layerContainers: StyleCompilerLayerContainers
     ) {
         const targets = createStyleTargetDescriptors(input);
         const activeTargetKeys = new Set<string>();
 
-        this.reconcileOrderSensitiveTargetGroups(targets, targetStops, targetOrderSignatures);
+        this.reconcileOrderSensitiveTargetGroups(targets, targetStops, targetOrders);
 
         for (const target of targets) {
             activeTargetKeys.add(target.key);
             if (targetStops.has(target.key)) continue;
 
-            const stopTarget = createStyleEffectScope(runtime, onDispose => {
-                this.compileTarget(input, onDispose, target, layerContainers);
+            const layoutOverrideContainer = createTargetLayoutOverrideContainer(
+                layerContainers.layoutOverride,
+                target.key,
+                runtime !== STATIC_STYLE_RUNTIME && target.group === 'library'
+            );
+            const stopTargetScope = createStyleEffectScope(runtime, onDispose => {
+                this.compileTarget(input, onDispose, target, layerContainers.declarations, layoutOverrideContainer);
             });
-            targetStops.set(target.key, stopTarget);
+            targetStops.set(target.key, () => {
+                stopTargetScope();
+                layoutOverrideContainer.dispose();
+            });
         }
 
         for (const targetKey of [...targetStops.keys()]) {
@@ -115,20 +148,40 @@ class StyleCompilerImpl implements StyleCompiler {
     private reconcileOrderSensitiveTargetGroups(
         targets: StyleTargetDescriptor[],
         targetStops: Map<string, StyleScopeStop>,
-        targetOrderSignatures: Map<StyleRuleGroup, string>
+        targetOrders: Map<StyleRuleGroup, string[]>
     ) {
         for (const group of ORDER_SENSITIVE_TARGET_GROUPS) {
-            const signature = targets
-                .filter(target => target.group === group)
-                .map(target => target.key)
-                .join('|');
-            const previousSignature = targetOrderSignatures.get(group);
+            const targetKeys = targets.filter(target => target.group === group).map(target => target.key);
+            const previousTargetKeys = targetOrders.get(group);
 
-            targetOrderSignatures.set(group, signature);
-            if (previousSignature === undefined || previousSignature === signature) continue;
+            targetOrders.set(group, targetKeys);
+            if (!previousTargetKeys || stringArraysAreEqual(previousTargetKeys, targetKeys)) continue;
+
+            const previousPositions = new Map(previousTargetKeys.map((targetKey, index) => [targetKey, index]));
+            const reusableTargetKeys = new Set<string>();
+            let previousPosition = -1;
+            let rebuildSuffix = false;
+
+            // Existing target chunks can stay mounted while their relative order is preserved.
+            // Once a new or reordered target appears, the remaining suffix must be appended again
+            // so its CSS keeps the requested cascade order.
+            for (const targetKey of targetKeys) {
+                if (rebuildSuffix) continue;
+
+                const position = previousPositions.get(targetKey);
+                if (position === undefined || position < previousPosition) {
+                    rebuildSuffix = true;
+                    continue;
+                }
+
+                reusableTargetKeys.add(targetKey);
+                previousPosition = position;
+            }
 
             for (const targetKey of [...targetStops.keys()]) {
-                if (targetKey.startsWith(`${group}:`)) stopTarget(targetStops, targetKey);
+                if (!targetKey.startsWith(`${group}:`) || reusableTargetKeys.has(targetKey)) continue;
+
+                stopTarget(targetStops, targetKey);
             }
         }
     }
@@ -137,13 +190,19 @@ class StyleCompilerImpl implements StyleCompiler {
         input: StyleCompilerInput,
         onDispose: StyleScopeDispose,
         target: StyleTargetDescriptor,
-        layerContainers: Map<StyleLayerContainerKey, StyleDeclarationLayerContainers>
+        declarationLayerContainers: Map<StyleSurfaceLayerContainerKey, StyleDeclarationLayerContainers>,
+        layoutOverrideContainer: StyleTargetLayoutOverrideContainer
     ) {
-        const source = readStyleTargetSource(input.reader, target);
-        if (!source) return;
+        const sourceData = readStyleTargetSource(input.reader, target);
+        if (!sourceData) return;
+        const source = cacheSourceCapabilities(sourceData);
+        if (source.capabilities?.().inherits?.includes('ww-layout')) layoutOverrideContainer.reserve();
 
         const targetInput = createTargetScopedInput(input, onDispose);
         const ruleAdapters: StyleRuleAdapter[] = [];
+        // Both element surfaces share the same source states. Resolve the fallback chain once so
+        // provenance checks do not reread every state and breakpoint for each surface.
+        const states = [{ id: 'base' }, ...getEffectiveSourceStates(targetInput, source)];
 
         onDispose(() => {
             for (let index = ruleAdapters.length - 1; index >= 0; index--) {
@@ -152,10 +211,20 @@ class StyleCompilerImpl implements StyleCompiler {
         });
 
         for (const surface of createStyleTargetSurfaces(source, target)) {
-            const declarationLayerContainers = layerContainers.get(getStyleLayerContainerKey(surface));
-            if (!declarationLayerContainers) continue;
+            const surfaceLayerContainerKey = getStyleLayerContainerKey(surface);
+            const surfaceDeclarationLayerContainers = declarationLayerContainers.get(surfaceLayerContainerKey);
+            if (!surfaceDeclarationLayerContainers) continue;
 
-            this.compileSurfaceRules(targetInput, ruleAdapters, source, surface, declarationLayerContainers, target);
+            this.compileSurfaceRules(
+                targetInput,
+                ruleAdapters,
+                source,
+                surface,
+                surfaceDeclarationLayerContainers,
+                { normal: layoutOverrideContainer, custom: layoutOverrideContainer },
+                target,
+                states
+            );
         }
     }
 
@@ -165,12 +234,10 @@ class StyleCompilerImpl implements StyleCompiler {
         source: StyleSourceReader,
         surface: StyleSurface,
         layerContainers: StyleDeclarationLayerContainers,
-        target: StyleTargetDescriptor
+        layoutOverrideLayerContainers: StyleDeclarationLayerContainers,
+        target: StyleTargetDescriptor,
+        states: readonly StyleStateDescriptor[]
     ) {
-        // The base state always exists. Additional states come from the reader and are normalized
-        // before generating rules so duplicate/base aliases do not create extra CSS.
-        const states = [{ id: 'base' }, ...getUniqueStates(source.states())];
-
         for (const state of states) {
             const selectorResult =
                 state.id === 'base'
@@ -197,6 +264,7 @@ class StyleCompilerImpl implements StyleCompiler {
                     source,
                     surface,
                     layerContainers,
+                    layoutOverrideLayerContainers,
                     state.id,
                     breakpoint,
                     selectorResult.selector,
@@ -212,6 +280,7 @@ class StyleCompilerImpl implements StyleCompiler {
         source: StyleSourceReader,
         surface: StyleSurface,
         layerContainers: StyleDeclarationLayerContainers,
+        layoutOverrideLayerContainers: StyleDeclarationLayerContainers,
         state: string,
         breakpoint: StyleBreakpointDefinition,
         selector: string,
@@ -220,6 +289,7 @@ class StyleCompilerImpl implements StyleCompiler {
         const slots = new Map<StylePropertyDomain, ReturnType<typeof createStyleSlotContext>>();
         const scope: DeclarationScope = {
             surface,
+            selector,
             input,
             source,
             state,
@@ -240,6 +310,10 @@ class StyleCompilerImpl implements StyleCompiler {
         };
         const normalRules = createBreakpointRuleAccessors(layerContainers.normal, 'normal');
         const customRules = createBreakpointRuleAccessors(layerContainers.custom, 'custom');
+        const layoutOverrideRules = createBreakpointRuleAccessors(
+            layoutOverrideLayerContainers.normal,
+            'layout-override'
+        );
 
         for (const resolveDeclarations of getDeclarationResolvers(surface)) {
             const { result: declarations, references } = collectStringifiedDynamicCssVariableReferences(() =>
@@ -248,7 +322,8 @@ class StyleCompilerImpl implements StyleCompiler {
             for (const declaration of declarations) {
                 if (!declaration) continue;
 
-                this.applyDeclaration(input, normalRules.getRule, declaration, surface, selector, references);
+                const rules = declaration.rule?.layer === 'layout-override' ? layoutOverrideRules : normalRules;
+                this.applyDeclaration(input, rules.getRule, declaration, surface, selector, references);
             }
         }
 
@@ -276,7 +351,7 @@ class StyleCompilerImpl implements StyleCompiler {
 
         function createBreakpointRuleAccessors(
             layerContainer: StyleRuleContainerAdapter,
-            declarationLayer: StyleDeclarationLayer
+            declarationLayer: StyleRuleEmissionLayer
         ) {
             const rules = new Map<string, StyleStyleRuleAdapter>();
             const mediaContainers = new Map<string, StyleRuleContainerAdapter>();
@@ -420,10 +495,90 @@ class StyleCompilerImpl implements StyleCompiler {
 }
 
 /**
+ * Includes concrete-root states when compiling a renderless library instance.
+ *
+ * Instance style overrides are emitted in a higher cascade layer. Layout declarations that combine
+ * those overrides with concrete-root layout state must therefore be recomputed for every root state,
+ * not only for states stored on the renderless instance itself.
+ */
+function getEffectiveSourceStates(input: StyleCompilerInput, source: StyleSourceReader) {
+    const sourceStates = getUniqueStates(source.states());
+    if (!hasRenderlessLayoutStyleOverride(input, source, sourceStates)) return sourceStates;
+
+    const states = [...sourceStates];
+    const visitedSourceUids = new Set([source.uid()]);
+    let currentSource = isRenderlessLibraryInstanceSource(source)
+        ? source.effectiveFallbackSource?.() || null
+        : null;
+
+    while (currentSource && !visitedSourceUids.has(currentSource.uid())) {
+        visitedSourceUids.add(currentSource.uid());
+        states.push(...currentSource.states());
+        currentSource = isRenderlessLibraryInstanceSource(currentSource)
+            ? currentSource.effectiveFallbackSource?.() || null
+            : null;
+    }
+
+    return getUniqueStates(states);
+}
+
+function hasRenderlessLayoutStyleOverride(
+    input: StyleCompilerInput,
+    source: StyleSourceReader,
+    states: readonly { id: string }[]
+) {
+    if (!isRenderlessLibraryInstanceSource(source)) return false;
+
+    for (const state of [{ id: 'base' }, ...states]) {
+        for (const breakpoint of STYLE_BREAKPOINTS) {
+            for (const property of RENDERLESS_LAYOUT_STYLE_OVERRIDE_PROPERTIES) {
+                const value = resolveRawStyleProperty({
+                    input,
+                    source,
+                    property,
+                    state: state.id,
+                    breakpoint: breakpoint.name,
+                });
+                if (value !== undefined) return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+function isRenderlessLibraryInstanceSource(source: StyleSourceReader): source is StyleElementReader {
+    return source.kind() === 'element' && !!(source as StyleElementReader).isLibraryComponentInstance?.();
+}
+
+/**
+ * Capabilities are immutable during one compiler effect, but declaration resolvers may ask for
+ * them repeatedly. Cache the adapter read for this pass; reactive runtimes create a fresh source
+ * reader when a dependency changes and the effect reruns.
+ */
+function cacheSourceCapabilities(source: StyleSourceReader) {
+    const readCapabilities = source.capabilities;
+    if (!readCapabilities) return source;
+
+    let hasCachedCapabilities = false;
+    let cachedCapabilities: ReturnType<NonNullable<StyleSourceReader['capabilities']>> | undefined;
+    return {
+        ...source,
+        capabilities() {
+            if (!hasCachedCapabilities) {
+                cachedCapabilities = readCapabilities.call(source);
+                hasCachedCapabilities = true;
+            }
+            return cachedCapabilities || {};
+        },
+    };
+}
+
+/**
  * Creates the fixed generated layer tree once per compiler run.
  */
 function createGeneratedLayerContainers(stylesheet: StyleCompilerInput['stylesheet']) {
-    const layerContainers = new Map<StyleLayerContainerKey, StyleDeclarationLayerContainers>();
+    const declarationLayerContainers = new Map<StyleSurfaceLayerContainerKey, StyleDeclarationLayerContainers>();
     for (const group of STYLE_RULE_GROUPS) {
         const groupLayer = stylesheet.insertRule({
             kind: 'layer',
@@ -431,7 +586,7 @@ function createGeneratedLayerContainers(stylesheet: StyleCompilerInput['styleshe
             name: STYLE_RULE_GROUP_LAYERS[group],
         });
         if (group !== 'library') {
-            layerContainers.set(group, createDeclarationLayerContainers(groupLayer, group));
+            declarationLayerContainers.set(group, createDeclarationLayerContainers(groupLayer, group));
             continue;
         }
 
@@ -446,14 +601,19 @@ function createGeneratedLayerContainers(stylesheet: StyleCompilerInput['styleshe
                 key: libraryLayer,
                 name: libraryLayer,
             });
-            layerContainers.set(
+            declarationLayerContainers.set(
                 `library:${libraryLayer}`,
                 createDeclarationLayerContainers(libraryLayerContainer, `library:${libraryLayer}`)
             );
         }
     }
 
-    return layerContainers;
+    const layoutOverrideLayer = stylesheet.insertRule({
+        kind: 'layer',
+        key: 'layout-override',
+        name: STYLE_LAYOUT_OVERRIDE_LAYER,
+    });
+    return { declarations: declarationLayerContainers, layoutOverride: layoutOverrideLayer };
 }
 
 function createDeclarationLayerContainers(
@@ -485,24 +645,80 @@ function createDeclarationLayerContainers(
  * Static generated rules are intentionally discarded.
  */
 function createNoopLayerContainers() {
-    const layerContainers = new Map<StyleLayerContainerKey, StyleDeclarationLayerContainers>();
+    const declarationLayerContainers = new Map<StyleSurfaceLayerContainerKey, StyleDeclarationLayerContainers>();
     const container = createNoopRuleContainerAdapter();
-    const declarationLayerContainers = { normal: container, custom: container };
+    const containers = { normal: container, custom: container };
     for (const group of STYLE_RULE_GROUPS) {
         if (group !== 'library') {
-            layerContainers.set(group, declarationLayerContainers);
+            declarationLayerContainers.set(group, containers);
             continue;
         }
 
         for (const libraryLayer of STYLE_LIBRARY_LAYER_ORDER) {
-            layerContainers.set(`library:${libraryLayer}`, declarationLayerContainers);
+            declarationLayerContainers.set(`library:${libraryLayer}`, containers);
         }
     }
 
-    return layerContainers;
+    return { declarations: declarationLayerContainers, layoutOverride: container };
 }
 
-function getStyleLayerContainerKey(surface: StyleSurface): StyleLayerContainerKey {
+/**
+ * Gives layout-capable reactive library targets stable source-order slots inside the flat override layer.
+ *
+ * Reactive target reruns clear and rebuild the wrapper's children without moving the wrapper itself;
+ * structural target changes dispose the whole slot through the target stop registered by the
+ * reconciler. Static compilation and non-overlapping page targets write directly into the layer and
+ * use a non-owning adapter so stopping one target never disposes the shared layer.
+ */
+function createTargetLayoutOverrideContainer(
+    parent: StyleRuleContainerAdapter,
+    targetKey: string,
+    preserveReactiveOrder: boolean
+) {
+    let targetContainer: StyleRuleContainerAdapter | undefined;
+    const getTargetContainer = () => {
+        targetContainer ||= parent.insertRule({
+            kind: 'media',
+            key: `layout-override-target:${targetKey}`,
+            query: '@media all',
+        });
+        return targetContainer;
+    };
+    const getRuleContainer = () => (preserveReactiveOrder ? getTargetContainer() : parent);
+
+    function insertRule(rule: Extract<StyleRule, { kind: 'layer-statement' }>): StyleRuleAdapter;
+    function insertRule(rule: Extract<StyleRule, { kind: 'layer' }>): StyleRuleContainerAdapter;
+    function insertRule(rule: Extract<StyleRule, { kind: 'media' }>): StyleRuleContainerAdapter;
+    function insertRule(rule: Extract<StyleRule, { kind: 'style' }>): StyleStyleRuleAdapter;
+    function insertRule(rule: Extract<StyleRule, { kind: 'keyframes' }>): StyleRuleAdapter;
+    function insertRule(rule: StyleRule) {
+        switch (rule.kind) {
+            case 'layer-statement':
+                return getRuleContainer().insertRule(rule);
+            case 'layer':
+                return getRuleContainer().insertRule(rule);
+            case 'media':
+                return getRuleContainer().insertRule(rule);
+            case 'style':
+                return getRuleContainer().insertRule(rule);
+            case 'keyframes':
+                return getRuleContainer().insertRule(rule);
+        }
+    }
+
+    return {
+        insertRule,
+        reserve() {
+            if (preserveReactiveOrder) getTargetContainer();
+        },
+        dispose() {
+            targetContainer?.dispose();
+            targetContainer = undefined;
+        },
+    } satisfies StyleTargetLayoutOverrideContainer;
+}
+
+function getStyleLayerContainerKey(surface: StyleSurface): StyleSurfaceLayerContainerKey {
     if (surface.group !== 'library') return surface.group;
 
     return `library:${surface.libraryLayer || 'definition'}`;
@@ -621,15 +837,27 @@ function stringifyDynamicVariableValueNormalizer(valueNormalizer: StyleDynamicVa
 /**
  * Creates an idempotent stop for the root list watcher and all live target scopes.
  */
-function createStylesheetStop(stopRoot: StyleScopeStop, targetStops: Map<string, StyleScopeStop>) {
+function createStylesheetStop(
+    stopRoot: StyleScopeStop,
+    targetStops: Map<string, StyleScopeStop>,
+    batch?: (callback: () => void) => void
+) {
     let stopped = false;
 
     return () => {
         if (stopped) return;
 
         stopped = true;
-        stopRoot();
-        stopTargets(targetStops);
+        const stop = () => {
+            stopRoot();
+            stopTargets(targetStops);
+        };
+
+        if (batch) {
+            batch(stop);
+        } else {
+            stop();
+        }
     };
 }
 
@@ -654,6 +882,10 @@ function stopTargets(targetStops: Map<string, StyleScopeStop>) {
     for (const stop of stops) {
         stop();
     }
+}
+
+function stringArraysAreEqual(left: readonly string[], right: readonly string[]) {
+    return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
 /**

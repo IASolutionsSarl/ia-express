@@ -41,6 +41,38 @@ describe('styleCompilerRuntimeStyleSheet', () => {
         expect(getFirstStyleRule(elementLayer)).toBeUndefined();
     });
 
+    it('preserves zero-specificity layout selectors when mounting runtime variables', () => {
+        const doc = new FakeDocument();
+        Object.assign(wwLib, {
+            getFrontDocument: () => doc,
+            wwLog: { warn: vi.fn() },
+        });
+        const variable: StyleDynamicVariable = {
+            ...createWidthVariable(),
+            surface: {
+                ...createWidthVariable().surface,
+                runtimeScopeSelector: '.ww-element-sized',
+            },
+            selector:
+                ':where(.ww-element-sized.ww-layout[data-ww-states~="active"]) > .ww-element[data-ww-layout-item]',
+        };
+
+        const stop = setStyleCompilerRuntimeVariable({
+            componentId: 'instance-layout',
+            variable,
+            cssValue: '100px',
+        });
+        const styleRule = collectRules(doc.styleElement.sheet).find(
+            (rule): rule is FakeStyleRule => rule instanceof FakeStyleRule
+        );
+
+        expect(styleRule?.selectorText).toBe(
+            ':where([data-ww-component-id="instance-layout"].ww-layout[data-ww-states~="active"]) > .ww-element[data-ww-layout-item]'
+        );
+
+        stop();
+    });
+
     it('replaces a runtime value with a clear rule and restores the value without stale declarations', async () => {
         const doc = new FakeDocument();
         Object.assign(wwLib, {

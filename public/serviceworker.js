@@ -1,4 +1,4 @@
-const version = 490;
+const version = 491;
 self.addEventListener('install', event => {
     // eslint-disable-next-line no-console
     console.log(`Service worker v${version} installed`);

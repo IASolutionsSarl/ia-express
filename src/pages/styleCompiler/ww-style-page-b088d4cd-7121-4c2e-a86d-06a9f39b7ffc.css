@@ -74,6 +74,73 @@
 @layer ww-style-element {
   @layer normal, custom;
   @layer normal {
+    .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d {
+      margin: 0;
+      padding: 0;
+      z-index: unset;
+      align-self: center;
+      display: flex;
+      width: 60%;
+      max-width: unset;
+      min-width: unset;
+      height: auto;
+      aspect-ratio: unset;
+      max-height: unset;
+      min-height: unset;
+      font-size: 18px;
+      font-family: var(--ww-default-font-family);
+      font-weight: 500;
+      color: var(--bd6a542c-8470-4a5d-b59f-0c45d3e4a36c,#6B46C1);
+      white-space-collapse: preserve;
+      cursor: pointer;
+      box-shadow: 0 2px 4px #0000001a;
+      transition: all 0.2s ease;
+      border: none;
+      border-radius: 8px;
+      --ww-element-transition: all 0.2s ease;
+    }
+    @media (max-width: 991px) {
+      .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d {
+        white-space-collapse: preserve;
+      }
+    }
+    @media (max-width: 767px) {
+      .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d {
+        white-space-collapse: preserve;
+      }
+    }
+    .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d:hover {
+      color: var(--fa0df1f0-674e-4725-b07b-fba23b45c9d6,#111827);
+      white-space-collapse: preserve;
+      background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
+      box-shadow: 0 4px 6px #0000001a;
+      transform: translateY(-1px);
+    }
+    @media (max-width: 991px) {
+      .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d:hover {
+        white-space-collapse: preserve;
+      }
+    }
+    @media (max-width: 767px) {
+      .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d:hover {
+        white-space-collapse: preserve;
+      }
+    }
+    .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d[data-ww-states~="H1pUBX"] {
+      color: var(--bd6a542c-8470-4a5d-b59f-0c45d3e4a36c,#6B46C1);
+      white-space-collapse: preserve;
+      background-color: var(--1de88585-9772-4695-85ed-dfd267fbcafe,#F3F4F6);
+    }
+    @media (max-width: 991px) {
+      .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d[data-ww-states~="H1pUBX"] {
+        white-space-collapse: preserve;
+      }
+    }
+    @media (max-width: 767px) {
+      .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d[data-ww-states~="H1pUBX"] {
+        white-space-collapse: preserve;
+      }
+    }
     .ww-element-82310353-3b7d-43b5-aa54-7e50551ea94e {
       margin: 0;
       padding: 30px 0 0;
@@ -3230,73 +3297,6 @@
     }
     .ww-element-4f7a5f39-266c-4846-89d7-8152f0b20c68[data-ww-states~="_wwChecked_wwHover"] {
       opacity: 0.9;
-    }
-    .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d {
-      margin: 0;
-      padding: 0;
-      z-index: unset;
-      align-self: center;
-      display: flex;
-      width: 60%;
-      max-width: unset;
-      min-width: unset;
-      height: auto;
-      aspect-ratio: unset;
-      max-height: unset;
-      min-height: unset;
-      font-size: 18px;
-      font-family: var(--ww-default-font-family);
-      font-weight: 500;
-      color: var(--bd6a542c-8470-4a5d-b59f-0c45d3e4a36c,#6B46C1);
-      white-space-collapse: preserve;
-      cursor: pointer;
-      box-shadow: 0 2px 4px #0000001a;
-      transition: all 0.2s ease;
-      border: none;
-      border-radius: 8px;
-      --ww-element-transition: all 0.2s ease;
-    }
-    @media (max-width: 991px) {
-      .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d {
-        white-space-collapse: preserve;
-      }
-    }
-    @media (max-width: 767px) {
-      .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d {
-        white-space-collapse: preserve;
-      }
-    }
-    .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d:hover {
-      color: var(--fa0df1f0-674e-4725-b07b-fba23b45c9d6,#111827);
-      white-space-collapse: preserve;
-      background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
-      box-shadow: 0 4px 6px #0000001a;
-      transform: translateY(-1px);
-    }
-    @media (max-width: 991px) {
-      .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d:hover {
-        white-space-collapse: preserve;
-      }
-    }
-    @media (max-width: 767px) {
-      .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d:hover {
-        white-space-collapse: preserve;
-      }
-    }
-    .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d[data-ww-states~="H1pUBX"] {
-      color: var(--bd6a542c-8470-4a5d-b59f-0c45d3e4a36c,#6B46C1);
-      white-space-collapse: preserve;
-      background-color: var(--1de88585-9772-4695-85ed-dfd267fbcafe,#F3F4F6);
-    }
-    @media (max-width: 991px) {
-      .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d[data-ww-states~="H1pUBX"] {
-        white-space-collapse: preserve;
-      }
-    }
-    @media (max-width: 767px) {
-      .ww-element-c88188ff-d4f7-4d18-9ea1-d2e0d0b2641d[data-ww-states~="H1pUBX"] {
-        white-space-collapse: preserve;
-      }
     }
   }
   @layer custom {

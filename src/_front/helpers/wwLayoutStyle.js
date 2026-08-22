@@ -1,13 +1,9 @@
-import { getDisplayValue } from '@/_common/helpers/component/component';
-
 /**
  * @deprecated Layout CSS is now rendered by the style compiler via the `.ww-layout` surface. This
- * helper (and `wwLib.wwElement.useLayoutStyle`) is kept only for backward compatibility with external
- * components; it has no internal callers anymore.
+ * helper is kept for `wwLib.wwElement.useLayoutStyle()` compatibility with external components whose
+ * root is not a compiler-owned `.ww-layout` surface.
  */
-export function getLayoutStyleFromContent(content, style, componentConfiguration, context) {
-    const display = getDisplayValue(style.display, componentConfiguration, context);
-
+export function getLayoutStyleFromContent(content, { display, textAlign }) {
     const layoutStyle = { display };
 
     if (display === true || display === 'flex' || display === 'inline-flex') {
@@ -57,7 +53,7 @@ export function getLayoutStyleFromContent(content, style, componentConfiguration
         if (tableBorderSpacing) layoutStyle.borderSpacing = tableBorderSpacing;
     } else if (display === 'block' || display === 'inline-block') {
         layoutStyle.height = '100%';
-        if (style.textAlign) layoutStyle.textAlign = style.textAlign;
+        if (textAlign) layoutStyle.textAlign = textAlign;
     }
 
     return layoutStyle;

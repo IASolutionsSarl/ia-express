@@ -79,6 +79,7 @@ export default {
         libraryComponentData: { type: Object, default: null },
         libraryComponentTriggerEvent: { type: Function, default: null },
         libraryComponentTriggerLibraryComponentEvent: { type: Function, default: null },
+        extraStyle: { type: Object, default: null },
      },
     // update:child-selected and update:is-selected are used by useElementSelection
     emits: ['element-event', 'update:child-selected', 'update:is-selected', 'add-state', 'remove-state'],
@@ -335,11 +336,11 @@ export default {
             STYLE
         \================================================================================================*/
         elementStyle() {
-            // Everything is rendered by the style compiler (CSS). The editor still layers an inline
-            // animation override for the canvas preview; the published build has no inline style at all.
+            // Authored styles are rendered by the compiler. `extraStyle` preserves the bounded legacy
+            // layout-item contract and must win over authored margins.
              /* wwFront:start */
             // eslint-disable-next-line no-unreachable
-            return {};
+            return this.extraStyle || {};
             /* wwFront:end */
         },
  

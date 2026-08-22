@@ -1,4 +1,3 @@
-import { getStyleBreakpointRangeMediaQuery } from './breakpoints';
 import {
     DEFAULT_DISPLAY_VALUES,
     getAllowedDisplayValues,
@@ -13,12 +12,9 @@ import {
     readStyleValue,
     shouldEmitDefaultDeclaration,
     type CompiledStyleDeclaration,
-    type CompiledStyleRuleTarget,
     type DeclarationScope,
 } from './declaration';
 import { getFlexDirection as getFlexDirectionCore } from './layout';
-import { LAYOUT_ITEM_SELECTOR } from './layoutContract';
-import { appendCssSelector, splitCssSelectorList, zeroCssSelectorSpecificity } from './selectors';
 import {
     createConditionalDynamicCssVariableReference,
     isDynamicCssVariableReference,
@@ -43,7 +39,6 @@ const LAYOUT_FLEX_CONTENT_PROPERTIES = [
     '_ww-layout_flexWrap',
     '_ww-layout_reverse',
 ];
-const LAYOUT_PUSH_LAST_CONTENT_PROPERTIES = ['_ww-layout_flexDirection', '_ww-layout_reverse', '_ww-layout_pushLast'];
 const LAYOUT_GRID_CONTENT_PROPERTIES = [
     '_ww-grid_flowDirection',
     '_ww-grid_columns',
@@ -52,11 +47,6 @@ const LAYOUT_GRID_CONTENT_PROPERTIES = [
     '_ww-grid_rowGap',
 ];
 const LAYOUT_TABLE_CONTENT_PROPERTIES = ['_ww-table_layout', '_ww-table_borderCollapse', '_ww-table_borderSpacing'];
-const LEGACY_FALSY_CONDITION_VALUE = '\u0000ww-falsy';
-const LEGACY_FALSY_CONDITION_NORMALIZER = {
-    type: 'falsy-fallback',
-    fallbackValue: LEGACY_FALSY_CONDITION_VALUE,
-} as const satisfies StyleCssValueNormalizer;
 const LEGACY_GRID_TRACK_LIST_NORMALIZER = {
     type: 'space-separated-list',
     fallbackValue: 'revert-layer',
@@ -101,70 +91,37 @@ export function createLayoutDeclarations(scope: DeclarationScope) {
         currentDisplay,
         effectiveDisplayResolution?.source
     );
-    const currentTextAlign = readStyleValue(scope, 'textAlign');
-    const effectiveTextAlignResolution =
-        currentTextAlign !== undefined
-            ? undefined
-            : readEffectiveStyleValueWithSourceFallbackResolution(scope, 'textAlign');
-    const textAlign = currentTextAlign !== undefined ? currentTextAlign : effectiveTextAlignResolution?.value;
-    const canUseBlockLayout = allowedDisplayValues.some(displayValue => getLayoutFamily(displayValue) === 'block');
-    const serializeBlockValues =
-        canUseBlockLayout &&
-        shouldEmitEffectiveBlockValues(
-            scope,
-            recomposeInheritedValues,
-            currentTextAlign,
-            effectiveTextAlignResolution?.source
-        );
     const compilation: LayoutCompilationContext = {
         currentDisplay,
-        textAlign,
         recomposeInheritedValues,
-        serializeBlockValues,
     };
-    const serializePushLastValues = !isRenderlessLibraryInstance(scope.source) || recomposeInheritedValues;
-    // Legacy wwLayout applied push-last to repeated items independently of the container's display
-    // family. Keep it outside the flex/grid/block switch so family changes can also clear it.
-    const pushLastDeclarations = createPushLastLayoutDeclarations(
-        scope,
-        readLayoutContentValues(scope, LAYOUT_PUSH_LAST_CONTENT_PROPERTIES),
-        serializePushLastValues
-    );
     const displayValue =
         display === undefined
             ? allowedDisplayValues[0] || DEFAULT_DISPLAY_VALUES[0]
             : getDisplayValue(display, allowedDisplayValues, restrictToAllowedValues);
 
-    if (displayValue === undefined) return pushLastDeclarations;
+    if (displayValue === undefined) return [];
     const layoutDisplayValue = getLayoutDisplayValue(displayValue, allowedDisplayValues, restrictToAllowedValues);
     if (layoutDisplayValue !== undefined) {
         return [
             createDeclaration(scope, 'display', displayValue),
             ...createLayoutFamilyDeclarations(scope, layoutDisplayValue, compilation),
-            ...pushLastDeclarations,
         ];
     }
 
     if (!isStyleDynamicVariableReference(displayValue) || !restrictToAllowedValues) {
-        return [
-            createDeclaration(scope, 'display', displayValue),
-            ...createBlockLayoutDeclarations(scope, false, undefined, serializeBlockValues),
-            ...pushLastDeclarations,
-        ];
+        return [createDeclaration(scope, 'display', displayValue)];
     }
 
     return [
         createDeclaration(scope, 'display', displayValue),
         ...createConditionalLayoutFamilyDeclarations(scope, displayValue, allowedDisplayValues, compilation),
-        ...pushLastDeclarations,
     ];
 }
 
 type LayoutCompilationContext = {
     currentDisplay: unknown;
-    textAlign: unknown;
     recomposeInheritedValues: boolean;
-    serializeBlockValues: boolean;
 };
 
 function createLayoutFamilyDeclarations(
@@ -172,17 +129,11 @@ function createLayoutFamilyDeclarations(
     layoutDisplayValue: string,
     compilation: LayoutCompilationContext
 ) {
-    const { currentDisplay, textAlign, recomposeInheritedValues, serializeBlockValues } = compilation;
+    const { currentDisplay, recomposeInheritedValues } = compilation;
     const contentValues = readLayoutContentValues(scope, getLayoutContentProperties(layoutDisplayValue));
-    const isBlockLayout = layoutDisplayValue === 'block' || layoutDisplayValue === 'inline-block';
     const hasCurrentInput = hasCurrentLayoutInput({ currentDisplay, contentValues });
     const isFlexLayout = layoutDisplayValue === 'flex' || layoutDisplayValue === 'inline-flex';
-    if (
-        !shouldEmitDefaultDeclaration(scope) &&
-        !hasCurrentInput &&
-        !recomposeInheritedValues &&
-        !serializeBlockValues
-    ) {
+    if (!shouldEmitDefaultDeclaration(scope) && !hasCurrentInput && !recomposeInheritedValues) {
         return [];
     }
 
@@ -195,8 +146,6 @@ function createLayoutFamilyDeclarations(
     } else if (layoutDisplayValue === 'table') {
         declarations.push(...createTableLayoutDeclarations(scope, contentValues, recomposeInheritedValues));
     }
-    declarations.push(...createBlockLayoutDeclarations(scope, isBlockLayout, textAlign, serializeBlockValues));
-
     return declarations;
 }
 
@@ -367,81 +316,6 @@ function shouldEmitEffectiveLayoutValues(
             !!effectiveDisplaySource &&
             effectiveDisplaySource.uid() === scope.source.uid())
     );
-}
-
-/**
- * Returns whether this slot must emit the legacy block-only declarations in the flat override layer.
- *
- * Normal elements emit a complete value for every exclusive responsive range so a value inherited
- * from a wider breakpoint cannot leak into a narrower one. Renderless instances stay sparse unless
- * they own either the effective display or text alignment; definition rules remain authoritative
- * otherwise and no duplicate instance override is needed.
- */
-function shouldEmitEffectiveBlockValues(
-    scope: DeclarationScope,
-    emitEffectiveLayoutValues: boolean,
-    currentTextAlign: unknown,
-    effectiveTextAlignSource?: StyleElementReader | StyleSectionReader
-) {
-    if (!isRenderlessLibraryInstance(scope.source)) return true;
-
-    return (
-        emitEffectiveLayoutValues ||
-        currentTextAlign !== undefined ||
-        (!!effectiveTextAlignSource && effectiveTextAlignSource.uid() === scope.source.uid())
-    );
-}
-
-/**
- * Emits and clears the properties owned only by the legacy block layout branch.
- *
- * These rules share the flat behavioral layer used by push-last. Zero specificity lets compiler
- * source order decide between definition, instance, state, and breakpoint slots, while
- * `revert-layer` reveals authored component CSS when the active display is no longer block.
- */
-function createBlockLayoutDeclarations(
-    scope: DeclarationScope,
-    isBlockLayout: boolean,
-    textAlign: unknown,
-    emitEffectiveValues: boolean
-) {
-    if (!isBlockLayout && !emitEffectiveValues) return [];
-
-    return [
-        createDeclaration(
-            scope,
-            'height',
-            isBlockLayout ? '100%' : 'revert-layer',
-            undefined,
-            createBlockLayoutRuleTarget(scope, 'height')
-        ),
-        createDeclaration(
-            scope,
-            'textAlign',
-            isBlockLayout ? getLegacyLayoutDeclarationValue(textAlign, textAlign !== undefined) : 'revert-layer',
-            undefined,
-            createBlockLayoutRuleTarget(scope, 'text-align')
-        ),
-    ];
-}
-
-function createBlockLayoutRuleTarget(
-    scope: DeclarationScope,
-    property: 'height' | 'text-align'
-): CompiledStyleRuleTarget {
-    const selectorParts = splitCssSelectorList(scope.selector);
-    const descendantLayoutSelectorParts =
-        property === 'height' && scope.surface.kind === 'element-layout'
-            ? selectorParts.filter(selector => selector.includes('[data-ww-layout-style-scopes~='))
-            : selectorParts;
-    const selector = descendantLayoutSelectorParts.length ? descendantLayoutSelectorParts.join(',\n') : scope.selector;
-
-    return {
-        keySuffix: `layout-block-only-${property}`,
-        selector: zeroCssSelectorSpecificity(selector),
-        layer: 'layout-override',
-        mediaQuery: getStyleBreakpointRangeMediaQuery(scope.breakpoint),
-    };
 }
 
 function readLayoutContentValues(scope: DeclarationScope, properties: readonly string[]) {
@@ -760,131 +634,8 @@ function createTableLayoutDeclarations(
     ];
 }
 
-function createPushLastLayoutDeclarations(
-    scope: DeclarationScope,
-    contentValues: LayoutContentValues,
-    emitEffectiveValues: boolean
-) {
-    const { current, effective } = contentValues;
-    const pushLast = effective['_ww-layout_pushLast'];
-    const currentPushLast = current['_ww-layout_pushLast'];
-    const hasCurrentPushLast = hasLayoutSlotValue(currentPushLast);
-    const hasCurrentDirection = hasLayoutSlotValue(current['_ww-layout_flexDirection']);
-    const hasCurrentReverse = hasLayoutSlotValue(current['_ww-layout_reverse']);
-
-    if (!hasLayoutSlotValue(pushLast)) return [];
-    if (!emitEffectiveValues && !hasCurrentPushLast && !hasCurrentDirection && !hasCurrentReverse) {
-        return [];
-    }
-
-    const flexDirection = effective['_ww-layout_flexDirection'];
-    const reverse = effective['_ww-layout_reverse'];
-    const axes = [
-        {
-            key: 'row',
-            property: 'marginLeft',
-            conditions: [whenExcluded(flexDirection, ['column'], LEGACY_NON_COLUMN_FLEX_DIRECTIONS)],
-        },
-        {
-            key: 'column',
-            property: 'marginTop',
-            conditions: [whenAllowed(flexDirection, ['column'])],
-        },
-    ] as const;
-    const positions = [
-        {
-            targetPosition: 'first-multiple',
-            outputPosition: 'first',
-            conditions: [whenTruthy(reverse)],
-        },
-        {
-            targetPosition: 'last-multiple',
-            outputPosition: 'last',
-            conditions: [whenAllowed(reverse, [LEGACY_FALSY_CONDITION_VALUE], LEGACY_FALSY_CONDITION_NORMALIZER)],
-        },
-        {
-            targetPosition: 'single',
-            outputPosition: 'single',
-            conditions: [],
-        },
-    ] as const;
-    const pushLastCondition = whenTruthy(pushLast);
-    const declarations: Array<CompiledStyleDeclaration | null> = [];
-
-    for (const axis of axes) {
-        for (const position of positions) {
-            const value = createConditionalLayoutValue(scope, '_ww-layout_pushLast', [
-                {
-                    outputKey: `${position.outputPosition}-${axis.key}-auto`,
-                    value: 'auto',
-                    conditions: [pushLastCondition, ...axis.conditions, ...position.conditions],
-                },
-                {
-                    outputKey: `${position.outputPosition}-${axis.key}-reset`,
-                    value: 'revert-layer',
-                    conditions: [],
-                },
-            ]);
-            declarations.push(
-                createDeclaration(
-                    scope,
-                    axis.property,
-                    value,
-                    undefined,
-                    createPushLastRuleTarget(scope, position.targetPosition)
-                )
-            );
-        }
-    }
-
-    return declarations;
-}
-
 function getLayoutContentValue(contentValues: LayoutContentValues, property: string, emitEffectiveValues: boolean) {
     return emitEffectiveValues ? contentValues.effective[property] : contentValues.current[property];
-}
-
-type PushLastRuleTargetPosition = 'first-multiple' | 'last-multiple' | 'single';
-
-function createPushLastRuleTarget(
-    scope: DeclarationScope,
-    position: PushLastRuleTargetPosition
-): CompiledStyleRuleTarget {
-    // Push-last definition, instance, state, and breakpoint rules deliberately share one flat
-    // override layer so `revert-layer` can reveal authored child margins. Remove the owner
-    // selector's specificity so their compiler-controlled source order remains the deciding factor.
-    const layoutOwnerSelector = zeroCssSelectorSpecificity(scope.selector);
-    const layoutItemSelector = LAYOUT_ITEM_SELECTOR;
-    const markedItemSelector = appendCssSelector(
-        layoutOwnerSelector,
-        ` > ${createPushLastItemSelector(position, layoutItemSelector)}`
-    );
-    const legacyLayoutItemSelector = '.ww-element:not(.ww-drag-placeholder)';
-    const legacyItemSelector = appendCssSelector(
-        layoutOwnerSelector,
-        `:not(:has(> ${layoutItemSelector})) > ${createPushLastItemSelector(position, legacyLayoutItemSelector)}`
-    );
-
-    return {
-        keySuffix: `layout-push-last-${position}`,
-        selector: `${markedItemSelector},\n${legacyItemSelector}`,
-        layer: 'layout-override',
-        mediaQuery: getStyleBreakpointRangeMediaQuery(scope.breakpoint),
-    };
-}
-
-function createPushLastItemSelector(position: PushLastRuleTargetPosition, itemSelector: string) {
-    const first = `:nth-child(1 of ${itemSelector})`;
-    const last = `:nth-last-child(1 of ${itemSelector})`;
-
-    switch (position) {
-        case 'first-multiple':
-            return `${first}:not(${last})`;
-        case 'last-multiple':
-            return `${last}:not(${first})`;
-        case 'single':
-            return `${first}${last}`;
-    }
 }
 
 function getFlexDirection(scope: DeclarationScope, flexDirection: unknown, isReversed: unknown) {

@@ -53,4 +53,12 @@ describe('style compiler layers', () => {
             /@layer ww-style-reset\s*\{[\s\S]*?\.ww-layout\s*\{[\s\S]*?pointer-events:\s*initial;/
         );
     });
+
+    it('keeps logical-item push-last out of generated and shared CSS', () => {
+        const commonCssPath = fileURLToPath(new URL('../../../assets/css/common.css', import.meta.url));
+        const commonCss = readFileSync(commonCssPath, 'utf8');
+
+        expect(commonCss).not.toContain('data-ww-layout-push-last');
+        expect(commonCss).not.toContain(':has(');
+    });
 });

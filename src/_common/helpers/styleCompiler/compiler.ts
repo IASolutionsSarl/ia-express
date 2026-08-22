@@ -59,7 +59,7 @@ import {
 } from './types';
 
 const ORDER_SENSITIVE_TARGET_GROUPS: readonly StyleRuleGroup[] = ['library'];
-const RENDERLESS_LAYOUT_STYLE_OVERRIDE_PROPERTIES = ['display', 'textAlign'] as const;
+const RENDERLESS_LAYOUT_STYLE_OVERRIDE_PROPERTIES = ['display'] as const;
 const STYLE_DECLARATION_LAYER_ORDER = ['normal', 'custom'] as const;
 type StyleDeclarationLayer = (typeof STYLE_DECLARATION_LAYER_ORDER)[number];
 type StyleRuleEmissionLayer = StyleDeclarationLayer | 'layout-override';

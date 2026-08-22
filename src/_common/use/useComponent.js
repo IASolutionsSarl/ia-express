@@ -3,10 +3,15 @@ import { computed, reactive, inject, provide, watch, ref, onMounted, onBeforeUnm
 
 import { getComponentConfiguration, getDisplayValue } from '@/_common/helpers/component/component.js';
 import { STYLE_CONFIGURATION, STATE_CONFIGURATION } from '@/_common/helpers/configuration/configurationCommon.js';
+import { inheritFrom } from '@/_common/helpers/configuration/configuration.js';
 import { getValue } from '@/_common/helpers/code/customCode.js';
 import { executeWorkflow } from '@/_common/helpers/code/workflows.js';
 import { getComponentRawProperty } from '@/_common/helpers/component/componentProperty.js';
-import { resolveLibraryComponentConditionalRendering } from '@/_common/helpers/component/libraryComponentRendering';
+import {
+    resolveLibraryComponentConditionalRendering,
+    resolveLibraryComponentLayoutValue,
+    resolveLibraryComponentRawLayoutValue,
+} from '@/_common/helpers/component/libraryComponentRendering';
 import { lazySet } from '@/_common/helpers/reactivity.js';
 import { usePopupStore } from '@/pinia/popup';
 
@@ -59,11 +64,10 @@ export function useComponentData({
     }
 
     // No per-style-prop loop here anymore: element CSS (incl. animation) is rendered by the compiler, and
-    // library style overrides go through its CSS cascade layers. `conditionalRendering` is the one non-CSS
-    // style prop that still needs a targeted JS instance→root override; it is resolved below and forwarded
-    // by wwLibraryComponent. STYLE_CONFIGURATION has no `editorOnly` style prop (audited editor + assets),
-    // so `sidepanelContent._state.style` is never populated. Editor-only STATE props (e.g. forceRendering)
-    // are still mirrored by the state loop below.
+    // library style overrides go through its CSS cascade layers. Conditional rendering and the two layout
+    // cleanup values are the targeted runtime exceptions forwarded by wwLibraryComponent. STYLE_CONFIGURATION
+    // has no `editorOnly` style prop (audited editor + assets), so `sidepanelContent._state.style` is never
+    // populated. Editor-only STATE props (e.g. forceRendering) are still mirrored by the state loop below.
     for (const propertyName in STATE_CONFIGURATION) {
         if (propertyName === 'interactions') {
             const rawProperty = computed(() => component.value?._state?.interactions);
@@ -122,12 +126,18 @@ export function useComponentData({
             libraryComponentDataRef,
          });
 
-    const resolveStyleProperty = suffix =>
-        getValue(resolveRawStyleProperty(suffix), context, {
-            defaultUndefined: STYLE_CONFIGURATION[suffix].fallbackToDefault
-                ? STYLE_CONFIGURATION[suffix].defaultValue
-                : STYLE_CONFIGURATION[suffix].defaultUndefined,
-        });
+    const resolveStyleProperty = suffix => {
+        const fallback = () =>
+            getValue(resolveRawStyleProperty(suffix), context, {
+                defaultUndefined: STYLE_CONFIGURATION[suffix].fallbackToDefault
+                    ? STYLE_CONFIGURATION[suffix].defaultValue
+                    : STYLE_CONFIGURATION[suffix].defaultUndefined,
+            });
+
+        if (suffix !== 'display' && suffix !== 'textAlign') return fallback();
+
+        return resolveLibraryComponentLayoutValue(libraryComponentDataRef?.value, suffix, fallback);
+    };
 
     // conditionalRendering drives `isRendering` (v-if) on FRONT + editor. Same resolution as the
     // navigator's eye icon. Library roots receive the instance's value through a dedicated rendering
@@ -158,12 +168,35 @@ export function useComponentData({
     isRendering = componentConditionalRendering;
     /* wwFront:end */
 
+    // Targeted resolved layout values for wwLayout. These stay outside the general runtime style
+    // object: only block cleanup and push-last require current-state runtime arbitration.
+    const resolveRawLayoutProperty = suffix =>
+        resolveLibraryComponentRawLayoutValue(libraryComponentDataRef?.value, suffix, () =>
+            resolveRawStyleProperty(suffix)
+        );
+    // Keep the front runtime contract lazy: the rendered layout's existing computed tracks these
+    // accessors, so components without a rendered layout allocate no additional computed refs.
+    const componentLayoutRuntime = {
+        inheritsLayout: !!inheritFrom(configuration, 'ww-layout'),
+        display: () => getDisplayValue(resolveStyleProperty('display'), configuration, { content, wwProps }),
+        textAlign: () => resolveStyleProperty('textAlign'),
+    };
+    if (type === 'libraryComponent') {
+        Object.assign(componentLayoutRuntime, {
+            rawDisplay: () => resolveRawLayoutProperty('display'),
+            displayValue: () => resolveStyleProperty('display'),
+            rawTextAlign: () => resolveRawLayoutProperty('textAlign'),
+        });
+    }
+
+ 
  
     if (type === 'libraryComponent') {
         // TODO ?
     } else {
         provide('componentContent', content);
         provide('componentState', state);
+        provide('componentLayoutRuntime', componentLayoutRuntime);
          provide('componentRawContent', rawContent);
         provide('componentData', component);
         provide('componentWwProps', wwProps);
@@ -174,6 +207,7 @@ export function useComponentData({
         isRendering,
         componentConditionalRendering,
         rawConditionalRendering,
+        componentLayoutRuntime,
          state,
         rawContent,
         rawState,

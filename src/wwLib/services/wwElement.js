@@ -1,5 +1,5 @@
 import { ref, inject, computed, unref, watch } from 'vue';
-// getLayoutStyleFromContent import removed (WW-3544): useLayoutStyle body neutralized (deprecated).
+import { useLegacyLayoutStyle } from '@/_front/helpers/wwLayoutRuntime';
 import { useRegisterElementLocalContext } from '@/_front/use/useElementLocalContext';
 import { getComponentLabel } from '@/_common/helpers/component/component.js';
 /* wwFront:start */
@@ -40,22 +40,7 @@ export default {
      * inline style. Kept only for backward compatibility with external components.
      */
     useLayoutStyle() {
-        // TEMP (WW-3544 migration check): flag any remaining caller of this deprecated helper. Layout
-        // is now rendered by the style compiler (.ww-layout surface). Remove once migration verified.
-        console.error(
-            '[WW-3544] wwLib.wwElement.useLayoutStyle() called — deprecated, layout is rendered by the style compiler (.ww-layout surface).'
-        );
-        // Body neutralized (WW-3544): `componentConfiguration` provide removed and layout is rendered
-        // by the compiler, so this no longer computes anything. Returns an empty style.
-        // const componentContent = inject('componentContent');
-        // const componentStyle = inject('componentStyle');
-        // const componentConfiguration = inject('componentConfiguration');
-        // const componentWwProps = inject('componentWwProps');
-        // const componentContext = { content: componentContent, wwProps: componentWwProps };
-        // return computed(() =>
-        //     getLayoutStyleFromContent(componentContent, componentStyle, componentConfiguration, componentContext)
-        // );
-        return computed(() => ({}));
+        return useLegacyLayoutStyle();
     },
 
     /**

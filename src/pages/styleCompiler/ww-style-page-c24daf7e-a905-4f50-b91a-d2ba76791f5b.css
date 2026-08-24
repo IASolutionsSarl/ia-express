@@ -194,16 +194,16 @@
         display: flex;
       }
     }
-    .ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover, .ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover {
+    .ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:where(:hover), .ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:where(:hover) {
       display: flex;
     }
     @media (max-width: 991px) {
-      .ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover, .ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover {
+      .ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:where(:hover), .ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:where(:hover) {
         display: flex;
       }
     }
     @media (max-width: 767px) {
-      .ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:hover, .ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:hover {
+      .ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80.ww-layout:where(:hover), .ww-element-a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80 [data-ww-layout-style-scopes~="a2d8aa1c-49cb-4ac0-86bc-522ee6cc1a80"]:where(:hover) {
         display: flex;
       }
     }
@@ -387,18 +387,18 @@
         white-space-collapse: preserve;
       }
     }
-    .ww-element-bc0bd18f-f362-4890-a644-ce474dc60b8d:hover {
+    .ww-element-bc0bd18f-f362-4890-a644-ce474dc60b8d:where(:hover) {
       color: var(--fa0df1f0-674e-4725-b07b-fba23b45c9d6,#111827);
       white-space-collapse: preserve;
       background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
     }
     @media (max-width: 991px) {
-      .ww-element-bc0bd18f-f362-4890-a644-ce474dc60b8d:hover {
+      .ww-element-bc0bd18f-f362-4890-a644-ce474dc60b8d:where(:hover) {
         white-space-collapse: preserve;
       }
     }
     @media (max-width: 767px) {
-      .ww-element-bc0bd18f-f362-4890-a644-ce474dc60b8d:hover {
+      .ww-element-bc0bd18f-f362-4890-a644-ce474dc60b8d:where(:hover) {
         white-space-collapse: preserve;
       }
     }

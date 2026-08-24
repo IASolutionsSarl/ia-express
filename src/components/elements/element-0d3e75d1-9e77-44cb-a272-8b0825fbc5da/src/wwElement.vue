@@ -191,9 +191,6 @@ export default {
         },
     },
     watch: {
-        textStyle() {
-            return wwLib.getTextStyleFromContent(this.content);
-        },
         async 'content.initialValue'(value) {
             this.init();
 

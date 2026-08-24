@@ -85,6 +85,7 @@ const UNITLESS_CSS_PROPERTIES = new Set([
 ]);
 
 const LEGACY_IMPORTANT_SUFFIX = /\s*!\s*important\s*$/i;
+const UNSAFE_RUNTIME_CSS_VALUE_CHARACTERS = /[\u0000-\u0008\u000b\u000e-\u001f{};]/;
 
 /**
  * Reproduces Vue's legacy inline-style handling without changing CSSOM setProperty semantics.
@@ -164,12 +165,13 @@ export function serializeRuntimeCssVariableValue(
 
 /**
  * Runtime variables are written into a shared custom-property rule, so keep declaration/rule
- * delimiters out of that transport before the browser CSSOM mutation occurs.
+ * delimiters out of that transport before the browser CSSOM mutation occurs. CSS whitespace
+ * (tab, line feed, form feed, and carriage return) remains valid inside declaration values.
  */
 function serializeRuntimeCssValue(value: unknown) {
     const cssValue = serializeCssValue(value);
     if (!cssValue) return undefined;
-    if (/[\u0000-\u001f{};]/.test(cssValue) || /<\/style/i.test(cssValue)) return undefined;
+    if (UNSAFE_RUNTIME_CSS_VALUE_CHARACTERS.test(cssValue) || /<\/style/i.test(cssValue)) return undefined;
     return cssValue;
 }
 

@@ -774,10 +774,7 @@ function resolveEffectiveRawStylePropertyWithFallback({
     resolveSource(source, slot);
     return result;
 
-    function resolveSource(
-        currentSource: StyleElementReader | StyleSectionReader,
-        currentSlot?: StyleSlotContext
-    ) {
+    function resolveSource(currentSource: StyleElementReader | StyleSectionReader, currentSlot?: StyleSlotContext) {
         const sourceUid = currentSource.uid();
         if (visitedSourceUids.has(sourceUid)) return;
 
@@ -1070,6 +1067,7 @@ export function createWhenAllEmptyDynamicCssVariableReference({
     property,
     outputKey,
     valueNormalizer,
+    omitWhenUndefined,
     state,
     breakpoint,
     value,
@@ -1089,6 +1087,7 @@ export function createWhenAllEmptyDynamicCssVariableReference({
         property,
         outputKey,
         valueNormalizer,
+        omitWhenUndefined,
         state,
         breakpoint,
         value,

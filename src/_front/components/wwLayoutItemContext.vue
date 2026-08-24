@@ -4,12 +4,13 @@
 
 <script>
 import { provide, inject, reactive, computed, toRef, ref } from 'vue';
-import { provideLayoutItemIndex } from '@/_front/use/useLayoutItemMarker';
+import { provideLayoutItemIndex, provideLayoutItemStyle } from '@/_front/use/useLayoutItemMarker';
 
 export default {
     props: {
         index: { type: Number, required: true },
         item: { type: [Object, null], default: null },
+        itemStyle: { type: Object, default: undefined },
         data: { type: undefined, default: null },
         isRepeat: { type: Boolean, default: false },
         repeatedItems: { type: [Array, null], default: null },
@@ -17,6 +18,7 @@ export default {
     setup(props) {
         const index = toRef(props, 'index');
         provideLayoutItemIndex(index);
+        provideLayoutItemStyle(toRef(props, 'itemStyle'));
 
  
         // Normally we are ok doing this here, as key for isRepeat and not repeat item or not the same

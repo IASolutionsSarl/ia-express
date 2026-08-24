@@ -191,7 +191,7 @@ export function createWidthElement(uid: string, width: string): TestSourceData {
 export function expectTargetChunkOrder(css: string, uid: string) {
     const baseIndex = css.indexOf(`.ww-element-${uid} {`);
     const tabletIndex = css.indexOf('@media (max-width: 991px)', baseIndex);
-    const hoverIndex = css.indexOf(`.ww-element-${uid}:hover {`);
+    const hoverIndex = css.indexOf(`.ww-element-${uid}:where(:hover) {`);
 
     expect(baseIndex).toBeGreaterThanOrEqual(0);
     expect(tabletIndex).toBeGreaterThan(baseIndex);

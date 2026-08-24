@@ -117,6 +117,42 @@ describe('styleCompilerRuntimeStyleSheet', () => {
         stopRegistration();
     });
 
+    it('mounts a multiline legacy gradient formula without clearing the authored background', async () => {
+        const doc = new FakeDocument();
+        Object.assign(wwLib, {
+            getFrontDocument: () => doc,
+            wwLog: { warn: vi.fn() },
+        });
+        const gradient = `linear-gradient(
+    212deg,
+    #015186 0%,
+    #039559 100%
+)`;
+        executeStyleFormula.mockReturnValue({ status: 'resolved', value: gradient });
+        const variable = createBackgroundGradientVariable();
+        const stopRegistration = registerStyleDynamicVariable(variable);
+        const scope = effectScope();
+        const element = {
+            nodeType: 1,
+            style: {},
+            getAttribute: () => 'instance-gradient',
+        } as unknown as HTMLElement;
+
+        scope.run(() => {
+            useStyleCompilerDynamicVariables({
+                sourceUid: 'gradient',
+                targets: { element: ref(element) },
+            });
+        });
+        await nextTick();
+
+        expect(getRuntimeDeclaration(doc, '--ww-style-background-gradient')).toBe(gradient);
+        expect(getGeneratedLayerDeclaration(doc, 'element', 'background')).toBe('');
+
+        scope.stop();
+        stopRegistration();
+    });
+
     it('switches an effective grid placement between its primary value, span fallback, and empty state', async () => {
         const doc = new FakeDocument();
         Object.assign(wwLib, {
@@ -893,6 +929,28 @@ function createBorderVariable(): StyleDynamicVariable {
         cssProperty: 'border',
         validationProperty: 'border',
         selector: '.ww-element-bordered',
+    };
+}
+
+function createBackgroundGradientVariable(): StyleDynamicVariable {
+    return {
+        name: '--ww-style-background-gradient',
+        surface: {
+            key: 'element:gradient',
+            group: 'element',
+            kind: 'element',
+            selector: '.ww-element-gradient',
+        },
+        group: 'element',
+        sourceUid: 'gradient',
+        domain: 'style',
+        property: 'backgroundGradient',
+        state: 'base',
+        breakpoint: 'default',
+        value: { __wwtype: 'js', code: 'return variables.gradient' },
+        cssProperty: 'background',
+        validationProperty: 'background',
+        selector: '.ww-element-gradient',
     };
 }
 

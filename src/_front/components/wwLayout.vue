@@ -19,6 +19,7 @@
                  <wwLayoutItemContext
                     :index="offset + index - 1"
                     :item="isBound ? internalList[0] : internalList[index - 1]"
+                    :item-style="getItemStyle(index - 1)"
                     :is-repeat="isBound"
                     :data="isBound && boundData ? boundData[offset + index - 1] : null"
                     :repeated-items="boundData"

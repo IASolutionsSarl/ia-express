@@ -44,7 +44,7 @@ import { useComponentStates } from '@/_front/use/useComponentStates';
 import { useComponentActions } from '@/_common/use/useActions';
 import { useElementLocalContext } from '@/_front/use/useElementLocalContext';
 import { useStyleCompilerDynamicVariables } from '@/_front/use/useStyleCompilerDynamicVariables';
-import { useLayoutItemAttribute, useLayoutItemIndex } from '@/_front/use/useLayoutItemMarker';
+import { consumeLayoutItemStyle, useLayoutItemAttribute, useLayoutItemIndex } from '@/_front/use/useLayoutItemMarker';
 import { LAYOUT_ITEM_ATTRIBUTE } from '@/_common/helpers/styleCompiler/layoutContract';
 import { createComponentId } from '@/_front/services/componentIds';
 import { getElementStyleResetClasses } from '@/_front/helpers/elementStyleReset';
@@ -90,6 +90,7 @@ export default {
         const wwLayoutContext = inject('wwLayoutContext', {});
         const wwLayoutIndex = useLayoutItemIndex();
         const wwLayoutItemAttribute = useLayoutItemAttribute(wwLayoutIndex);
+        const wwLayoutItemStyle = consumeLayoutItemStyle();
         const bindingContext = inject('bindingContext', null);
         const sectionId = inject('sectionId', null);
         const wwLibraryComponentUid_ = inject('wwLibraryComponentUid_', null);
@@ -281,6 +282,7 @@ export default {
             forcedStatesAttribute,
             wwLayoutIndex,
             wwLayoutItemAttribute,
+            wwLayoutItemStyle,
             LAYOUT_ITEM_ATTRIBUTE,
          };
     },
@@ -336,11 +338,12 @@ export default {
             STYLE
         \================================================================================================*/
         elementStyle() {
-            // Authored styles are rendered by the compiler. `extraStyle` preserves the bounded legacy
-            // layout-item contract and must win over authored margins.
+            // Authored styles are rendered by the compiler. The consumed layout-item style makes the
+            // runtime contract independent from slot forwarding; explicit extraStyle remains compatible
+            // with older/custom layout adapters and wins when both paths are present.
              /* wwFront:start */
             // eslint-disable-next-line no-unreachable
-            return this.extraStyle || {};
+            return { ...(this.wwLayoutItemStyle || {}), ...(this.extraStyle || {}) };
             /* wwFront:end */
         },
  

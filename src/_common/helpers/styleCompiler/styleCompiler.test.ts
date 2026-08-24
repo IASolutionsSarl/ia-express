@@ -23,6 +23,7 @@ import {
     createVueStyleCompilerTestRuntime,
     createWidthElement,
     expectTargetChunkOrder,
+    type TestSourceData,
 } from './styleCompiler.testUtils';
 
 describe('styleCompiler', () => {
@@ -441,6 +442,188 @@ describe('styleCompiler', () => {
         expect(run.result).toContain('width: var(--ww-section-root-auto-width, revert-layer);');
     });
 
+    function compileLibraryInstanceWidth({
+        direct = true,
+        styles,
+        sectionAlignItems = 'center',
+        dynamic = false,
+    }: {
+        direct?: boolean;
+        styles?: TestSourceData['styles'];
+        sectionAlignItems?: string;
+        dynamic?: boolean;
+    }) {
+        const variables: StyleDynamicVariable[] = [];
+        const stylesheet = dynamic
+            ? createDynamicVariableStringStyleSheetAdapter(variables)
+            : createStringStyleSheetAdapter();
+        const instance: TestSourceData = {
+            uid: 'libraryInstance',
+            libraryComponentBaseId: 'libraryA',
+            capabilities: { omitUndefinedDynamicValues: true },
+            emitDefaultDeclarations: false,
+            styles,
+            ...(direct
+                ? {
+                      parentRef: { uid: 'sectionA' },
+                      isDirectSectionChild: true,
+                  }
+                : {}),
+        };
+        const run = createStyleCompiler().compileStylesheet({
+            scope: {
+                elementUids: ['libraryInstance'],
+                sectionUids: direct ? ['sectionA'] : [],
+                libraryComponentIds: ['libraryA'],
+            },
+            reader: createReader({
+                elements: {
+                    libraryRoot: {
+                        uid: 'libraryRoot',
+                        styles: { base: { default: { width: '80%' } } },
+                    },
+                    libraryInstance: instance,
+                },
+                sections: direct
+                    ? {
+                          sectionA: {
+                              uid: 'sectionA',
+                              content: {
+                                  base: {
+                                      default: {
+                                          '_ww-layout_flexDirection': 'column',
+                                          '_ww-layout_alignItems': sectionAlignItems,
+                                      },
+                                  },
+                              },
+                          },
+                      }
+                    : {},
+                libraryComponents: {
+                    libraryA: { rootElementUid: 'libraryRoot' },
+                },
+            }),
+            stylesheet,
+            runtime: STATIC_STYLE_RUNTIME,
+        });
+
+        return {
+            run,
+            variables,
+            definitionRule: run.result.match(/\.ww-element-libraryRoot\s*\{[^}]*\}/)?.[0] || '',
+            instanceRule: run.result.match(/\.ww-element-libraryInstance\s*\{[^}]*\}/)?.[0] || '',
+        };
+    }
+
+    it('keeps an explicit auto width on a direct library component instance', () => {
+        const { definitionRule, instanceRule, run } = compileLibraryInstanceWidth({
+            styles: { base: { default: { width: 'auto' } } },
+        });
+
+        expect(definitionRule).toContain('width: 80%;');
+        expect(instanceRule).toContain('width: var(--ww-section-root-auto-width, auto);');
+        expect(instanceRule).not.toContain('revert-layer');
+
+        run.stop();
+    });
+
+    it('keeps legacy section sizing for an auto-width library component instance', () => {
+        const { instanceRule, run } = compileLibraryInstanceWidth({
+            sectionAlignItems: 'stretch',
+            styles: { base: { default: { width: 'auto' }, tablet: { align: 'flex-start' } } },
+        });
+        const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
+
+        expect(run.result).toContain('--ww-section-root-auto-width: 100%;');
+        expect(instanceRule).toContain('width: var(--ww-section-root-auto-width, auto);');
+        expect(tabletCss).toContain('align-self: flex-start;');
+        expect(tabletCss).toContain('width: auto;');
+
+        run.stop();
+    });
+
+    it.each([null, false, '', 0, 'auto'])('masks a nested library definition width with %j', width => {
+        const { instanceRule, run } = compileLibraryInstanceWidth({
+            direct: false,
+            styles: { base: { default: { width } } },
+        });
+
+        expect(instanceRule).toContain('width: auto;');
+
+        run.stop();
+    });
+
+    it('keeps a library definition width when its direct instance does not override width', () => {
+        const { definitionRule, instanceRule, run } = compileLibraryInstanceWidth({});
+
+        expect(definitionRule).toContain('width: 80%;');
+        expect(instanceRule).toContain('width: var(--ww-section-root-auto-width, revert-layer);');
+
+        run.stop();
+    });
+
+    it('keeps a bound nested library instance width distinct from an undefined override', () => {
+        const widthFormula = { __wwtype: 'f', code: 'variables.width' };
+        const { run, variables } = compileLibraryInstanceWidth({
+            direct: false,
+            dynamic: true,
+            styles: { base: { default: { width: widthFormula } } },
+        });
+        const widthVariable = variables.find(variable => variable.property === 'width');
+
+        expect(widthVariable).toEqual(
+            expect.objectContaining({
+                valueNormalizer: { type: 'component-size', fallbackValue: 'auto' },
+                omitWhenUndefined: true,
+            })
+        );
+
+        run.stop();
+    });
+
+    it('preserves library instance auto-width overrides across breakpoints and states', () => {
+        const { instanceRule, run } = compileLibraryInstanceWidth({
+            styles: {
+                base: { default: { width: '60%' }, tablet: { width: 'auto' } },
+                _wwHover: { default: { width: null } },
+            },
+        });
+        const tabletRule = run.result.match(
+            /@media \(max-width: 991px\)[\s\S]*?\.ww-element-libraryInstance\s*\{[^}]*\}/
+        )?.[0];
+        const hoverRule = run.result.match(/\.ww-element-libraryInstance:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
+
+        expect(instanceRule).toContain('width: 60%;');
+        expect(tabletRule).toContain('width: var(--ww-section-root-auto-width, auto);');
+        expect(hoverRule).toContain('width: var(--ww-section-root-auto-width, auto);');
+
+        run.stop();
+    });
+
+    it('uses the section fallback without revealing the definition for a bound direct instance width', () => {
+        const widthFormula = { __wwtype: 'f', code: 'variables.width' };
+        const { run, variables } = compileLibraryInstanceWidth({
+            dynamic: true,
+            sectionAlignItems: 'stretch',
+            styles: { base: { default: { width: widthFormula } } },
+        });
+        const widthVariable = variables.find(variable => variable.property === 'width');
+
+        expect(widthVariable).toEqual(
+            expect.objectContaining({
+                valueNormalizer: { type: 'component-size' },
+                omitWhenUndefined: true,
+                runtimeFallback: {
+                    type: 'when-all-empty',
+                    dependencies: [],
+                    value: 'var(--ww-section-root-auto-width, auto)',
+                },
+            })
+        );
+
+        run.stop();
+    });
+
     it('keeps auto-by-content section roots content-sized', () => {
         const stylesheet = createStringStyleSheetAdapter();
         const reader = createReader({
@@ -663,7 +846,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const hoverCss = run.result.slice(run.result.indexOf('.ww-element-root:hover'));
+        const hoverCss = run.result.slice(run.result.indexOf('.ww-element-root:where(:hover)'));
 
         expect(hoverCss).toContain('align-self: var(--ww-section-root-auto-align, unset);');
     });
@@ -806,7 +989,9 @@ describe('styleCompiler', () => {
             reader,
             stylesheet,
         });
-        const hoverCss = run.result.slice(run.result.indexOf('.ww-section-sectionA > .ww-section-element:hover'));
+        const hoverCss = run.result.slice(
+            run.result.indexOf('.ww-section-sectionA > .ww-section-element:where(:hover)')
+        );
 
         expect(hoverCss).toContain('--ww-section-root-auto-align: initial;');
         expect(hoverCss).toContain('--ww-section-root-auto-width: initial;');
@@ -993,7 +1178,7 @@ describe('styleCompiler', () => {
         expect(run.result).not.toContain('  placeholder-color: #ff00aa;');
         expect(run.result).toContain('@media (max-width: 991px)');
         expect(run.result).toContain('width: 80px;');
-        expect(run.result).toContain('.element-a:hover');
+        expect(run.result).toContain('.element-a:where(:hover)');
         expect(run.result).not.toContain('[data-ww-states~="_wwHover"]');
     });
 
@@ -1120,7 +1305,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const hoverRule = run.result.match(/\.ww-element-animated:hover\s*\{[^}]*\}/)?.[0] || '';
+        const hoverRule = run.result.match(/\.ww-element-animated:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
 
         expect(hoverRule).toContain('animation-iteration-count: infinite;');
     });
@@ -1465,7 +1650,8 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const errorRule = run.result.match(/\.ww-element-elementA\[data-ww-states~="error"\]\s*\{[^}]*\}/)?.[0] || '';
+        const errorRule =
+            run.result.match(/\.ww-element-elementA:where\(\[data-ww-states~="error"\]\)\s*\{[^}]*\}/)?.[0] || '';
 
         expect(errorRule).toContain('border: 1px solid red;');
         expect(errorRule).toContain('border-left: 0px;');
@@ -1611,7 +1797,8 @@ describe('styleCompiler', () => {
             stylesheet: createStringStyleSheetAdapter(),
         });
         const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
-        const hoverRule = run.result.match(/\.ww-section-sectionA > \.ww-section-element:hover\s*\{[^}]*\}/)?.[0] || '';
+        const hoverRule =
+            run.result.match(/\.ww-section-sectionA > \.ww-section-element:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
 
         expect(tabletCss).toContain('width: 100%;');
         expect(hoverRule).toContain('width: 100%;');
@@ -2052,7 +2239,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet,
         });
-        const hoverRule = run.result.match(/\.ww-element-elementA:hover\s*\{[^}]*\}/)?.[0] || '';
+        const hoverRule = run.result.match(/\.ww-element-elementA:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
 
         expect(hoverRule).toContain('opacity: 0.5;');
         expect(run.result).not.toContain('ww-style-class');
@@ -2625,6 +2812,79 @@ describe('styleCompiler', () => {
         expect(plainRule).not.toContain('--ww-element-transition: color 240ms ease;');
     });
 
+    it('preserves explicit responsive and state style clears from the legacy renderer', () => {
+        const run = createStyleCompiler().compileStylesheet({
+            scope: {
+                elementUids: ['textElement'],
+                sectionUids: [],
+                libraryComponentIds: [],
+            },
+            reader: createReader({
+                elements: {
+                    textElement: {
+                        uid: 'textElement',
+                        stateNames: ['_wwHover'],
+                        capabilities: { inherits: ['ww-text'] },
+                        styles: {
+                            base: {
+                                default: {
+                                    boxShadow: '4px 4px 8px #0008',
+                                    transition: 'all 200ms ease',
+                                },
+                                mobile: {
+                                    boxShadow: null,
+                                    transition: '',
+                                },
+                            },
+                            _wwHover: {
+                                default: {
+                                    boxShadow: null,
+                                    transition: null,
+                                },
+                            },
+                        },
+                        content: {
+                            base: {
+                                default: {
+                                    '_ww-text_textTransform': 'uppercase',
+                                    '_ww-text_textShadow': '3px 3px 5px #000',
+                                },
+                                mobile: {
+                                    '_ww-text_textTransform': null,
+                                    '_ww-text_textShadow': '',
+                                },
+                            },
+                            _wwHover: {
+                                default: {
+                                    '_ww-text_textTransform': null,
+                                    '_ww-text_textShadow': null,
+                                },
+                            },
+                        },
+                    },
+                },
+            }),
+            stylesheet: createStringStyleSheetAdapter(),
+        });
+        const baseRule = run.result.match(/\.ww-element-textElement\s*\{[^}]*\}/)?.[0] || '';
+        const mobileCss = run.result.slice(run.result.indexOf('@media (max-width: 767px)'));
+        const mobileRule = mobileCss.match(/\.ww-element-textElement\s*\{[^}]*\}/)?.[0] || '';
+        const hoverRule = run.result.match(/\.ww-element-textElement:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
+
+        expect(baseRule).toContain('box-shadow: 4px 4px 8px #0008;');
+        expect(baseRule).toContain('transition: all 200ms ease;');
+        expect(baseRule).toContain('text-transform: uppercase;');
+        expect(baseRule).toContain('text-shadow: 3px 3px 5px #000;');
+        expect(mobileRule).toContain('box-shadow: revert-layer;');
+        expect(mobileRule).toContain('transition: revert-layer;');
+        expect(mobileRule).toContain('text-transform: revert-layer;');
+        expect(mobileRule).toContain('text-shadow: revert-layer;');
+        expect(hoverRule).toContain('box-shadow: revert-layer;');
+        expect(hoverRule).toContain('transition: revert-layer;');
+        expect(hoverRule).toContain('text-transform: revert-layer;');
+        expect(hoverRule).toContain('text-shadow: revert-layer;');
+    });
+
     it('emits the legacy default font family only when no text font owns the base slot', () => {
         const run = createStyleCompiler().compileStylesheet({
             scope: {
@@ -2723,7 +2983,9 @@ describe('styleCompiler', () => {
         });
         const baseRule = run.result.match(/\.ww-element-textElement\s*\{[^}]*\}/)?.[0] || '';
         const activeRule =
-            run.result.match(/\.ww-element-textElement\[data-ww-states~="_wwLinkActive"\]\s*\{[^}]*\}/)?.[0] || '';
+            run.result.match(
+                /\.ww-element-textElement:where\(\[data-ww-states~="_wwLinkActive"\]\)\s*\{[^}]*\}/
+            )?.[0] || '';
 
         expect(baseRule).toContain("font: 400 14px/20px 'Inter', sans-serif;");
         expect(baseRule).toContain('font-size: 16px;');
@@ -3030,8 +3292,8 @@ describe('styleCompiler', () => {
             stylesheet,
         });
 
-        expect(run.result).toContain('.scoped-parent:hover .ww-element-child');
-        expect(run.result).not.toContain('.scoped-parent[data-ww-states~="_wwHover"] .ww-element-child');
+        expect(run.result).toContain(':where(.scoped-parent:hover) .ww-element-child');
+        expect(run.result).not.toContain(':where(.scoped-parent[data-ww-states~="_wwHover"]) .ww-element-child');
         expect(run.result).toContain('opacity: 0.5;');
     });
 
@@ -3071,8 +3333,8 @@ describe('styleCompiler', () => {
             mode: 'editor',
         });
 
-        expect(run.result).toContain(':where(#app.-ww-preview) .scoped-parent:hover .ww-element-child');
-        expect(run.result).toContain('.scoped-parent[data-ww-forced-states~="_wwHover"] .ww-element-child');
+        expect(run.result).toContain(':where(#app.-ww-preview) :where(.scoped-parent:hover) .ww-element-child');
+        expect(run.result).toContain(':where(.scoped-parent[data-ww-forced-states~="_wwHover"]) .ww-element-child');
         expect(run.result).toContain('opacity: 0.5;');
     });
 
@@ -3113,10 +3375,14 @@ describe('styleCompiler', () => {
             mode: 'editor',
         });
 
-        expect(run.result).toContain(':where(#app.-ww-preview) .scoped-parent:focus-within .ww-element-child');
-        expect(run.result).toContain(':where(#app.-ww-preview) .scoped-parent:has(input:focus) .ww-element-child');
-        expect(run.result).toContain('.scoped-parent[data-ww-states~="stored-focus-id"] .ww-element-child');
-        expect(run.result).toContain('.scoped-parent[data-ww-forced-states~="stored-focus-id"] .ww-element-child');
+        expect(run.result).toContain(':where(#app.-ww-preview) :where(.scoped-parent:focus-within) .ww-element-child');
+        expect(run.result).toContain(
+            ':where(#app.-ww-preview) :where(.scoped-parent:has(input:focus)) .ww-element-child'
+        );
+        expect(run.result).toContain(':where(.scoped-parent[data-ww-states~="stored-focus-id"]) .ww-element-child');
+        expect(run.result).toContain(
+            ':where(.scoped-parent[data-ww-forced-states~="stored-focus-id"]) .ww-element-child'
+        );
         expect(run.result).toContain('opacity: 0.5;');
     });
 
@@ -3157,9 +3423,59 @@ describe('styleCompiler', () => {
         });
 
         expect(run.result).toMatch(
-            /\.scoped-parent\[data-ww-states~="open"\] \.ww-element-child,\n\s*\.scoped-parent\[data-ww-forced-states~="open"\] \.ww-element-child/
+            /:where\(\.scoped-parent\[data-ww-states~="open"\]\) \.ww-element-child,\n\s*:where\(\.scoped-parent\[data-ww-forced-states~="open"\]\) \.ww-element-child/
         );
         expect(run.result).toContain('opacity: 0.5;');
+    });
+
+    it('preserves configured state order across parent and local state selectors', () => {
+        const run = createStyleCompiler().compileStylesheet({
+            scope: {
+                elementUids: ['child'],
+                sectionUids: [],
+                libraryComponentIds: [],
+            },
+            reader: createReader({
+                elements: {
+                    child: {
+                        uid: 'child',
+                        parentRef: { uid: 'parent', selector: '.scoped-parent' },
+                        states: [
+                            {
+                                id: '_wwParent_parent_open',
+                                parent: {
+                                    uid: 'parent',
+                                    stateId: 'open',
+                                },
+                            },
+                            {
+                                id: 'stored-focus-id',
+                                selectors: ['&:focus-within'],
+                            },
+                        ],
+                        styles: {
+                            _wwParent_parent_open: {
+                                default: {
+                                    opacity: '0.5',
+                                },
+                            },
+                            'stored-focus-id': {
+                                default: {
+                                    opacity: '1',
+                                },
+                            },
+                        },
+                    },
+                },
+            }),
+            stylesheet: createStringStyleSheetAdapter(),
+        });
+        const parentStateSelector = ':where(.scoped-parent[data-ww-states~="open"]) .ww-element-child';
+        const focusStateSelector = '.ww-element-child:where(:focus-within)';
+
+        expect(run.result).toContain(parentStateSelector);
+        expect(run.result).toContain(focusStateSelector);
+        expect(run.result.indexOf(parentStateSelector)).toBeLessThan(run.result.indexOf(focusStateSelector));
     });
 
     it('lets CSS cascade handle inherited state and breakpoint values for normal declarations', () => {
@@ -3197,7 +3513,7 @@ describe('styleCompiler', () => {
             stylesheet,
         });
         const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
-        const hoverRule = run.result.match(/\.ww-element-elementA:hover\s*\{[^}]*\}/)?.[0] || '';
+        const hoverRule = run.result.match(/\.ww-element-elementA:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
 
         expect(run.result).toContain('width: 100px;');
         expect(tabletCss).toContain('width: 80px;');
@@ -3690,11 +4006,11 @@ describe('styleCompiler', () => {
             mode: 'editor',
         });
 
-        expect(run.result).toContain('.element-a[data-ww-states~="_wwLinkActive"]');
-        expect(run.result).toContain('.element-a[data-ww-forced-states~="_wwLinkActive"]');
-        expect(run.result).toContain(':where(#app.-ww-preview) .element-a:hover');
-        expect(run.result).toContain('.element-a[data-ww-forced-states~="_wwHover"]');
-        expect(run.result).not.toContain('.element-a[data-ww-states~="_wwHover"]');
+        expect(run.result).toContain('.element-a:where([data-ww-states~="_wwLinkActive"])');
+        expect(run.result).toContain('.element-a:where([data-ww-forced-states~="_wwLinkActive"])');
+        expect(run.result).toContain(':where(#app.-ww-preview) .element-a:where(:hover)');
+        expect(run.result).toContain('.element-a:where([data-ww-forced-states~="_wwHover"])');
+        expect(run.result).not.toContain('.element-a:where([data-ww-states~="_wwHover"])');
     });
 
     it('uses configured state selectors while preserving persisted state ids', () => {
@@ -3731,11 +4047,60 @@ describe('styleCompiler', () => {
             mode: 'editor',
         });
 
-        expect(run.result).toContain(':where(#app.-ww-preview) .element-a:focus-within');
-        expect(run.result).toContain(':where(#app.-ww-preview) .element-a:has(input:focus)');
-        expect(run.result).toContain('.element-a[data-ww-states~="stored-focus-id"]');
-        expect(run.result).toContain('.element-a[data-ww-forced-states~="stored-focus-id"]');
+        expect(run.result).toContain(':where(#app.-ww-preview) .element-a:where(:focus-within)');
+        expect(run.result).toContain(':where(#app.-ww-preview) .element-a:where(:has(input:focus))');
+        expect(run.result).toContain('.element-a:where([data-ww-states~="stored-focus-id"])');
+        expect(run.result).toContain('.element-a:where([data-ww-forced-states~="stored-focus-id"])');
         expect(run.result).toContain('opacity: 0.5;');
+    });
+
+    it('preserves configured selectors that target descendants or pseudo-elements', () => {
+        const run = createStyleCompiler().compileStylesheet({
+            scope: {
+                elementUids: ['elementA'],
+                sectionUids: [],
+                libraryComponentIds: [],
+            },
+            reader: createReader({
+                elements: {
+                    elementA: {
+                        uid: 'elementA',
+                        selector: '.element-a',
+                        states: [
+                            {
+                                id: 'stored-target-id',
+                                selectors: [
+                                    '& > input',
+                                    '&:hover > input',
+                                    '&::placeholder',
+                                    '.form &',
+                                    '& + &',
+                                    '&:has(input > .field)',
+                                ],
+                            },
+                        ],
+                        styles: {
+                            'stored-target-id': {
+                                default: {
+                                    opacity: '0.5',
+                                },
+                            },
+                        },
+                    },
+                },
+            }),
+            stylesheet: createStringStyleSheetAdapter(),
+        });
+
+        expect(run.result).toContain('.element-a > input');
+        expect(run.result).toContain('.element-a:hover > input');
+        expect(run.result).toContain('.element-a::placeholder');
+        expect(run.result).toContain('.element-a:where(.form .element-a)');
+        expect(run.result).toContain('.element-a:where(.element-a + .element-a)');
+        expect(run.result).toContain('.element-a:where(:has(input > .field))');
+        expect(run.result).not.toContain('.element-a:where( > input)');
+        expect(run.result).not.toContain('.element-a:where(:hover > input)');
+        expect(run.result).not.toContain('.element-a:where(::placeholder)');
     });
 
     it('uses configured selectors or formula-driven runtime states', () => {
@@ -3764,8 +4129,8 @@ describe('styleCompiler', () => {
             stylesheet: createStringStyleSheetAdapter(),
         });
 
-        expect(run.result).toContain('.element-a:active');
-        expect(run.result).toContain('.element-a[data-ww-states~="stored-active-id"]');
+        expect(run.result).toContain('.element-a:where(:active)');
+        expect(run.result).toContain('.element-a:where([data-ww-states~="stored-active-id"])');
         expect(run.result).toContain('opacity: 0.5;');
     });
 
@@ -3795,8 +4160,8 @@ describe('styleCompiler', () => {
             stylesheet: createStringStyleSheetAdapter(),
         });
 
-        expect(run.result).toContain('.element-a:active');
-        expect(run.result).not.toContain('.element-a[data-ww-states~="_wwActive"]');
+        expect(run.result).toContain('.element-a:where(:active)');
+        expect(run.result).not.toContain('.element-a:where([data-ww-states~="_wwActive"])');
         expect(run.result).toContain('opacity: 0.5;');
     });
 
@@ -3833,11 +4198,11 @@ describe('styleCompiler', () => {
             mode: 'editor',
         });
 
-        expect(run.result).toContain('.element-a:disabled');
-        expect(run.result).toContain('.element-a[aria-selected="true"]');
-        expect(run.result).not.toContain(':where(#app.-ww-preview) .element-a:disabled');
-        expect(run.result).not.toContain(':where(#app.-ww-preview) .element-a[aria-selected="true"]');
-        expect(run.result).toContain('.element-a[data-ww-forced-states~="stored-structural-id"]');
+        expect(run.result).toContain('.element-a:where(:disabled)');
+        expect(run.result).toContain('.element-a:where([aria-selected="true"])');
+        expect(run.result).not.toContain(':where(#app.-ww-preview) .element-a:where(:disabled)');
+        expect(run.result).not.toContain(':where(#app.-ww-preview) .element-a:where([aria-selected="true"])');
+        expect(run.result).toContain('.element-a:where([data-ww-forced-states~="stored-structural-id"])');
     });
 
     it('gates transient and structural selector alternatives independently', () => {
@@ -3867,9 +4232,9 @@ describe('styleCompiler', () => {
             mode: 'editor',
         });
 
-        expect(run.result).toContain(':where(#app.-ww-preview) .element-a:focus');
-        expect(run.result).toContain('.element-a:disabled');
-        expect(run.result).not.toContain(':where(#app.-ww-preview) .element-a:disabled');
+        expect(run.result).toContain(':where(#app.-ww-preview) .element-a:where(:focus)');
+        expect(run.result).toContain('.element-a:where(:disabled)');
+        expect(run.result).not.toContain(':where(#app.-ww-preview) .element-a:where(:disabled)');
     });
 
     it('keeps plain component states as runtime states unless they define selectors', () => {
@@ -3899,7 +4264,7 @@ describe('styleCompiler', () => {
             stylesheet,
         });
 
-        expect(run.result).toContain('.element-a[data-ww-states~="active"]');
+        expect(run.result).toContain('.element-a:where([data-ww-states~="active"])');
         expect(run.result).not.toContain('.element-a:active');
     });
 
@@ -4936,7 +5301,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const hoverRule = run.result.match(/\.ww-element-elementA:hover\s*\{[^}]*\}/)?.[0] || '';
+        const hoverRule = run.result.match(/\.ww-element-elementA:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
 
         expect(hoverRule).toContain('color: blue !important;');
         expect(hoverRule).toContain('overflow: revert-layer;');
@@ -5400,7 +5765,7 @@ describe('styleCompiler', () => {
             stylesheet: createStringStyleSheetAdapter(),
         });
         const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
-        const hoverRule = run.result.match(/\.ww-element-elementA:hover\s*\{[^}]*\}/)?.[0] || '';
+        const hoverRule = run.result.match(/\.ww-element-elementA:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
 
         expect(tabletCss).toContain(
             "background: url('tablet.png') center center / cover no-repeat scroll, var(--ww-style-background-color, #FB1818);"
@@ -5575,6 +5940,24 @@ describe('styleCompiler', () => {
         expect(serializeRuntimeCssVariableValue('opacity', 0.5)).toBe('0.5');
         expect(serializeRuntimeCssVariableValue('z-index', 10)).toBe('10');
         expect(serializeRuntimeCssVariableValue('--placeholder-color', 200)).toBe('200');
+    });
+
+    it('preserves CSS whitespace in multiline runtime formula values', () => {
+        const multilineGradient = `linear-gradient(
+    212deg,
+    #015186 0%,
+    #039559 100%
+)`;
+
+        expect(serializeRuntimeCssVariableValue('background', multilineGradient)).toBe(multilineGradient);
+    });
+
+    it('rejects runtime CSS declaration and rule delimiters', () => {
+        const unsafeValues = ['red; color: blue', 'red}', '</style><style>body{color:red}', 'red\u0000blue'];
+
+        for (const value of unsafeValues) {
+            expect(serializeRuntimeCssVariableValue('background', value)).toBeUndefined();
+        }
     });
 
     it('separates legacy important priorities only for standard CSS properties', () => {
@@ -5859,7 +6242,7 @@ describe('styleCompiler', () => {
                 }),
                 expect.objectContaining({
                     name: '--ww-style-width',
-                    selector: '.ww-element-elementA:hover',
+                    selector: '.ww-element-elementA:where(:hover)',
                     state: '_wwHover',
                     cssProperty: 'width',
                 }),

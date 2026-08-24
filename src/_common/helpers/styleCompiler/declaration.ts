@@ -64,6 +64,27 @@ export function createDeclaration(
     return { property, value: declarationValue, isDefault, rule };
 }
 
+/**
+ * Creates a declaration from one persisted state and breakpoint slot.
+ *
+ * The legacy inline renderer treated `null` and an empty string as explicit values: they removed
+ * the current inline declaration instead of inheriting the broader WeWeb slot. CSS keeps broader
+ * state and breakpoint rules in the cascade, so non-base slots need an explicit layer reset to
+ * preserve that removal. A clear in the base/default slot remains transparent to lower layers.
+ */
+export function createAuthoredStyleDeclaration(
+    scope: DeclarationScope,
+    property: string,
+    value: unknown,
+    defaultValue?: unknown,
+    rule?: CompiledStyleRuleTarget
+) {
+    const isExplicitClear = value === null || value === '';
+    const needsCascadeReset = isExplicitClear && (scope.state !== 'base' || scope.breakpoint !== 'default');
+
+    return createDeclaration(scope, property, needsCascadeReset ? 'revert-layer' : value, defaultValue, rule);
+}
+
 export function shouldEmitDefaultDeclaration(scope: DeclarationScope) {
     return scope.emitDefaultDeclarations && scope.state === 'base' && scope.breakpoint === 'default';
 }

@@ -91,7 +91,10 @@ export function getStateRuleSelectors({
     surface: StyleSurface;
     source: StyleElementReader | StyleSectionReader;
     mode?: StyleCompilerMode;
-}): { selector?: string; diagnostics: StyleDiagnostic[] } {
+}): {
+    selector?: string;
+    diagnostics: StyleDiagnostic[];
+} {
     const parentState = state.parent;
     const includeForcedStateSelectors = mode === 'editor';
     const selectors: string[] = [];
@@ -153,7 +156,7 @@ export function getStateRuleSelectors({
                     splitCssSelectorList(selector).map(selectorPart =>
                         gatePreviewOnlySelectorInEditor(
                             mapSelectorList(surface.selector, surfaceSelectorPart =>
-                                selectorPart.replaceAll('&', surfaceSelectorPart)
+                                applyConfiguredStateSelector(surfaceSelectorPart, selectorPart)
                             ),
                             selectorPart,
                             mode
@@ -217,7 +220,7 @@ function gatePreviewOnlySelectorInEditor(selector: string, configuredSelector: s
  * Appends a native pseudo class to a surface selector.
  */
 function appendPseudoClass(selector: string, pseudoClass: string) {
-    return mapSelectorList(selector, selectorPart => `${selectorPart}${pseudoClass}`);
+    return mapSelectorList(selector, selectorPart => `${selectorPart}:where(${pseudoClass})`);
 }
 
 /**
@@ -227,7 +230,7 @@ function prependParentPseudoClass(selector: string, parentSelector: string, pseu
     return combineParentAndChildSelectors(
         selector,
         parentSelector,
-        parentSelectorPart => `${parentSelectorPart}${pseudoClass}`
+        parentSelectorPart => `:where(${parentSelectorPart}${pseudoClass})`
     );
 }
 
@@ -235,7 +238,11 @@ function prependParentPseudoClass(selector: string, parentSelector: string, pseu
  * Creates a parent-state selector such as `.parent:focus-within .child`.
  */
 function prependParentSelector(selector: string, parentSelector: string) {
-    return combineParentAndChildSelectors(selector, parentSelector);
+    return combineParentAndChildSelectors(
+        selector,
+        parentSelector,
+        parentSelectorPart => `:where(${parentSelectorPart})`
+    );
 }
 
 /**
@@ -251,7 +258,7 @@ function prependParentStateAttribute(
     return combineParentAndChildSelectors(
         selector,
         parentSelector,
-        parentSelectorPart => `${parentSelectorPart}${attributeSelector}`
+        parentSelectorPart => `:where(${parentSelectorPart}${attributeSelector})`
     );
 }
 
@@ -260,7 +267,7 @@ function prependParentStateAttribute(
  */
 function appendStateAttribute(selector: string, state: string) {
     const attributeSelector = createStateAttributeSelector('data-ww-states', state);
-    return mapSelectorList(selector, selectorPart => `${selectorPart}${attributeSelector}`);
+    return mapSelectorList(selector, selectorPart => `${selectorPart}:where(${attributeSelector})`);
 }
 
 /**
@@ -268,7 +275,89 @@ function appendStateAttribute(selector: string, state: string) {
  */
 function appendForcedStateAttribute(selector: string, state: string) {
     const attributeSelector = createStateAttributeSelector('data-ww-forced-states', state);
-    return mapSelectorList(selector, selectorPart => `${selectorPart}${attributeSelector}`);
+    return mapSelectorList(selector, selectorPart => `${selectorPart}:where(${attributeSelector})`);
+}
+
+/**
+ * Applies a component-configured selector without increasing the rendered surface specificity.
+ *
+ * Configured selectors normally append a condition to `&`, such as `&:focus-within`. The fallback
+ * keeps ancestor forms such as `.form &` working while still neutralizing their extra specificity.
+ */
+function applyConfiguredStateSelector(surfaceSelector: string, configuredSelector: string) {
+    const firstAmpersand = configuredSelector.indexOf('&');
+    const hasOneLeadingAmpersand = firstAmpersand === 0 && configuredSelector.indexOf('&', 1) === -1;
+    const targetsSurface = configuredSelectorTargetsSurface(configuredSelector);
+    if (hasOneLeadingAmpersand && targetsSurface) {
+        const condition = configuredSelector.slice(1);
+        return condition ? `${surfaceSelector}:where(${condition})` : surfaceSelector;
+    }
+
+    const replacedSelector = configuredSelector.replaceAll('&', surfaceSelector);
+    if (!targetsSurface) return replacedSelector;
+
+    return `${surfaceSelector}:where(${replacedSelector})`;
+}
+
+/**
+ * Returns whether the configured selector still targets the surface represented by its last `&`.
+ *
+ * A top-level combinator or pseudo-element after the last `&` changes the target. Those selectors
+ * must keep their legacy replacement form because nesting them in `:where()` would be invalid or
+ * would apply declarations to a different element.
+ */
+function configuredSelectorTargetsSurface(configuredSelector: string) {
+    const lastAmpersand = configuredSelector.lastIndexOf('&');
+    if (lastAmpersand === -1) return false;
+
+    const suffix = configuredSelector.slice(lastAmpersand + 1);
+    let parenthesisDepth = 0;
+    let bracketDepth = 0;
+    let quote: '"' | "'" | null = null;
+    let escaped = false;
+
+    for (let index = 0; index < suffix.length; index += 1) {
+        const character = suffix[index];
+        if (escaped) {
+            escaped = false;
+            continue;
+        }
+        if (character === '\\') {
+            escaped = true;
+            continue;
+        }
+        if (quote) {
+            if (character === quote) quote = null;
+            continue;
+        }
+        if (character === '"' || character === "'") {
+            quote = character;
+            continue;
+        }
+        if (character === '(') {
+            parenthesisDepth += 1;
+            continue;
+        }
+        if (character === ')') {
+            parenthesisDepth = Math.max(0, parenthesisDepth - 1);
+            continue;
+        }
+        if (character === '[') {
+            bracketDepth += 1;
+            continue;
+        }
+        if (character === ']') {
+            bracketDepth = Math.max(0, bracketDepth - 1);
+            continue;
+        }
+        if (parenthesisDepth || bracketDepth) continue;
+
+        if (/\s/.test(character) || character === '>' || character === '+' || character === '~') return false;
+        if (character === '|' && suffix[index + 1] === '|') return false;
+        if (character === ':' && suffix[index + 1] === ':') return false;
+    }
+
+    return true;
 }
 
 function createStateAttributeSelector(attribute: 'data-ww-states' | 'data-ww-forced-states', state: string) {

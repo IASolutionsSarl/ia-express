@@ -1,6 +1,7 @@
 import { getCompiledBackgroundDeclarations, getCompiledBackgroundShorthand } from './background';
 import { rewriteAnimationKeyframes } from './keyframes';
 import {
+    createAuthoredStyleDeclaration,
     createDeclaration,
     readDisplayValue as readDisplay,
     readEffectiveStyleValue as readEffective,
@@ -146,7 +147,6 @@ const LEGACY_AUTO_COMPONENT_SIZE_NORMALIZER = {
 const SECTION_ROOT_AUTO_ALIGN_PROPERTY = '--ww-section-root-auto-align';
 const SECTION_ROOT_AUTO_WIDTH_PROPERTY = '--ww-section-root-auto-width';
 const SECTION_ROOT_AUTO_ALIGN_VALUE = `var(${SECTION_ROOT_AUTO_ALIGN_PROPERTY}, unset)`;
-const SECTION_ROOT_AUTO_WIDTH_VALUE = `var(${SECTION_ROOT_AUTO_WIDTH_PROPERTY}, revert-layer)`;
 
 const declarationResolversBySurfaceKind = new Map<StyleSurface['kind'], StyleDeclarationResolver[]>();
 
@@ -434,10 +434,14 @@ function createElementAlignDeclaration(scope: DeclarationScope) {
 
 function createElementWidthDeclaration(scope: DeclarationScope) {
     const autoByContent = getStyleComponentCapabilities(scope.source).autoByContent === true;
+    const libraryComponentInstance = isLibraryComponentInstance(scope);
     if (!isDirectSectionChild(scope)) {
-        const valueNormalizer = autoByContent
-            ? LEGACY_AUTO_COMPONENT_SIZE_NORMALIZER
-            : LEGACY_EMPTY_COMPONENT_SIZE_NORMALIZER;
+        // The legacy runtime merged an instance width before applying getComponentSize(). An explicit
+        // empty/auto instance value therefore removed the concrete root width instead of revealing it.
+        const valueNormalizer =
+            autoByContent || libraryComponentInstance
+                ? LEGACY_AUTO_COMPONENT_SIZE_NORMALIZER
+                : LEGACY_EMPTY_COMPONENT_SIZE_NORMALIZER;
         const width = read(scope, 'width', 'style', valueNormalizer);
         if (width === undefined) {
             return [createDeclaration(scope, 'width', undefined, autoByContent ? 'auto' : undefined)];
@@ -447,7 +451,9 @@ function createElementWidthDeclaration(scope: DeclarationScope) {
         }
 
         const normalizedWidth = normalizeStyleRuntimeValue(width, valueNormalizer);
-        return [createDeclaration(scope, 'width', normalizedWidth ?? 'revert-layer')];
+        return [
+            createDeclaration(scope, 'width', normalizedWidth ?? (libraryComponentInstance ? 'auto' : 'revert-layer')),
+        ];
     }
 
     const ownWidth = read(scope, 'width');
@@ -457,15 +463,30 @@ function createElementWidthDeclaration(scope: DeclarationScope) {
 
     const width = readEffective(scope, 'width', 'style', LEGACY_EMPTY_COMPONENT_SIZE_NORMALIZER);
     const align = readEffective(scope, 'align', 'style', LEGACY_FALSY_LAYOUT_VALUE_NORMALIZER);
+    // Keep an omitted instance width transparent, but make an explicit empty/auto width mask the
+    // library definition while still participating in the legacy stretched-section fallback.
+    const emptyInstanceWidthFallback = libraryComponentInstance && width !== undefined ? 'auto' : 'revert-layer';
 
-    return [createDeclaration(scope, 'width', createSectionRootWidthValue(scope, width, align, autoByContent))];
+    return [
+        createDeclaration(
+            scope,
+            'width',
+            createSectionRootWidthValue(scope, width, align, autoByContent, emptyInstanceWidthFallback)
+        ),
+    ];
 }
 
-function createSectionRootWidthValue(scope: DeclarationScope, width: unknown, align: unknown, autoByContent: boolean) {
-    const emptyWidth = autoByContent ? 'auto' : SECTION_ROOT_AUTO_WIDTH_VALUE;
+function createSectionRootWidthValue(
+    scope: DeclarationScope,
+    width: unknown,
+    align: unknown,
+    autoByContent: boolean,
+    emptyWidthFallback: 'auto' | 'revert-layer'
+) {
+    const emptyWidth = autoByContent ? 'auto' : createSectionRootAutoWidthValue(emptyWidthFallback);
     if (isStyleDynamicVariableReference(width)) {
         if (align && !isStyleDynamicVariableReference(align)) {
-            return width.withCssFallbackIfMissing(autoByContent ? 'auto' : 'revert-layer');
+            return width.withCssFallbackIfMissing(autoByContent ? 'auto' : emptyWidthFallback);
         }
 
         const fallbackValues = isStyleDynamicVariableReference(align) ? [align.variable.value] : [];
@@ -478,6 +499,7 @@ function createSectionRootWidthValue(scope: DeclarationScope, width: unknown, al
             property: 'width',
             outputKey: 'section-root',
             valueNormalizer: width.variable.valueNormalizer,
+            omitWhenUndefined: width.variable.omitWhenUndefined,
             state: scope.state,
             breakpoint: scope.breakpoint,
             value: width.variable.value,
@@ -487,7 +509,7 @@ function createSectionRootWidthValue(scope: DeclarationScope, width: unknown, al
                 dependencies: fallbackValues,
                 value: emptyWidth,
             },
-            cssFallbackValue: align ? (autoByContent ? 'auto' : 'revert-layer') : emptyWidth,
+            cssFallbackValue: align ? (autoByContent ? 'auto' : emptyWidthFallback) : emptyWidth,
         });
     }
 
@@ -504,13 +526,23 @@ function createSectionRootWidthValue(scope: DeclarationScope, width: unknown, al
             outputKey: 'section-root-align',
             state: scope.state,
             breakpoint: scope.breakpoint,
-            value: 'revert-layer',
+            value: emptyWidthFallback,
             condition: { value: align.variable.value, truthy: true },
-            cssFallbackValue: SECTION_ROOT_AUTO_WIDTH_VALUE,
+            cssFallbackValue: emptyWidth,
         });
     }
 
-    return align ? 'revert-layer' : SECTION_ROOT_AUTO_WIDTH_VALUE;
+    return align ? emptyWidthFallback : emptyWidth;
+}
+
+function createSectionRootAutoWidthValue(fallback: 'auto' | 'revert-layer') {
+    return `var(${SECTION_ROOT_AUTO_WIDTH_PROPERTY}, ${fallback})`;
+}
+
+function isLibraryComponentInstance(scope: DeclarationScope) {
+    if (scope.source.kind() !== 'element') return false;
+
+    return (scope.source as StyleElementReader).isLibraryComponentInstance?.() === true;
 }
 
 function isDirectSectionChild(scope: DeclarationScope) {
@@ -578,7 +610,7 @@ function createTextDeclarations(scope: DeclarationScope) {
     for (const [sourceProperty, cssProperty] of TEXT_INHERITED_PROPERTIES) {
         if (!shouldEmitTextProperty(scope, sourceProperty)) continue;
 
-        declarations.push(createDeclaration(scope, cssProperty, readTextProperty(scope, sourceProperty)));
+        declarations.push(createAuthoredStyleDeclaration(scope, cssProperty, readTextProperty(scope, sourceProperty)));
     }
 
     declarations.push(createDeclaration(scope, 'whiteSpaceCollapse', 'preserve'));
@@ -712,8 +744,8 @@ function createPropertyDeclarationResolver(property: string, defaultValue?: unkn
 
         return [
             hasDefaultValue
-                ? createDeclaration(scope, property, read(scope, property), defaultValue)
-                : createDeclaration(scope, property, read(scope, property)),
+                ? createAuthoredStyleDeclaration(scope, property, read(scope, property), defaultValue)
+                : createAuthoredStyleDeclaration(scope, property, read(scope, property)),
         ];
     };
 }

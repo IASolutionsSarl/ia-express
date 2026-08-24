@@ -1,4 +1,4 @@
-import { computed, createSSRApp, defineComponent, h, provide, reactive, ref } from 'vue';
+import { computed, createSSRApp, defineComponent, h, provide, reactive, ref, unref } from 'vue';
 import { renderToString } from '@vue/server-renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -23,7 +23,10 @@ vi.mock('@/_front/use/useLayoutStyleScopes', async () => {
     const { computed } = await import('vue');
     return { useLayoutStyleScopeAttribute: () => computed(() => '') };
 });
-vi.mock('@/_front/use/useLayoutItemMarker', () => ({ resetLayoutItemIndex: vi.fn() }));
+vi.mock('@/_front/use/useLayoutItemMarker', async importOriginal => {
+    const actual = await importOriginal<typeof import('@/_front/use/useLayoutItemMarker')>();
+    return { ...actual, resetLayoutItemIndex: vi.fn() };
+});
 vi.mock('@/_common/helpers/styleCompiler', () => ({ getFlexDirection: vi.fn(() => 'row') }));
 vi.mock('@/_common/editor/interaction/dragPreview', () => ({
     getDragPlaceholderStyle: vi.fn(() => ({})),
@@ -42,15 +45,8 @@ vi.mock('@/_front/use/editor/useEditorLibraryComponent.js', async () => {
 });
 vi.mock('@/_common/helpers/pathResolver.js', () => ({ getPath: (path: string) => path }));
 vi.mock('./wwLayoutItem.vue', () => ({ default: defineComponent({ render: () => null }) }));
-vi.mock('./wwLayoutItemContext.vue', () => ({
-    default: defineComponent({
-        setup(_, { slots }) {
-            return () => slots.default?.();
-        },
-    }),
-}));
-
 import wwLayout from './wwLayout.vue';
+import { useLayoutItemStyle } from '@/_front/use/useLayoutItemMarker';
 
 function installWwLib() {
     vi.stubGlobal('wwLib', {
@@ -95,6 +91,7 @@ function createLayoutApp({
     root = true,
     resolveDisplay,
     resolveTextAlign,
+    slotOmitsItemStyle = false,
 }: {
     slot?: (props: Record<string, unknown>) => unknown;
     elementStyles?: unknown[];
@@ -104,6 +101,7 @@ function createLayoutApp({
     root?: boolean;
     resolveDisplay?: () => string;
     resolveTextAlign?: () => string | undefined;
+    slotOmitsItemStyle?: boolean;
 }) {
     const content = reactive({
         '_ww-layout_flexDirection': 'row',
@@ -115,8 +113,9 @@ function createLayoutApp({
             extraStyle: { type: Object, default: undefined },
         },
         setup(props) {
+            const layoutItemStyle = useLayoutItemStyle();
             return () => {
-                elementStyles?.push(props.extraStyle);
+                elementStyles?.push(props.extraStyle || unref(layoutItemStyle));
                 return h('div');
             };
         },
@@ -143,7 +142,11 @@ function createLayoutApp({
                 h(
                     wwLayout,
                     { path: 'children', class: root ? 'ww-element' : undefined },
-                    slot ? { default: slot } : undefined
+                    slotOmitsItemStyle
+                        ? { default: () => h(WwElementStub, { uid: 'custom-slot-child' }) }
+                        : slot
+                          ? { default: slot }
+                          : undefined
                 );
         },
     });
@@ -213,5 +216,13 @@ describe('wwLayout Vue adapter', () => {
         await renderToString(createLayoutApp({ slot }));
 
         expect(itemStyles).toEqual([undefined, { marginLeft: 'auto' }]);
+    });
+
+    it('preserves push-last when a custom layout slot omits the itemStyle prop', async () => {
+        const elementStyles: unknown[] = [];
+
+        await renderToString(createLayoutApp({ elementStyles, slotOmitsItemStyle: true }));
+
+        expect(elementStyles).toEqual([undefined, { marginLeft: 'auto' }]);
     });
 });

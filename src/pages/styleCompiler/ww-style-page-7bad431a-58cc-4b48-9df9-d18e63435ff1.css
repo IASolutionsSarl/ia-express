@@ -246,7 +246,7 @@
         width: 100%;
       }
     }
-    .ww-element-ee712422-ec52-4480-9a65-b5cccdf1a4f8:hover {
+    .ww-element-ee712422-ec52-4480-9a65-b5cccdf1a4f8:where(:hover) {
       overflow: hidden;
       box-shadow: 0px 5px 8px 0px var(--bd6a542c-8470-4a5d-b59f-0c45d3e4a36c,#6B46C1);
       transform: scale3d(1, 1, 1) translate3d(0, -3px, 0) rotateX(0) rotateY(0) rotateZ(0);
@@ -267,16 +267,16 @@
         display: flex;
       }
     }
-    .ww-element-ee712422-ec52-4480-9a65-b5cccdf1a4f8.ww-layout:hover, .ww-element-ee712422-ec52-4480-9a65-b5cccdf1a4f8 [data-ww-layout-style-scopes~="ee712422-ec52-4480-9a65-b5cccdf1a4f8"]:hover {
+    .ww-element-ee712422-ec52-4480-9a65-b5cccdf1a4f8.ww-layout:where(:hover), .ww-element-ee712422-ec52-4480-9a65-b5cccdf1a4f8 [data-ww-layout-style-scopes~="ee712422-ec52-4480-9a65-b5cccdf1a4f8"]:where(:hover) {
       display: flex;
     }
     @media (max-width: 991px) {
-      .ww-element-ee712422-ec52-4480-9a65-b5cccdf1a4f8.ww-layout:hover, .ww-element-ee712422-ec52-4480-9a65-b5cccdf1a4f8 [data-ww-layout-style-scopes~="ee712422-ec52-4480-9a65-b5cccdf1a4f8"]:hover {
+      .ww-element-ee712422-ec52-4480-9a65-b5cccdf1a4f8.ww-layout:where(:hover), .ww-element-ee712422-ec52-4480-9a65-b5cccdf1a4f8 [data-ww-layout-style-scopes~="ee712422-ec52-4480-9a65-b5cccdf1a4f8"]:where(:hover) {
         display: flex;
       }
     }
     @media (max-width: 767px) {
-      .ww-element-ee712422-ec52-4480-9a65-b5cccdf1a4f8.ww-layout:hover, .ww-element-ee712422-ec52-4480-9a65-b5cccdf1a4f8 [data-ww-layout-style-scopes~="ee712422-ec52-4480-9a65-b5cccdf1a4f8"]:hover {
+      .ww-element-ee712422-ec52-4480-9a65-b5cccdf1a4f8.ww-layout:where(:hover), .ww-element-ee712422-ec52-4480-9a65-b5cccdf1a4f8 [data-ww-layout-style-scopes~="ee712422-ec52-4480-9a65-b5cccdf1a4f8"]:where(:hover) {
         display: flex;
       }
     }
@@ -561,7 +561,7 @@
         white-space-collapse: preserve;
       }
     }
-    .ww-element-26e72deb-1a6d-4664-bcf1-86a452899259:hover {
+    .ww-element-26e72deb-1a6d-4664-bcf1-86a452899259:where(:hover) {
       color: #7c3aed;
       white-space-collapse: preserve;
       background-color: #f5f0ff;
@@ -569,12 +569,12 @@
       transform: translateY(-1px);
     }
     @media (max-width: 991px) {
-      .ww-element-26e72deb-1a6d-4664-bcf1-86a452899259:hover {
+      .ww-element-26e72deb-1a6d-4664-bcf1-86a452899259:where(:hover) {
         white-space-collapse: preserve;
       }
     }
     @media (max-width: 767px) {
-      .ww-element-26e72deb-1a6d-4664-bcf1-86a452899259:hover {
+      .ww-element-26e72deb-1a6d-4664-bcf1-86a452899259:where(:hover) {
         white-space-collapse: preserve;
       }
     }
@@ -591,7 +591,7 @@
       max-height: unset;
       min-height: unset;
     }
-    .ww-element-4626d587-a854-4163-9aaf-edd56d866829[data-ww-states~="_wwParent_6d7ddbe6-2f18-4d3f-b5e1-9e4bb68eebe2_H1pUBX"] {
+    .ww-element-4626d587-a854-4163-9aaf-edd56d866829:where([data-ww-states~="_wwParent_6d7ddbe6-2f18-4d3f-b5e1-9e4bb68eebe2_H1pUBX"]) {
       animation-duration: 1s;
       animation-timing-function: linear;
       animation-iteration-count: infinite;
@@ -706,19 +706,19 @@
         white-space-collapse: preserve;
       }
     }
-    .ww-element-22b22674-663f-4c3b-a06c-c634a8538324:hover {
+    .ww-element-22b22674-663f-4c3b-a06c-c634a8538324:where(:hover) {
       white-space-collapse: preserve;
       background-color: var(--8B5CF6, #8B5CF6);
       box-shadow: 0 10px 15px -3px #6b46c166;
       transform: translateY(-2px);
     }
     @media (max-width: 991px) {
-      .ww-element-22b22674-663f-4c3b-a06c-c634a8538324:hover {
+      .ww-element-22b22674-663f-4c3b-a06c-c634a8538324:where(:hover) {
         white-space-collapse: preserve;
       }
     }
     @media (max-width: 767px) {
-      .ww-element-22b22674-663f-4c3b-a06c-c634a8538324:hover {
+      .ww-element-22b22674-663f-4c3b-a06c-c634a8538324:where(:hover) {
         white-space-collapse: preserve;
       }
     }
@@ -748,16 +748,16 @@
         white-space-collapse: preserve;
       }
     }
-    .ww-element-a70eebb2-bfb8-48a8-a336-540dfd1de8c1:hover {
+    .ww-element-a70eebb2-bfb8-48a8-a336-540dfd1de8c1:where(:hover) {
       white-space-collapse: preserve;
     }
     @media (max-width: 991px) {
-      .ww-element-a70eebb2-bfb8-48a8-a336-540dfd1de8c1:hover {
+      .ww-element-a70eebb2-bfb8-48a8-a336-540dfd1de8c1:where(:hover) {
         white-space-collapse: preserve;
       }
     }
     @media (max-width: 767px) {
-      .ww-element-a70eebb2-bfb8-48a8-a336-540dfd1de8c1:hover {
+      .ww-element-a70eebb2-bfb8-48a8-a336-540dfd1de8c1:where(:hover) {
         white-space-collapse: preserve;
       }
     }
@@ -825,7 +825,7 @@
         white-space-collapse: preserve;
       }
     }
-    .ww-element-64d6a891-b705-4fcc-b301-3281a83530b5:hover {
+    .ww-element-64d6a891-b705-4fcc-b301-3281a83530b5:where(:hover) {
       color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7, #FFFFFF);
       white-space-collapse: preserve;
       background-color: var(--bd6a542c-8470-4a5d-b59f-0c45d3e4a36c, #6B46C1);
@@ -833,12 +833,12 @@
       transform: translateY(-2px);
     }
     @media (max-width: 991px) {
-      .ww-element-64d6a891-b705-4fcc-b301-3281a83530b5:hover {
+      .ww-element-64d6a891-b705-4fcc-b301-3281a83530b5:where(:hover) {
         white-space-collapse: preserve;
       }
     }
     @media (max-width: 767px) {
-      .ww-element-64d6a891-b705-4fcc-b301-3281a83530b5:hover {
+      .ww-element-64d6a891-b705-4fcc-b301-3281a83530b5:where(:hover) {
         white-space-collapse: preserve;
       }
     }

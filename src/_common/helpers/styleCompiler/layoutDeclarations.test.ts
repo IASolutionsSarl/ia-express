@@ -439,7 +439,7 @@ describe('styleCompiler layout compatibility', () => {
         expect(tabletCss).toContain('.ww-element-elementA.ww-layout');
         expect(tabletCss).toContain('row-gap: 20px;');
         expect(run.result).toMatch(
-            /\.ww-element-elementA\.ww-layout:hover,\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]:hover/
+            /\.ww-element-elementA\.ww-layout:where\(:hover\),\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]:where\(:hover\)/
         );
         expect(run.result).toContain('align-items: flex-end;');
     });
@@ -505,7 +505,7 @@ describe('styleCompiler layout compatibility', () => {
                 .find(rule => rule.includes('display: flex;')) || '';
         const hoverLayoutRule =
             run.result.match(
-                /\.ww-element-elementA\.ww-layout:hover,\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]:hover\s*\{[^}]*\}/
+                /\.ww-element-elementA\.ww-layout:where\(:hover\),\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]:where\(:hover\)\s*\{[^}]*\}/
             )?.[0] || '';
 
         expect(baseLayoutRule).toContain('display: none;');
@@ -561,7 +561,7 @@ describe('styleCompiler layout compatibility', () => {
         });
         const openLayoutRule =
             run.result.match(
-                /\.ww-element-elementA\.ww-layout\[data-ww-states~="open"\],\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]\[data-ww-states~="open"\][^{]*\{[^}]*\}/
+                /\.ww-element-elementA\.ww-layout:where\(\[data-ww-states~="open"\]\),\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]:where\(\[data-ww-states~="open"\]\)[^{]*\{[^}]*\}/
             )?.[0] || '';
 
         expect(openLayoutRule).toContain('display: flex;');
@@ -1109,9 +1109,7 @@ describe('styleCompiler layout compatibility', () => {
             runtime: STATIC_STYLE_RUNTIME,
         });
 
-        expect(run.result).toMatch(
-            /\.ww-element-definitionRoot\.ww-layout\[data-ww-states~="active"\]/
-        );
-        expect(run.result).not.toMatch(/\.ww-element-instance[^{}]*\[data-ww-states~="active"\]/);
+        expect(run.result).toMatch(/\.ww-element-definitionRoot\.ww-layout:where\(\[data-ww-states~="active"\]\)/);
+        expect(run.result).not.toMatch(/\.ww-element-instance[^{}]*:where\(\[data-ww-states~="active"\]\)/);
     });
 });

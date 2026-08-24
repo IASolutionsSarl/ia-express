@@ -220,6 +220,55 @@ describe('resolveStyleCompilerRuntimeVariable', () => {
         });
     });
 
+    it('distinguishes an undefined library width override from an explicit automatic size', () => {
+        const widthFormula = { __wwtype: 'f', code: 'width' };
+        const values = new Map<string, unknown>([['width', undefined]]);
+        const executor = createExecutor(values);
+        const variable = {
+            ...createPositionedVariable('width', widthFormula),
+            condition: undefined,
+            valueNormalizer: { type: 'component-size', fallbackValue: 'auto' },
+            omitWhenUndefined: true,
+        } satisfies StyleDynamicVariable;
+
+        expect(resolveStyleCompilerRuntimeVariableResult({ variable, context: {}, executor })).toEqual({
+            status: 'empty',
+        });
+
+        values.set('width', 'auto');
+        expect(resolveStyleCompilerRuntimeVariableResult({ variable, context: {}, executor })).toEqual({
+            status: 'value',
+            cssValue: 'auto',
+        });
+    });
+
+    it('uses section sizing for an explicit automatic direct-instance width but not for undefined', () => {
+        const widthFormula = { __wwtype: 'f', code: 'width' };
+        const values = new Map<string, unknown>([['width', undefined]]);
+        const executor = createExecutor(values);
+        const variable = {
+            ...createPositionedVariable('width', widthFormula),
+            condition: undefined,
+            valueNormalizer: { type: 'component-size' },
+            omitWhenUndefined: true,
+            runtimeFallback: {
+                type: 'when-all-empty',
+                dependencies: [],
+                value: 'var(--ww-section-root-auto-width, auto)',
+            },
+        } satisfies StyleDynamicVariable;
+
+        expect(resolveStyleCompilerRuntimeVariableResult({ variable, context: {}, executor })).toEqual({
+            status: 'empty',
+        });
+
+        values.set('width', 'auto');
+        expect(resolveStyleCompilerRuntimeVariableResult({ variable, context: {}, executor })).toEqual({
+            status: 'value',
+            cssValue: 'var(--ww-section-root-auto-width, auto)',
+        });
+    });
+
     it.each([
         ['0px', '0px'],
         [320, '320px'],

@@ -9089,7 +9089,7 @@
       .ww-section-c8da146e-7ab3-4211-9e0a-3f20296e23e8 {
         display: flex;
         transition: transform 0.3s ease-in-out;
-        transform: var(--ww-style-transform, translateX(-100%));
+        transform: var(--ww-style-transform);
       }
     }
     .ww-section-c8da146e-7ab3-4211-9e0a-3f20296e23e8 > .ww-section-element {
@@ -9106,7 +9106,7 @@
     @media (max-width: 767px) {
       .ww-section-c8da146e-7ab3-4211-9e0a-3f20296e23e8 > .ww-section-element {
         transition: transform 0.3s ease-in-out;
-        transform: var(--ww-style-transform, translateX(-100%));
+        transform: var(--ww-style-transform);
       }
     }
     .ww-section-c8da146e-7ab3-4211-9e0a-3f20296e23e8 > .ww-section-element.ww-layout {

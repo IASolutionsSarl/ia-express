@@ -591,19 +591,6 @@
       max-height: unset;
       min-height: unset;
     }
-    .ww-element-4626d587-a854-4163-9aaf-edd56d866829:where([data-ww-states~="_wwParent_6d7ddbe6-2f18-4d3f-b5e1-9e4bb68eebe2_H1pUBX"]) {
-      animation-duration: 1s;
-      animation-timing-function: linear;
-      animation-iteration-count: infinite;
-      animation-name: ww-keyframes-element-4626d587-a854-4163-9aaf-edd56d866829-_wwParent_6d7ddbe6-2f18-4d3f-b5e1-9e4bb68eebe2_H1pUBX-default;
-    }
-    @keyframes ww-keyframes-element-4626d587-a854-4163-9aaf-edd56d866829-_wwParent_6d7ddbe6-2f18-4d3f-b5e1-9e4bb68eebe2_H1pUBX-default {
-      0% {
-      }
-      100% {
-        transform: scale3d(1, 1, 1) translate3d(0, 0, 0) rotateX(0) rotateY(0) rotateZ(360deg);
-      }
-    }
     .ww-element-d3b03112-e24d-46d8-a8db-2b645afa5beb {
       margin: 0;
       padding: 0;
@@ -745,19 +732,6 @@
     }
     @media (max-width: 767px) {
       .ww-element-a70eebb2-bfb8-48a8-a336-540dfd1de8c1 {
-        white-space-collapse: preserve;
-      }
-    }
-    .ww-element-a70eebb2-bfb8-48a8-a336-540dfd1de8c1:where(:hover) {
-      white-space-collapse: preserve;
-    }
-    @media (max-width: 991px) {
-      .ww-element-a70eebb2-bfb8-48a8-a336-540dfd1de8c1:where(:hover) {
-        white-space-collapse: preserve;
-      }
-    }
-    @media (max-width: 767px) {
-      .ww-element-a70eebb2-bfb8-48a8-a336-540dfd1de8c1:where(:hover) {
         white-space-collapse: preserve;
       }
     }

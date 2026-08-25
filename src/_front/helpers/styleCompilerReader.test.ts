@@ -13,7 +13,11 @@ const componentConfigurations = vi.hoisted(
     () =>
         new Map<
             string,
-            { inherit?: unknown[]; options?: { autoByContent?: boolean; displayAllowedValues?: string[] } }
+            {
+                inherit?: unknown[];
+                states?: Array<string | { label: string; selectors?: string[] }>;
+                options?: { autoByContent?: boolean; displayAllowedValues?: string[] };
+            }
         >()
 );
 const popupStore = vi.hoisted(() => ({ instances: {} as Record<string, StyleSourceData> }));
@@ -426,6 +430,186 @@ describe('styleCompilerReader source indexing', () => {
             stateId: 'hover',
             selector: '.ww-element-parent',
         });
+    });
+
+    it('ignores undeclared native states persisted outside the state list', () => {
+        elements.elementA = {
+            uid: 'elementA',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [],
+                style: { _wwHover_default: { boxShadow: '0 0 0 3px blue' } },
+                classes: { _wwActive: ['classA'] },
+                subClasses: { _wwFocusVisible: ['classB'] },
+            },
+            content: { _wwFocus_default: { text: 'orphaned focus content' } },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('elementA')?.states();
+
+        expect(states).toEqual([]);
+    });
+
+    it('keeps native states that are explicitly declared', () => {
+        elements.elementA = {
+            uid: 'elementA',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [{ id: '_wwHover', label: 'Hover' }],
+                style: { _wwHover_default: { boxShadow: '0 0 0 3px blue' } },
+            },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('elementA')?.states();
+
+        expect(states).toEqual([{ id: '_wwHover', label: 'Hover' }]);
+    });
+
+    it('ignores undeclared parent native states persisted outside the state list', () => {
+        elements.parent = {
+            uid: 'parent',
+            parentSectionId: 'sectionA',
+            _state: { states: [{ id: '_wwHover', label: 'Hover' }] },
+        };
+        elements.child = {
+            uid: 'child',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [],
+                style: { _wwParent_parent__wwHover_default: { opacity: 0.5 } },
+            },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('child')?.states();
+
+        expect(states).toEqual([]);
+    });
+
+    it('keeps parent native states that are explicitly declared', () => {
+        elements.parent = {
+            uid: 'parent',
+            parentSectionId: 'sectionA',
+            _state: { states: [{ id: '_wwHover', label: 'Hover' }] },
+        };
+        elements.child = {
+            uid: 'child',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [{ id: '_wwParent_parent__wwHover', label: 'Parent:Hover' }],
+                style: { _wwParent_parent__wwHover_default: { opacity: 0.5 } },
+            },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('child')?.states();
+
+        expect(states).toEqual([
+            {
+                id: '_wwParent_parent__wwHover',
+                parent: {
+                    uid: 'parent',
+                    stateId: '_wwHover',
+                    selector: '.ww-element-parent',
+                },
+            },
+        ]);
+    });
+
+    it('ignores declared parent native states that no longer exist on the parent', () => {
+        elements.parent = {
+            uid: 'parent',
+            parentSectionId: 'sectionA',
+            _state: { states: [] },
+        };
+        elements.child = {
+            uid: 'child',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [{ id: '_wwParent_parent__wwHover', label: 'Parent:Hover' }],
+                style: { _wwParent_parent__wwHover_default: { opacity: 0.5 } },
+            },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('child')?.states();
+
+        expect(states).toEqual([]);
+    });
+
+    it('ignores custom parent states that no longer exist on the parent', () => {
+        elements.parent = {
+            uid: 'parent',
+            parentSectionId: 'sectionA',
+            _state: { states: [] },
+        };
+        elements.child = {
+            uid: 'child',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [{ id: '_wwParent_parent_open', label: 'Parent:Open' }],
+                style: { _wwParent_parent_open_default: { opacity: 0.5 } },
+            },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('child')?.states();
+
+        expect(states).toEqual([]);
+    });
+
+    it('ignores parent states whose parent source no longer exists', () => {
+        elements.child = {
+            uid: 'child',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [{ id: '_wwParent_deletedParent_open', label: 'Deleted parent:Open' }],
+                style: { _wwParent_deletedParent_open_default: { opacity: 0.5 } },
+            },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('child')?.states();
+
+        expect(states).toEqual([]);
+    });
+
+    it('ignores undeclared configured-selector states persisted outside the state list', () => {
+        componentConfigurations.set('element:configuredBase', {
+            states: [{ label: 'focus', selectors: ['&:focus-within'] }],
+        });
+        elements.elementA = {
+            uid: 'elementA',
+            wwObjectBaseId: 'configuredBase',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [],
+                style: { focus_default: { opacity: 0.5 } },
+            },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('elementA')?.states();
+
+        expect(states).toEqual([]);
+    });
+
+    it('ignores undeclared parent configured-selector states persisted outside the state list', () => {
+        componentConfigurations.set('element:configuredBase', {
+            states: [{ label: 'focus', selectors: ['&:focus-within'] }],
+        });
+        elements.parent = {
+            uid: 'parent',
+            wwObjectBaseId: 'configuredBase',
+            parentSectionId: 'sectionA',
+            _state: { states: [{ id: 'focus', label: 'focus' }] },
+        };
+        elements.child = {
+            uid: 'child',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [],
+                style: { _wwParent_parent_focus_default: { opacity: 0.5 } },
+            },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('child')?.states();
+
+        expect(states).toEqual([]);
     });
 });
 

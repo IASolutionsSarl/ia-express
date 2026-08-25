@@ -8,6 +8,7 @@ import { useComponentBasesStore } from '@/pinia/componentBases';
 import {
     createElementSelector,
     createSectionContainerSelector,
+    getNativeStyleStatePseudoClass,
     normalizeConfiguredStyleStates,
     PARENT_STYLE_STATE_PREFIX,
 } from '@/_common/helpers/styleCompiler';
@@ -604,7 +605,10 @@ function getSourceStates(
         if (!state?.id) continue;
 
         const label = typeof state.label === 'string' ? state.label : undefined;
-        states.set(state.id, createStateDescriptor(state.id, selectorsByLabel, resolveParentStateReference, label));
+        const descriptor = createStateDescriptor(state.id, selectorsByLabel, resolveParentStateReference, label);
+        if (!hasAvailableParentState(state.id, descriptor)) continue;
+
+        states.set(state.id, descriptor);
     }
 
     collectStateNamesFromSlotKeys(
@@ -660,9 +664,15 @@ function collectStateNamesFromSlotKeys(
             if (!key.endsWith(suffix)) continue;
 
             const state = key.slice(0, -suffix.length);
-            if (state && !states.has(state)) {
-                states.set(state, createStateDescriptor(state, selectorsByLabel, resolveParentStateReference));
-            }
+            const descriptor = createInferredStateDescriptor(
+                states,
+                state,
+                selectorsByLabel,
+                resolveParentStateReference
+            );
+            if (!descriptor) continue;
+
+            states.set(state, descriptor);
         }
     }
 }
@@ -674,10 +684,49 @@ function collectStateNamesFromClassKeys(
     resolveParentStateReference: EditorParentStateReferenceResolver
 ) {
     for (const key of keys) {
-        if (key !== DEFAULT_STATE && key !== BASE_STATE && !states.has(key)) {
-            states.set(key, createStateDescriptor(key, selectorsByLabel, resolveParentStateReference));
-        }
+        const descriptor = createInferredStateDescriptor(
+            states,
+            key,
+            selectorsByLabel,
+            resolveParentStateReference
+        );
+        if (!descriptor) continue;
+
+        states.set(key, descriptor);
     }
+}
+
+function createInferredStateDescriptor(
+    states: Map<string, StyleStateDescriptor>,
+    state: string,
+    selectorsByLabel: Map<string, readonly string[]>,
+    resolveParentStateReference: EditorParentStateReferenceResolver
+): StyleStateDescriptor | null {
+    if (!state || state === DEFAULT_STATE || state === BASE_STATE || states.has(state)) return null;
+
+    const descriptor = createStateDescriptor(state, selectorsByLabel, resolveParentStateReference);
+    if (!hasAvailableParentState(state, descriptor)) return null;
+
+    return hasIndependentlyMatchingStateSelector(descriptor) ? null : descriptor;
+}
+
+function hasIndependentlyMatchingStateSelector(descriptor: StyleStateDescriptor) {
+    // Runtime-only inferred states remain inert without `_state.states`. Native and configured
+    // selectors can match the DOM independently, so inferring them would resurrect orphaned styles.
+    if (getNativeStyleStatePseudoClass(descriptor.id) || descriptor.selectors?.length) return true;
+
+    return !!(
+        descriptor.parent &&
+        (getNativeStyleStatePseudoClass(descriptor.parent.stateId) || descriptor.parent.selectors?.length)
+    );
+}
+
+function hasAvailableParentState(id: string, descriptor: StyleStateDescriptor) {
+    if (!id.startsWith(PARENT_STYLE_STATE_PREFIX)) return true;
+    if (!descriptor.parent) return false;
+
+    const parentSource = getParentStateSource(descriptor.parent.uid);
+    return !!parentSource && hasSourceStateId(parentSource.data, descriptor.parent.stateId);
 }
 
 function createStateDescriptor(
@@ -768,6 +817,10 @@ function findSourceState(data: StyleSourceData, stateId: string) {
     return (data._state?.states || []).find(
         (state: StyleSourceData) => state?.id === stateId || state?.label === stateId
     );
+}
+
+function hasSourceStateId(data: StyleSourceData, stateId: string) {
+    return (data._state?.states || []).some((state: StyleSourceData) => state?.id === stateId);
 }
 
 function getSourceStateLabel(state: StyleSourceData | undefined, fallback: string) {

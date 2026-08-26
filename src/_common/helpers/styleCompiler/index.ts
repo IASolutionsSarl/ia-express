@@ -1,4 +1,5 @@
 export { STYLE_BREAKPOINTS } from './breakpoints';
+export { createAtomicStyleClassName } from './atomic';
 export type { StyleBreakpointDefinition, StyleBreakpointName } from './breakpoints';
 export {
     DEFAULT_DISPLAY_VALUES,
@@ -14,13 +15,22 @@ export {
 export { createStyleCompiler } from './compiler';
 export { getFlexDirection } from './layout';
 export {
+    assignDenseStyleSourceIds,
+    createStyleSourceIdRegistry,
+    encodeDenseStyleSourceId,
+    isDenseStyleSourceId,
+} from './sourceIds';
+export type { StyleSourceIdRecord, StyleSourceIdRegistry } from './sourceIds';
+export {
     appendCssSelector,
     createElementClassName,
     createElementLayoutSelector,
     createElementSelector,
+    createSectionClassName,
     createSectionLayoutSelector,
     createSectionContainerSelector,
     createSectionElementSelector,
+    encodeStyleSourceId,
     splitCssSelectorList,
 } from './selectors';
 export {
@@ -37,8 +47,16 @@ export {
     splitLegacyCssPriority,
 } from './serialization';
 export { createStyleEffectScope } from './scope';
-export { decodeStyleRuntimeManifest, encodeStyleRuntimeManifest } from './runtimeManifest';
-export type { StyleRuntimeManifest } from './runtimeManifest';
+export {
+    decodeStyleRuntimeManifest,
+    decodeStyleRuntimeManifestData,
+    encodeStyleRuntimeManifest,
+} from './runtimeManifest';
+export type {
+    StyleRuntimeAtomicClassAssignment,
+    StyleRuntimeManifest,
+    StyleRuntimeManifestData,
+} from './runtimeManifest';
 export {
     getNativeStyleStatePseudoClass,
     getStateRuleSelectors,
@@ -69,6 +87,7 @@ export {
 export type {
     CssStyleRecord,
     StyleBreakpointPropertyReader,
+    StyleAtomicClassAssignment,
     StyleClassReader,
     StyleCompileScope,
     StyleComponentCapabilities,

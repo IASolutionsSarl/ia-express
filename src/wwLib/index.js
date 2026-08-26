@@ -16,6 +16,8 @@ import { getRuntimeEnvironment } from '@/helpers/frontEnv.js';
 import { useEnvVariablesStore } from '@/pinia/envVariables.js';
 import { createEnvironmentVariablesContext } from './services/environmentVariables';
 
+let runtimeActivationError;
+
 export default {
     ...services,
      $on(event, fn) {
@@ -36,7 +38,8 @@ export default {
      front: {},
     $focus: null,
     env: process.env.NODE_ENV,
-    async initFront({ router, store }) {
+    runtimeActivated: false,
+    async initFront({ router, store, staticRendering = false }) {
  
         this.front.router = router;
         /* wwFront:start */
@@ -58,9 +61,22 @@ wwLib.wwPluginHelper.registerPlugin('plugin-2bd1c688-31c5-443e-ae25-59aa5b6431fb
         /* wwFront:end */
 
  
-        services.scrollStore.start();
-        services.keyboardEventStore.start();
-        services.pwaStore.start();
+        if (!staticRendering) this.activateRuntime();
+    },
+    activateRuntime() {
+        if (this.runtimeActivated) return;
+        if (runtimeActivationError) throw runtimeActivationError;
+
+        try {
+            void this.wwPluginHelper.activatePlugins();
+            services.scrollStore.start();
+            services.keyboardEventStore.start();
+            services.pwaStore.start();
+            this.runtimeActivated = true;
+        } catch (error) {
+            runtimeActivationError = error;
+            throw error;
+        }
     },
      // TODO: Verify with Alexis, still uses wwImageMultiLang
     getResponsiveStyleProp({ store, style, uid, states = [], prop }) {

@@ -1,4 +1,7 @@
 import fs from 'fs';
+import { spawnSync } from 'node:child_process';
+
+const PRERENDER_SHUTDOWN_GRACE_MS = 5_000;
 
 const collectionPages = {};
 
@@ -32,4 +35,33 @@ for (const collectionName in collectionPages) {
 
     fs.rmSync(`./dist${collectionName}/index.html`);
     fs.rmdirSync(`./dist${collectionName}`);
+}
+
+runPrerender();
+
+function runPrerender() {
+    try {
+        const deadline = Number.parseInt(process.env.WW_PRERENDER_DEADLINE_EPOCH_MS || '', 10);
+        const timeout = Number.isFinite(deadline)
+            ? Math.max(deadline - Date.now() + PRERENDER_SHUTDOWN_GRACE_MS, 1)
+            : undefined;
+        const result = spawnSync(process.execPath, ['./prerender/index.ts'], {
+            cwd: process.cwd(),
+            env: process.env,
+            stdio: 'inherit',
+            timeout,
+        });
+
+        if (!result.error && result.status === 0) return;
+
+        console.warn('[weweb-prerender] static rendering failed; preserving the CSR build', {
+            message: result.error?.message,
+            signal: result.signal,
+            status: result.status,
+        });
+    } catch (error) {
+        console.warn('[weweb-prerender] unable to start static rendering; preserving the CSR build', {
+            message: error instanceof Error ? error.message : `${error}`,
+        });
+    }
 }

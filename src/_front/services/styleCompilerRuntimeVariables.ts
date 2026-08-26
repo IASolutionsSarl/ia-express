@@ -3,8 +3,15 @@ import { shallowRef, unref, type Ref } from 'vue';
 import type { StyleDynamicVariable, StyleScopeStop, StyleSurfaceKind } from '@/_common/helpers/styleCompiler';
 
 type StyleDynamicVariableBucket = {
-    variablesByKey: Map<string, StyleDynamicVariable>;
+    registrationsByKey: Map<string, StyleDynamicVariableRegistration>;
     version: Ref<number>;
+};
+
+type StyleDynamicVariableRegistration = {
+    variable: StyleDynamicVariable;
+    previous?: StyleDynamicVariableRegistration;
+    next?: StyleDynamicVariableRegistration;
+    active: boolean;
 };
 
 const variablesBySourceUid = new Map<string, StyleDynamicVariableBucket>();
@@ -22,20 +29,38 @@ let isVersionFlushScheduled = false;
 export function registerStyleDynamicVariable(variable: StyleDynamicVariable): StyleScopeStop {
     const bucket = getOrCreateSourceBucket(variable.sourceUid);
     const key = createVariableKey(variable);
-    let active = true;
+    const previousRegistration = bucket.registrationsByKey.get(key);
+    const registration: StyleDynamicVariableRegistration = {
+        variable,
+        previous: previousRegistration,
+        active: true,
+    };
 
-    bucket.variablesByKey.set(key, variable);
+    if (previousRegistration) previousRegistration.next = registration;
+    bucket.registrationsByKey.set(key, registration);
     bumpVersion(bucket);
 
     return () => {
-        if (!active) return;
+        if (!registration.active) return;
 
-        active = false;
-        if (bucket.variablesByKey.get(key) !== variable) return;
+        registration.active = false;
+        const isLatestRegistration = bucket.registrationsByKey.get(key) === registration;
+        const { previous, next } = registration;
 
-        bucket.variablesByKey.delete(key);
+        if (previous) previous.next = next;
+        if (next) next.previous = previous;
+        registration.previous = undefined;
+        registration.next = undefined;
+
+        if (!isLatestRegistration) return;
+
+        if (previous) {
+            bucket.registrationsByKey.set(key, previous);
+        } else {
+            bucket.registrationsByKey.delete(key);
+        }
         bumpVersion(bucket);
-        if (!bucket.variablesByKey.size) {
+        if (!bucket.registrationsByKey.size) {
             variablesBySourceUid.delete(variable.sourceUid);
             bumpRegistryVersion();
         }
@@ -73,10 +98,12 @@ export function getStyleDynamicVariablesForSource(
 
     bucket.version.value;
 
-    return [...bucket.variablesByKey.values()].filter(variable => {
-        if (variable.sourceUid !== uid) return false;
-        return !surfaceKinds || surfaceKinds.has(variable.surface.kind);
-    });
+    return [...bucket.registrationsByKey.values()]
+        .map(registration => registration.variable)
+        .filter(variable => {
+            if (variable.sourceUid !== uid) return false;
+            return !surfaceKinds || surfaceKinds.has(variable.surface.kind);
+        });
 }
 
 function createVariableKey(variable: StyleDynamicVariable) {
@@ -110,7 +137,7 @@ function getOrCreateSourceBucket(sourceUid: string): StyleDynamicVariableBucket 
     if (bucket) return bucket;
 
     bucket = {
-        variablesByKey: new Map(),
+        registrationsByKey: new Map(),
         version: shallowRef(0),
     };
     variablesBySourceUid.set(sourceUid, bucket);

@@ -4,9 +4,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => {
     const compilerStops: Array<ReturnType<typeof vi.fn>> = [];
     const registrationStops: Array<ReturnType<typeof vi.fn>> = [];
+    const atomicRegistrationStops: Array<ReturnType<typeof vi.fn>> = [];
 
     return {
         compilerStops,
+        atomicRegistrationStops,
         compileStylesheet: vi.fn(() => {
             const stop = vi.fn();
             compilerStops.push(stop);
@@ -22,6 +24,11 @@ const mocks = vi.hoisted(() => {
         registerVariables: vi.fn(() => {
             const stop = vi.fn();
             registrationStops.push(stop);
+            return stop;
+        }),
+        registerAtomicClasses: vi.fn(() => {
+            const stop = vi.fn();
+            atomicRegistrationStops.push(stop);
             return stop;
         }),
     };
@@ -44,6 +51,9 @@ vi.mock('@/_front/services/styleCompilerDomStyleSheet', () => ({
 vi.mock('@/_front/services/styleCompilerRuntimeVariables', () => ({
     registerStyleDynamicVariables: mocks.registerVariables,
 }));
+vi.mock('@/_front/services/styleCompilerAtomicClasses', () => ({
+    registerStyleAtomicClasses: mocks.registerAtomicClasses,
+}));
 
 import { usePageStyleCompilerRuntime } from './useStyleCompilerRuntime';
 
@@ -53,9 +63,69 @@ describe('published page style runtime', () => {
         mocks.createSources.mockClear();
         mocks.createStyleSheet.mockClear();
         mocks.registerVariables.mockClear();
+        mocks.registerAtomicClasses.mockClear();
         mocks.compilerStops.length = 0;
         mocks.lifecycleCleanups.length = 0;
         mocks.registrationStops.length = 0;
+        mocks.atomicRegistrationStops.length = 0;
+    });
+
+    it('registers and disposes atomic classes transported by a version two manifest', () => {
+        setCurrentPage(
+            { id: 'page-atomic', _sm: [2, [], [[0, [0, ['ww-a-display']]]]] },
+            { wwObjects: { 'element-a': {} } }
+        );
+
+        usePageStyleCompilerRuntime('runtime');
+
+        expect(mocks.registerAtomicClasses).toHaveBeenCalledWith([
+            { sourceUid: 'element-a', surfaceKind: 'element', className: 'ww-a-display' },
+        ]);
+        runLifecycleCleanups();
+        expect(mocks.atomicRegistrationStops[0]).toHaveBeenCalledOnce();
+    });
+
+    it('retries indexed atomic assignments when page sources arrive after the manifest', async () => {
+        const websiteData = reactive({
+            page: { id: 'page-atomic', _sm: [2, [], [[0, [0, ['ww-a-display']]]]] },
+            sections: {} as Record<string, unknown>,
+            wwObjects: {} as Record<string, unknown>,
+        });
+        setReactiveWebsiteData(websiteData);
+
+        usePageStyleCompilerRuntime('runtime');
+
+        expect(mocks.compileStylesheet).toHaveBeenCalledOnce();
+        expect(mocks.registerAtomicClasses).not.toHaveBeenCalled();
+
+        websiteData.wwObjects['element-a'] = {};
+        await nextTick();
+
+        expect(mocks.compilerStops[0]).toHaveBeenCalledOnce();
+        expect(mocks.registerAtomicClasses).toHaveBeenCalledWith([
+            { sourceUid: 'element-a', surfaceKind: 'element', className: 'ww-a-display' },
+        ]);
+        runLifecycleCleanups();
+    });
+
+    it('resolves indexed assignments from the incoming page order after SPA navigation', () => {
+        setCurrentPage(
+            { id: 'page-after-navigation', _sm: [2, [], [[0, 'ww-a-display', [0]]]] },
+            {
+                wwObjects: {
+                    'retained-from-previous-page': {},
+                    'element-a': {},
+                },
+                styleSourceUids: ['element-a'],
+            }
+        );
+
+        usePageStyleCompilerRuntime('runtime');
+
+        expect(mocks.registerAtomicClasses).toHaveBeenCalledWith([
+            { sourceUid: 'element-a', surfaceKind: 'element', className: 'ww-a-display' },
+        ]);
+        runLifecycleCleanups();
     });
 
     it('registers a valid page manifest without constructing runtime compiler sources', () => {
@@ -102,10 +172,44 @@ describe('published page style runtime', () => {
     });
 });
 
-function setCurrentPage(page: { id: string; _sm?: unknown }) {
+function setCurrentPage(
+    page: { id: string; _sm?: unknown },
+    {
+        sections = {},
+        wwObjects = {},
+        styleSourceUids,
+    }: {
+        sections?: Record<string, unknown>;
+        wwObjects?: Record<string, unknown>;
+        styleSourceUids?: readonly string[];
+    } = {}
+) {
     wwLib.$store = {
         getters: {
             'websiteData/getPage': page,
+            'websiteData/getSections': sections,
+            'websiteData/getWwObjects': wwObjects,
+            'websiteData/getStyleSourceUids': styleSourceUids,
+        },
+    } as typeof wwLib.$store;
+}
+
+function setReactiveWebsiteData(websiteData: {
+    page: { id: string; _sm?: unknown };
+    sections: Record<string, unknown>;
+    wwObjects: Record<string, unknown>;
+}) {
+    wwLib.$store = {
+        getters: {
+            get 'websiteData/getPage'() {
+                return websiteData.page;
+            },
+            get 'websiteData/getSections'() {
+                return websiteData.sections;
+            },
+            get 'websiteData/getWwObjects'() {
+                return websiteData.wwObjects;
+            },
         },
     } as typeof wwLib.$store;
 }

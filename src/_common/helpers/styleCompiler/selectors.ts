@@ -1,4 +1,5 @@
 import { escapeCssIdentifier, escapeCssString } from './serialization';
+import { encodeDenseStyleSourceId } from './sourceIds';
 import type {
     StyleElementReader,
     StyleLibraryLayer,
@@ -16,18 +17,110 @@ type ElementSurfaceOptions = {
     libraryLayer?: StyleLibraryLayer;
 };
 
+const BASE64_URL_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_NON_UUID_STYLE_SOURCE_ID_CACHE_SIZE = 8_192;
+const NON_UUID_STYLE_SOURCE_ID_CACHE = new Map<string, string>();
+
+/**
+ * Encodes a persistent style source identity as a compact, collision-free DOM token.
+ *
+ * UUIDs use their 128-bit representation instead of their 36-character text form. Historical and
+ * transient non-UUID identities use a lossless Unicode fallback. The discriminator keeps the UUID,
+ * well-formed UTF-8, and isolated-surrogate domains disjoint without requiring a manifest or
+ * allocated identifiers.
+ */
+export function encodeStyleSourceId(uid: string, persistedId?: unknown) {
+    if (typeof persistedId === 'number') {
+        const denseId = encodeDenseStyleSourceId(persistedId);
+        if (denseId) return denseId;
+    }
+
+    if (UUID_PATTERN.test(uid)) {
+        const hex = uid.replaceAll('-', '');
+        const bytes = new Uint8Array(16);
+
+        for (let index = 0; index < bytes.length; index++) {
+            bytes[index] = Number.parseInt(hex.slice(index * 2, index * 2 + 2), 16);
+        }
+
+        return `u${encodeBase64Url(bytes)}`;
+    }
+
+    const cached = NON_UUID_STYLE_SOURCE_ID_CACHE.get(uid);
+    if (cached) return cached;
+
+    const encoded = hasUnpairedSurrogate(uid)
+        ? `w${encodeUtf16Base64Url(uid)}`
+        : `s${encodeBase64Url(new TextEncoder().encode(uid))}`;
+    if (NON_UUID_STYLE_SOURCE_ID_CACHE.size < MAX_NON_UUID_STYLE_SOURCE_ID_CACHE_SIZE) {
+        NON_UUID_STYLE_SOURCE_ID_CACHE.set(uid, encoded);
+    }
+    return encoded;
+}
+
+function hasUnpairedSurrogate(value: string) {
+    for (let index = 0; index < value.length; index++) {
+        const codeUnit = value.charCodeAt(index);
+        if (codeUnit < 0xd800 || codeUnit > 0xdfff) continue;
+
+        if (codeUnit <= 0xdbff) {
+            const nextCodeUnit = value.charCodeAt(index + 1);
+            if (nextCodeUnit >= 0xdc00 && nextCodeUnit <= 0xdfff) {
+                index++;
+                continue;
+            }
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+function encodeUtf16Base64Url(value: string) {
+    const bytes = new Uint8Array(value.length * 2);
+
+    for (let index = 0; index < value.length; index++) {
+        const codeUnit = value.charCodeAt(index);
+        bytes[index * 2] = codeUnit >> 8;
+        bytes[index * 2 + 1] = codeUnit & 0xff;
+    }
+
+    return encodeBase64Url(bytes);
+}
+
+function encodeBase64Url(bytes: Uint8Array) {
+    let encoded = '';
+
+    for (let index = 0; index < bytes.length; index += 3) {
+        const first = bytes[index];
+        const second = bytes[index + 1];
+        const third = bytes[index + 2];
+
+        encoded += BASE64_URL_ALPHABET[first >> 2];
+        encoded += BASE64_URL_ALPHABET[((first & 0b00000011) << 4) | ((second ?? 0) >> 4)];
+        if (second !== undefined) {
+            encoded += BASE64_URL_ALPHABET[((second & 0b00001111) << 2) | ((third ?? 0) >> 6)];
+        }
+        if (third !== undefined) encoded += BASE64_URL_ALPHABET[third & 0b00111111];
+    }
+
+    return encoded;
+}
+
 /**
  * Creates the compiler-owned class applied to rendered element surfaces.
  */
-export function createElementClassName(uid: string) {
-    return `ww-element-${uid}`;
+export function createElementClassName(uid: string, persistedId?: unknown) {
+    return `ww-e-${encodeStyleSourceId(uid, persistedId)}`;
 }
 
 /**
  * Creates the default selector for an element surface.
  */
-export function createElementSelector(uid: string) {
-    return `.${escapeCssIdentifier(createElementClassName(uid))}`;
+export function createElementSelector(uid: string, persistedId?: unknown) {
+    return `.${escapeCssIdentifier(createElementClassName(uid, persistedId))}`;
 }
 
 /**
@@ -37,17 +130,19 @@ export function createElementSelector(uid: string) {
  * Internal layouts expose every renderless root/instance scope that owns them. The token selector
  * prevents an element from styling layouts owned by child elements.
  */
-export function createElementLayoutSelector(uid: string, selector = createElementSelector(uid)) {
-    return `${appendCssSelector(selector, '.ww-layout')},\n${createElementDescendantLayoutSelector(uid, selector)}`;
+export function createElementLayoutSelector(uid: string, selector?: string, persistedId?: unknown) {
+    const ownerSelector = selector || createElementSelector(uid, persistedId);
+    return `${appendCssSelector(ownerSelector, '.ww-layout')},\n${createElementDescendantLayoutSelector(uid, ownerSelector, persistedId)}`;
 }
 
 /**
  * Creates selectors for internal layout nodes owned by an element source.
  */
-export function createElementDescendantLayoutSelector(uid: string, selector = createElementSelector(uid)) {
-    const scopedLayoutSelector = `[data-ww-layout-style-scopes~="${escapeCssString(uid)}"]`;
+export function createElementDescendantLayoutSelector(uid: string, selector?: string, persistedId?: unknown) {
+    const ownerSelector = selector || createElementSelector(uid, persistedId);
+    const scopedLayoutSelector = `[data-ww-ls~="${escapeCssString(encodeStyleSourceId(uid, persistedId))}"]`;
 
-    return splitCssSelectorList(selector)
+    return splitCssSelectorList(ownerSelector)
         .map(selectorPart => `${selectorPart} ${scopedLayoutSelector}`)
         .join(',\n');
 }
@@ -55,22 +150,29 @@ export function createElementDescendantLayoutSelector(uid: string, selector = cr
 /**
  * Creates the default selector for a section container surface.
  */
-export function createSectionContainerSelector(uid: string) {
-    return `.ww-section-${escapeCssIdentifier(uid)}`;
+export function createSectionContainerSelector(uid: string, persistedId?: unknown) {
+    return `.${escapeCssIdentifier(createSectionClassName(uid, persistedId))}`;
+}
+
+/**
+ * Creates the compiler-owned class applied to rendered section containers.
+ */
+export function createSectionClassName(uid: string, persistedId?: unknown) {
+    return `ww-s-${encodeStyleSourceId(uid, persistedId)}`;
 }
 
 /**
  * Creates the default selector for a section inner element surface.
  */
-export function createSectionElementSelector(uid: string) {
-    return `${createSectionContainerSelector(uid)} > .ww-section-element`;
+export function createSectionElementSelector(uid: string, persistedId?: unknown) {
+    return `${createSectionContainerSelector(uid, persistedId)} > .ww-section-element`;
 }
 
 /**
  * Creates selectors for layout CSS owned by a section source.
  */
-export function createSectionLayoutSelector(uid: string) {
-    const sectionElementSelector = createSectionElementSelector(uid);
+export function createSectionLayoutSelector(uid: string, persistedId?: unknown) {
+    const sectionElementSelector = createSectionElementSelector(uid, persistedId);
 
     return `${sectionElementSelector}.ww-layout`;
 }
@@ -171,7 +273,8 @@ export function createElementStyleSurface(
     options: ElementSurfaceOptions = {}
 ): StyleSurface {
     const uid = source.uid();
-    const selector = options.selector || source.selector?.() || createElementSelector(uid);
+    const persistedId = source.styleSourceId?.();
+    const selector = options.selector || source.selector?.() || createElementSelector(uid, persistedId);
 
     return {
         key: options.key || `element:${uid}`,
@@ -192,13 +295,14 @@ export function createElementLayoutStyleSurface(
     options: ElementSurfaceOptions = {}
 ): StyleSurface {
     const uid = source.uid();
+    const persistedId = source.styleSourceId?.();
 
     return {
         key: options.key ? `${options.key}:layout` : `element-layout:${uid}`,
         group,
         kind: 'element-layout',
-        selector: options.layoutSelector || createElementLayoutSelector(uid, options.selector),
-        runtimeScopeSelector: options.runtimeScopeSelector || createElementSelector(uid),
+        selector: options.layoutSelector || createElementLayoutSelector(uid, options.selector, persistedId),
+        runtimeScopeSelector: options.runtimeScopeSelector || createElementSelector(uid, persistedId),
         libraryLayer: options.libraryLayer,
     };
 }
@@ -212,7 +316,11 @@ export function createSectionStyleSurface(
     group: StyleRuleGroup
 ): StyleSurface {
     const uid = source.uid();
-    const defaultSelector = kind === 'section-container' ? createSectionContainerSelector(uid) : createSectionElementSelector(uid);
+    const persistedId = source.styleSourceId?.();
+    const defaultSelector =
+        kind === 'section-container'
+            ? createSectionContainerSelector(uid, persistedId)
+            : createSectionElementSelector(uid, persistedId);
     const selector = source.selector?.() || defaultSelector;
 
     return {
@@ -229,13 +337,14 @@ export function createSectionStyleSurface(
  */
 export function createSectionLayoutStyleSurface(source: StyleSectionReader, group: StyleRuleGroup): StyleSurface {
     const uid = source.uid();
+    const persistedId = source.styleSourceId?.();
 
     return {
         key: `section-layout:${uid}`,
         group,
         kind: 'section-layout',
-        selector: createSectionLayoutSelector(uid),
-        runtimeScopeSelector: createSectionElementSelector(uid),
+        selector: createSectionLayoutSelector(uid, persistedId),
+        runtimeScopeSelector: createSectionElementSelector(uid, persistedId),
     };
 }
 
@@ -246,5 +355,5 @@ export function resolveParentSelector(parentUid: string, source: StyleElementRea
     const parentRef = source.parentRef();
     if (parentRef?.uid === parentUid && parentRef.selector) return parentRef.selector;
 
-    return createElementSelector(parentUid);
+    return createElementSelector(parentUid, parentRef?.uid === parentUid ? parentRef.styleSourceId : undefined);
 }

@@ -4,7 +4,7 @@
         class="ww-layout"
         :data-ww-layout-owner-type="parentElementUid ? 'element' : sectionId ? 'section' : undefined"
         :data-ww-layout-owner-uid="parentElementUid || sectionId || undefined"
-        :data-ww-layout-style-scopes="layoutStyleScopes"
+        :data-ww-ls="layoutStyleScopes"
         :style="layoutStyle"
     >
         <slot></slot>
@@ -21,7 +21,11 @@ withDefaults(defineProps<{ tag?: string }>(), {
 });
 
 const parentElementUid = inject<string | null>('_wwElementUid', null);
+const parentElementStyleSourceId = inject<{ value?: number } | null>('_wwElementStyleSourceId', null);
 const sectionId = inject<string | null>('sectionId', null);
-const layoutStyleScopes = useLayoutStyleScopeAttribute(() => parentElementUid);
+const layoutStyleScopes = useLayoutStyleScopeAttribute(
+    () => parentElementUid,
+    () => parentElementStyleSourceId?.value
+);
 const layoutStyle = useLegacyLayoutStyle();
 </script>

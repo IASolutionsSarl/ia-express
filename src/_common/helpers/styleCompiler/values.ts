@@ -1277,6 +1277,7 @@ export function resolveRawStyleProperty({
             domain,
         });
     }
+    if (propertyTree.supportsState?.(property) === false) return undefined;
 
     const stateReader = slot?.stateReader || propertyTree.state(state);
     const stateClassIds = slot?.stateClassIds || getStringArray(stateReader.classIds());
@@ -1334,6 +1335,8 @@ function resolveRawStylePropertyWithOrigin({
         });
         candidates.push({ kind: 'source', reader: baseState.breakpoint(breakpoint) });
     } else {
+        if (propertyTree.supportsState?.(property) === false) return undefined;
+
         const stateReader = slot?.stateReader || propertyTree.state(state);
         const stateClassIds = slot?.stateClassIds || getStringArray(stateReader.classIds());
 
@@ -1479,6 +1482,7 @@ function resolveEffectiveRawStyleProperty({
     }
 
     if (state === 'base') return result;
+    if (propertyTree.supportsState?.(property) === false) return result;
 
     const stateReader = slot?.stateReader || propertyTree.state(state);
     const stateClassIds = slot?.stateClassIds || getStringArray(stateReader.classIds());

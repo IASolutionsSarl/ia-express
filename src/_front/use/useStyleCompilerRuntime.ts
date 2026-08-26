@@ -2,14 +2,17 @@ import { effectScope, onBeforeUnmount, watch, watchEffect } from 'vue';
 
 import {
     createStyleCompiler,
-    decodeStyleRuntimeManifest,
+    decodeStyleRuntimeManifestData,
+    type StyleAtomicClassAssignment,
     type StyleCompilerMode,
     type StyleReactivityRuntime,
+    type StyleRuntimeAtomicClassAssignment,
 } from '@/_common/helpers/styleCompiler';
 import { createEditorStyleCompilerSources } from '@/_front/helpers/styleCompilerReader';
 import { createReactiveCompileScope } from '@/_front/helpers/styleCompilerRuntimeScope';
 import { createDomStyleSheetAdapter } from '@/_front/services/styleCompilerDomStyleSheet';
 import { registerStyleDynamicVariables } from '@/_front/services/styleCompilerRuntimeVariables';
+import { registerStyleAtomicClasses } from '@/_front/services/styleCompilerAtomicClasses';
 
 const vueStyleCompilerRuntime: StyleReactivityRuntime = {
     createScope() {
@@ -38,12 +41,36 @@ function usePublishedPageStyleRuntime() {
     const stopManifestWatch = watch(
         () => {
             const page = wwLib.$store.getters['websiteData/getPage'];
-            return [page?.id, page?._sm] as const;
+            const pageStyleSourceUids = wwLib.$store.getters['websiteData/getStyleSourceUids'];
+            const sourceUids = Array.isArray(pageStyleSourceUids)
+                ? pageStyleSourceUids
+                : [
+                      ...Object.keys(wwLib.$store.getters['websiteData/getSections'] || {}),
+                      ...Object.keys(wwLib.$store.getters['websiteData/getWwObjects'] || {}),
+                  ];
+            return [page?.id, page?._sm, sourceUids] as const;
         },
-        ([, manifest]) => {
+        ([, manifest, sourceUids]) => {
             stopCurrentRuntime();
-            const variables = decodeStyleRuntimeManifest(manifest);
-            stopCurrentRuntime = variables ? registerStyleDynamicVariables(variables) : mountStyleCompiler('runtime');
+            const manifestData = decodeStyleRuntimeManifestData(manifest);
+            if (!manifestData) {
+                stopCurrentRuntime = mountStyleCompiler('runtime');
+                return;
+            }
+
+            const atomicClasses = resolvePublishedAtomicClasses(manifestData.atomicClasses, sourceUids);
+            if (!atomicClasses) {
+                stopCurrentRuntime = mountStyleCompiler('runtime');
+                return;
+            }
+
+            const stops = [registerStyleDynamicVariables(manifestData.variables)];
+            if (atomicClasses.length) {
+                stops.push(registerStyleAtomicClasses(atomicClasses));
+            }
+            stopCurrentRuntime = () => {
+                for (let index = stops.length - 1; index >= 0; index--) stops[index]();
+            };
         },
         { immediate: true }
     );
@@ -52,6 +79,31 @@ function usePublishedPageStyleRuntime() {
         stopManifestWatch();
         stopCurrentRuntime();
     });
+}
+
+function resolvePublishedAtomicClasses(
+    assignments: readonly StyleRuntimeAtomicClassAssignment[],
+    sourceUids: readonly string[]
+) {
+    return assignments.reduce<StyleAtomicClassAssignment[] | null>(
+        (resolved, assignment) => {
+            if (!resolved) return null;
+            if ('sourceUid' in assignment) {
+                resolved.push(assignment);
+                return resolved;
+            }
+
+            const sourceUid = sourceUids[assignment.sourceIndex];
+            if (!sourceUid) return null;
+            resolved.push({
+                sourceUid,
+                surfaceKind: assignment.surfaceKind,
+                className: assignment.className,
+            });
+            return resolved;
+        },
+        []
+    );
 }
 
 function mountStyleCompiler(mode: Extract<StyleCompilerMode, 'editor' | 'runtime'>) {

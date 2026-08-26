@@ -91,6 +91,8 @@ export function createLayoutDeclarations(scope: DeclarationScope) {
         currentDisplay,
         effectiveDisplayResolution?.source
     );
+    const emitDisplay =
+        shouldEmitDefaultDeclaration(scope) || hasResolvedValue(currentDisplay) || recomposeInheritedValues;
     const compilation: LayoutCompilationContext = {
         currentDisplay,
         recomposeInheritedValues,
@@ -101,20 +103,18 @@ export function createLayoutDeclarations(scope: DeclarationScope) {
             : getDisplayValue(display, allowedDisplayValues, restrictToAllowedValues);
 
     if (displayValue === undefined) return [];
+    const displayDeclarations = emitDisplay ? [createDeclaration(scope, 'display', displayValue)] : [];
     const layoutDisplayValue = getLayoutDisplayValue(displayValue, allowedDisplayValues, restrictToAllowedValues);
     if (layoutDisplayValue !== undefined) {
-        return [
-            createDeclaration(scope, 'display', displayValue),
-            ...createLayoutFamilyDeclarations(scope, layoutDisplayValue, compilation),
-        ];
+        return [...displayDeclarations, ...createLayoutFamilyDeclarations(scope, layoutDisplayValue, compilation)];
     }
 
     if (!isStyleDynamicVariableReference(displayValue) || !restrictToAllowedValues) {
-        return [createDeclaration(scope, 'display', displayValue)];
+        return displayDeclarations;
     }
 
     return [
-        createDeclaration(scope, 'display', displayValue),
+        ...displayDeclarations,
         ...createConditionalLayoutFamilyDeclarations(scope, displayValue, allowedDisplayValues, compilation),
     ];
 }

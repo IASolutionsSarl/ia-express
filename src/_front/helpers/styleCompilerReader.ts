@@ -4,6 +4,7 @@ import {
     getComponentBaseConfiguration,
     getDisplayAllowedValues as getConfigurationDisplayAllowedValues,
 } from '@/_common/helpers/component/component';
+import { getInheritedConfiguration } from '@/_common/helpers/configuration/configuration';
 import { useComponentBasesStore } from '@/pinia/componentBases';
 import {
     createElementSelector,
@@ -12,6 +13,7 @@ import {
     normalizeConfiguredStyleStates,
     PARENT_STYLE_STATE_PREFIX,
 } from '@/_common/helpers/styleCompiler';
+import { getContentPropertyStateSupport } from '@/_common/helpers/styleCompiler/propertyCapabilities';
 import type {
     StyleBreakpointName,
     StyleClassReader,
@@ -34,6 +36,8 @@ import { usePopupStore } from '@/pinia/popup';
 const BASE_STATE = 'base';
 const DEFAULT_STATE = 'default';
 const BREAKPOINT_NAMES: StyleBreakpointName[] = ['default', 'tablet', 'mobile'];
+const inheritedConfigurations = new WeakMap<object, StyleSourceData>();
+const emptyConfiguration: StyleSourceData = {};
 
 type StyleSourceData = Record<string, any>;
 type EditorLibraryComponentSourceIndex = {
@@ -280,9 +284,7 @@ function createSourceReader(
                 if (!isLibraryComponentInstance(data)) return null;
 
                 const fallbackData = getLibraryComponentRootElement(data.libraryComponentBaseId);
-                return fallbackData
-                    ? createSourceReader(fallbackData, 'element', resolveParentStateReference)
-                    : null;
+                return fallbackData ? createSourceReader(fallbackData, 'element', resolveParentStateReference) : null;
             },
             isDirectSectionChild() {
                 return isDirectSectionChild(data);
@@ -307,6 +309,9 @@ function createBaseSourceReader(
         uid() {
             return data.uid;
         },
+        styleSourceId() {
+            return typeof data._si === 'number' ? data._si : undefined;
+        },
         baseId() {
             return getSourceBaseId(data, kind);
         },
@@ -326,7 +331,12 @@ function createBaseSourceReader(
             return createPropertyTreeReader(data, 'style');
         },
         content() {
-            return createPropertyTreeReader(data, 'content');
+            const configuration = getSourceConfiguration(data, kind);
+            return createPropertyTreeReader(
+                data,
+                'content',
+                getContentPropertyStateSupport(configuration, getInheritedSourceConfiguration(configuration))
+            );
         },
     };
 }
@@ -353,7 +363,7 @@ function createSourceCapabilities(data: StyleSourceData, kind: 'element' | 'sect
 
 function getSourceConfiguration(data: StyleSourceData, kind: 'element' | 'section') {
     const baseId = getSourceBaseId(data, kind);
-    if (!baseId) return {};
+    if (!baseId) return emptyConfiguration;
 
     if (kind === 'section') return getComponentBaseConfiguration('section', baseId);
     if (data.libraryComponentBaseId && !data.wwObjectBaseId) {
@@ -361,6 +371,15 @@ function getSourceConfiguration(data: StyleSourceData, kind: 'element' | 'sectio
     }
 
     return getComponentBaseConfiguration('element', baseId);
+}
+
+function getInheritedSourceConfiguration(configuration: StyleSourceData): StyleSourceData {
+    const cached = inheritedConfigurations.get(configuration);
+    if (cached) return cached;
+
+    const resolved = getInheritedConfiguration({ inherit: configuration.inherit });
+    inheritedConfigurations.set(configuration, resolved);
+    return resolved;
 }
 
 function getSourceBaseId(data: StyleSourceData, kind: 'element' | 'section') {
@@ -465,11 +484,13 @@ function getSourceParentRef(data: StyleSourceData, kind: 'element' | 'section') 
     if (kind !== 'element') return null;
 
     const sectionUid = data.parentSectionId;
-    if (!sectionUid || !getSections()[sectionUid]) return null;
+    const section = getSections()[sectionUid];
+    if (!sectionUid || !section) return null;
 
     return {
         uid: sectionUid,
-        selector: createSectionContainerSelector(sectionUid),
+        styleSourceId: section._si,
+        selector: createSectionContainerSelector(sectionUid, section._si),
     };
 }
 
@@ -527,8 +548,13 @@ function createClassReader(data: StyleSourceData): StyleClassReader {
     };
 }
 
-function createPropertyTreeReader(data: StyleSourceData, domain: StylePropertyDomain): StylePropertyTreeReader {
+function createPropertyTreeReader(
+    data: StyleSourceData,
+    domain: StylePropertyDomain,
+    supportsState?: (property: string) => boolean
+): StylePropertyTreeReader {
     return {
+        ...(supportsState ? { supportsState } : {}),
         state(name) {
             return createStateReader(data, domain, name);
         },
@@ -797,7 +823,7 @@ function getParentStateSource(uid: string) {
         return {
             data: element,
             kind: 'element' as const,
-            selector: createElementSelector(uid),
+            selector: createElementSelector(uid, element._si),
         };
     }
 
@@ -806,7 +832,7 @@ function getParentStateSource(uid: string) {
         return {
             data: section,
             kind: 'section' as const,
-            selector: createSectionContainerSelector(uid),
+            selector: createSectionContainerSelector(uid, section._si),
         };
     }
 

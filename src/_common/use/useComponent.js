@@ -14,6 +14,7 @@ import {
 } from '@/_common/helpers/component/libraryComponentRendering';
 import { lazySet } from '@/_common/helpers/reactivity.js';
 import { usePopupStore } from '@/pinia/popup';
+import { scheduleRuntimeLifecycle } from '@/_front/rendering/runtimeLifecycleScheduler';
 
 export function useComponentData({
     type,
@@ -334,12 +335,16 @@ export function useComponentTriggerEvent(
         triggerEvent(eventName, {});
     }
 
+    function scheduleLifecycleEvent(eventName) {
+        scheduleRuntimeLifecycle(() => triggerLifecycleEvent(eventName));
+    }
+
     watch(isRenderingRef, (isRendered, wasRendered) => {
         if (isRendered && !wasRendered) {
             // Next tick to ensure that the component is fully rendered
-            nextTick(() => triggerLifecycleEvent('_wwOnMounted'));
+            nextTick(() => scheduleLifecycleEvent('_wwOnMounted'));
         } else if (!isRendered && wasRendered) {
-            triggerLifecycleEvent('_wwOnBeforeUnmount');
+            scheduleLifecycleEvent('_wwOnBeforeUnmount');
         }
     });
 
@@ -357,17 +362,17 @@ export function useComponentTriggerEvent(
         });
     }
 
-    triggerLifecycleEvent('_wwOnCreated');
+    scheduleLifecycleEvent('_wwOnCreated');
 
     onMounted(() => {
         if (isRenderingRef.value) {
-            triggerLifecycleEvent('_wwOnMounted');
+            scheduleLifecycleEvent('_wwOnMounted');
         }
     });
 
     onBeforeUnmount(() => {
         if (isRenderingRef.value) {
-            triggerLifecycleEvent('_wwOnBeforeUnmount');
+            scheduleLifecycleEvent('_wwOnBeforeUnmount');
         }
 
         if (rootElementRef?.value?.$el) {

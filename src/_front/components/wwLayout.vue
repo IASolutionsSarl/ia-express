@@ -5,7 +5,7 @@
         :data-ww-layout-id="layoutId"
         :data-ww-layout-owner-type="parentElementUid ? 'element' : sectionId ? 'section' : undefined"
         :data-ww-layout-owner-uid="parentElementUid || sectionId || undefined"
-        :data-ww-layout-style-scopes="layoutStyleScopes"
+        :data-ww-ls="layoutStyleScopes"
         :class="{
          }"
         :style="layoutDomStyle"
@@ -83,7 +83,11 @@ export default {
         const id = layoutId++;
         resetLayoutItemIndex();
         const parentElementUid = inject('_wwElementUid', null);
-        const layoutStyleScopes = useLayoutStyleScopeAttribute(() => parentElementUid);
+        const parentElementStyleSourceId = inject('_wwElementStyleSourceId', null);
+        const layoutStyleScopes = useLayoutStyleScopeAttribute(
+            () => parentElementUid,
+            () => parentElementStyleSourceId?.value
+        );
         const parentElementComponentId = inject('_wwElementComponentId', null);
         const sectionId = inject('sectionId', null);
         const bindingContext = inject('bindingContext', null);

@@ -613,7 +613,12 @@ function createTextDeclarations(scope: DeclarationScope) {
         declarations.push(createAuthoredStyleDeclaration(scope, cssProperty, readTextProperty(scope, sourceProperty)));
     }
 
-    declarations.push(createDeclaration(scope, 'whiteSpaceCollapse', 'preserve'));
+    // This compatibility value is constant and inherited by every responsive/state slot on the
+    // same surface. Emitting it once keeps the legacy behavior without creating one-rule media
+    // blocks for every slot.
+    if (shouldEmitDefaultDeclaration(scope)) {
+        declarations.push(createDeclaration(scope, 'whiteSpaceCollapse', 'preserve'));
+    }
 
     return declarations;
 }

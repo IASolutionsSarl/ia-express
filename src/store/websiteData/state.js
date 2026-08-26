@@ -1,8 +1,13 @@
+import { createStyleSourceIdRegistry } from '@/_common/helpers/styleCompiler';
+import { markRaw } from 'vue';
+
 export default () => ({
     /*=============================================m_ÔÔ_m=============================================\
         DESIGN
     \================================================================================================*/
     pageId: null,
+    styleSourceUids: [],
+    styleSourceIdRegistry: markRaw(createStyleSourceIdRegistry()),
     design: {
         info: null,
         pages: [],

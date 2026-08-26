@@ -206,6 +206,10 @@ export function useInput(props, emit) {
         }
     });
 
+    const isFocused = computed(() => {
+        return isReallyFocused.value;
+    });
+
 
     return {
         inputRef,
@@ -224,6 +228,7 @@ export function useInput(props, emit) {
         focusInput,
         selectInput,
         onBlur,
+        isFocused,
         setValue,
     };
 }

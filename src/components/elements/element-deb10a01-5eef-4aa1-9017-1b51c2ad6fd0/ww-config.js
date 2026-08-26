@@ -66,13 +66,7 @@ export default {
     },
     states: [
         { label: 'focus', selector: '&:focus-within' },
-        {
-            label: 'readonly',
-            selectors: [
-                '&.ww-input-basic:read-only:not(.editing)',
-                '&:has(.ww-input-basic:read-only:not(.editing))',
-            ],
-        },
+        { label: 'readonly', selectors: ['&:read-only', '&:has(:read-only)'] },
     ],
     actions: [{ label: 'Focus element', action: 'focusInput' }],
     triggerEvents: [
@@ -310,7 +304,7 @@ export default {
             section: 'settings',
             type: 'Formula',
             defaultValue: '',
-            bindable: true,
+            bindable: false,
             hidden: (content, sidePanelContent) => {
                 return !sidePanelContent.form?.uid || !content.customValidation;
             },

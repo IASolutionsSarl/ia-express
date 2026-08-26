@@ -2,6 +2,7 @@ import { watchEffect, shallowReactive } from 'vue';
 import { useComponentBasesStore } from '@/pinia/componentBases.js';
 import { useVariablesStore } from '@/pinia/variables.js';
 import { cloneDeep } from 'lodash-es';
+import { pluginLifecycleScheduler } from './pluginLifecycleScheduler';
 
 export default {
      async registerPlugin(componentId, content, devOptions = null) {
@@ -96,8 +97,7 @@ export default {
             });
         });
 
-         // eslint-disable-next-line no-async-promise-executor
-        const isLoaded = new Promise(async resolve => {
+         const isLoaded = pluginLifecycleScheduler.register(async () => {
             try {
                 if (wwLib.wwPlugins[plugin.namespace]._onLoad)
                     await wwLib.wwPlugins[plugin.namespace]._onLoad(settings);
@@ -110,14 +110,16 @@ export default {
                 pluginId: plugin.id,
                 isLoaded: true,
             });
-
-            resolve();
         });
 
         this._pluginPromises.push(isLoaded);
     },
     async initPlugins() {
+        await this.activatePlugins();
         await this.waitPluginsLoaded();
+    },
+    async activatePlugins() {
+        await pluginLifecycleScheduler.activate();
     },
     async waitPluginsLoaded() {
         return await Promise.all(this._pluginPromises);

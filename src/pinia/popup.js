@@ -42,11 +42,13 @@ export const usePopupStore = defineStore('popups', () => {
         }
 
         const uid = `popup-${createId.rnd()}`;
-        instances.value[uid] = {
+        const instance = {
             uid,
             libraryComponentBaseId,
             content,
         };
+        wwLib.$store.commit('websiteData/ensureStyleSourceIds', [instance]);
+        instances.value[uid] = instance;
         if (waitClosing) {
             return new Promise(resolve => {
                 onClosePromises[uid] = resolve;

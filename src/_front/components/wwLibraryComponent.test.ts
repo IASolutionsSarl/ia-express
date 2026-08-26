@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const libraryFixture = vi.hoisted(() => ({
     capturedLayoutData: [] as Array<Record<string, unknown>>,
+    capturedRootClasses: [] as unknown[],
 }));
 
 vi.mock('@/_common/helpers/component/component.js', () => ({
@@ -86,6 +87,9 @@ vi.mock('@/_front/use/useComponentStates.js', async () => {
 });
 vi.mock('@/_common/use/useActions.js', () => ({ useLibraryComponentActions: vi.fn() }));
 vi.mock('@/_front/use/useStyleCompilerDynamicVariables', () => ({ useStyleCompilerDynamicVariables: vi.fn() }));
+vi.mock('@/_front/services/styleCompilerAtomicClasses', () => ({
+    getStyleAtomicClassesForSource: () => ['ww-a-instance-default'],
+}));
 vi.mock('@/_front/use/useLayoutStyleScopes', () => ({ provideLibraryComponentLayoutStyleScope: vi.fn() }));
 vi.mock('@/pinia/popup', () => ({ usePopupStore: () => ({}) }));
 vi.mock('./ComponentLoader.vue', () => ({
@@ -100,8 +104,9 @@ vi.mock('./wwElementComponent.vue', () => ({
         props: {
             libraryComponentData: { type: Object, default: undefined },
         },
-        setup(props) {
+        setup(props, { attrs }) {
             return () => {
+                libraryFixture.capturedRootClasses.push(attrs.class);
                 const layout = props.libraryComponentData?.layout;
                 if (layout) {
                     libraryFixture.capturedLayoutData.push({
@@ -111,7 +116,7 @@ vi.mock('./wwElementComponent.vue', () => ({
                         textAlignValue: layout.textAlign?.value(),
                     });
                 }
-                return h('div');
+                return h('div', attrs);
             };
         },
     }),
@@ -142,7 +147,21 @@ function installWwLib({ hasBase = true } = {}) {
 describe('wwLibraryComponent Vue adapter', () => {
     beforeEach(() => {
         libraryFixture.capturedLayoutData.length = 0;
+        libraryFixture.capturedRootClasses.length = 0;
         installWwLib();
+    });
+
+    it.each([
+        ['Editor', wwLibraryComponentEditor],
+        ['Front', wwLibraryComponentFront],
+    ])('forwards page-instance atomic classes to its concrete root in %s', async (_, target) => {
+        const app = createSSRApp({
+            render: () => h(target, { uid: 'library-instance' }),
+        });
+
+        const html = await renderToString(app);
+
+        expect(html).toContain('ww-a-instance-default');
     });
 
     it.each([

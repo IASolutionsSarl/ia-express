@@ -59,12 +59,13 @@
         @input="handleManualInput"
         @blur="onBlur"
         @focus="isReallyFocused = true"
+        @click="handleColorInputClick"
         @keyup.enter="onEnter"
     />
 </template>
 
 <script>
-import { computed, inject, watch, nextTick, ref, useId } from 'vue';
+import { computed, inject, watch, nextTick, ref } from 'vue';
 import { useInput } from './composables/useInput';
 import { useCurrency } from './composables/useCurrency';
 
@@ -81,15 +82,6 @@ export default {
         'update:sidepanel-content',
     ],
     setup(props, { emit }) {
-        // Generate unique ID for the input
-        const generatedId = `ww-input-basic-${useId()}`;
-
-        // Use custom ID if set, otherwise use generated ID
-        const inputId = computed(() => props.wwElementState.props.attributes?.id || generatedId);
-
-        // Register with parent label if available
-        const useLabelChild = inject('_wwLabel:useLabelChild', null);
-
         const isEditing = computed(() => {
             return false;
         });
@@ -144,15 +136,31 @@ export default {
         // Initialize currency display value from initial value
         watch(
             [() => props.content.type, () => props.content.value, variableValue],
-            ([contentType, propsValue, variableValue]) => {
+            ([contentType, propsValue, variableValue], [oldContentType, oldPropsValue, oldVariableValue]) => {
                 // Use props.content.value if it exists (binding case), otherwise use variableValue
                 const value = propsValue !== undefined && propsValue !== null ? propsValue : variableValue;
-                if (contentType === 'currency' && value !== undefined && value !== null && value !== '' && !isTyping) {
-                    // Only auto-format if not currently typing
-                    // For input field, use formatCurrency with zero padding and without symbol
-                    const inputFormattedValue = formatCurrency(value, { padZeros: true, includeSymbol: false });
-                    if (currencyDisplayValue.value !== inputFormattedValue) {
-                        currencyDisplayValue.value = inputFormattedValue;
+
+                // Check if props.content.value (init value) has changed
+                const isInitValueChange =
+                    propsValue !== oldPropsValue && propsValue !== undefined && propsValue !== null;
+
+                if (contentType === 'currency' && (!isTyping || isInitValueChange)) {
+                    if (value !== undefined && value !== null && value !== '') {
+                        // Format when not typing OR when init value changes (override typing)
+                        // For input field, use formatCurrency with zero padding and without symbol
+                        const inputFormattedValue = formatCurrency(value, { padZeros: true, includeSymbol: false });
+                        if (currencyDisplayValue.value !== inputFormattedValue) {
+                            currencyDisplayValue.value = inputFormattedValue;
+                        }
+                        // Reset isTyping when init value changes
+                        if (isInitValueChange) {
+                            isTyping = false;
+                        }
+                    } else {
+                        // Clear the display value when the actual value is empty/null/undefined
+                        if (currencyDisplayValue.value !== '') {
+                            currencyDisplayValue.value = '';
+                        }
                     }
                 }
             },
@@ -257,6 +265,7 @@ export default {
 
             // Check for conflicting separators
             if (thousandsSep === decimalSep) {
+                console.warn('⚠️ Warning: Thousands separator and decimal separator are the same:', thousandsSep);
 
             }
 
@@ -356,7 +365,8 @@ export default {
             const limitedCleanValue = integerPart + (decimalPart ? '.' + decimalPart : '');
 
             // Extract numeric value from the limited clean value
-            const actualValue = parseFloat(limitedCleanValue) || 0;
+            // If the clean value is empty, keep it as empty string instead of defaulting to 0
+            const actualValue = limitedCleanValue === '' ? '' : parseFloat(limitedCleanValue) || 0;
 
             // Add thousands separators to integer part
             if (integerPart && thousandsSep) {
@@ -452,41 +462,18 @@ export default {
         const customValidation = computed(() => props.content.customValidation);
         const required = computed(() => props.content.required);
 
-        // Create computed name for label - use fieldName or element name
-        const inputName = computed(() => {
-            // First priority: field name from form
-            if (fieldName.value) {
-                return fieldName.value;
-            }
-            // Second priority: element name from editor state
-            return null;
-        });
-
-        // Register with label if inside one
-        if (useLabelChild) {
-            useLabelChild(props.uid, inputName);
-        }
-
         useForm(
             variableValue,
-            {
-                fieldName,
-                validation,
-                customValidation,
-                required,
-                initialValue: computed(() => props.content.value),
-                elementId: inputId,
-            },
+            { fieldName, validation, customValidation, required, initialValue: computed(() => props.content.value) },
             { elementState: props.wwElementState, emit, sidepanelFormPath: 'form', setValue }
         );
 
         const inputBindings = computed(() => ({
             ...props.wwElementState.props.attributes,
-            id: inputId.value,
             key: 'ww-input-basic-' + step.value,
             value: props.content.type === 'currency' ? currencyDisplayValue.value : displayValue.value,
             type: inputType.value,
-            name: inputId.value,
+            name: props.wwElementState.name,
             readonly: isReadonly.value || isEditing.value,
             required: props.content.required,
             autocomplete: props.content.autocomplete ? 'on' : 'off',
@@ -498,10 +485,9 @@ export default {
 
         const textareaBindings = computed(() => ({
             ...props.wwElementState.props.attributes,
-            id: inputId.value,
             value: displayValue.value,
             type: props.content.type,
-            name: inputId.value,
+            name: props.wwElementState.name,
             readonly: isReadonly.value || isEditing.value,
             required: props.content.required,
             placeholder: wwLib.wwLang.getText(props.content.placeholder),
@@ -518,6 +504,15 @@ export default {
 
         function onEnter() {
             emit('trigger-event', { name: 'onEnterKey', event: { value: variableValue.value } });
+        }
+
+        function handleColorInputClick(event) {
+            // Prevent color picker from opening when input is readonly (either from isReadonly or isEditing)
+            if (props.content.type === 'color' && (isReadonly.value || isEditing.value)) {
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
         }
 
         watch(
@@ -543,6 +538,10 @@ export default {
 
                     // Check for conflicting separators
                     if (currentThousandsSep === currentDecimalSep) {
+                        console.warn(
+                            '⚠️ Warning: Thousands separator and decimal separator are the same:',
+                            currentThousandsSep
+                        );
 
                         return; // Don't reformat if separators are invalid
                     }
@@ -603,6 +602,7 @@ export default {
             textareaBindings,
             inputClasses,
             onEnter,
+            handleColorInputClick,
             // Currency-related
             handleCurrencyInput,
             handleCurrencyKeydown,
@@ -649,7 +649,6 @@ export default {
     overflow: var(--ww-text-overflow, initial);
     text-overflow: var(--ww-text-text-overflow, initial);
     white-space: var(--ww-text-white-space, initial);
-    white-space-collapse: preserve;
 
     &::placeholder {
         color: var(--placeholder-color, #000000ad);
@@ -692,8 +691,11 @@ export default {
         color: inherit;
         font: inherit;
         letter-spacing: inherit;
+        line-height: inherit;
         text-align: inherit;
         text-decoration: inherit;
+        text-decoration-color: inherit;
+        text-decoration-style: inherit;
         text-shadow: inherit;
         text-transform: inherit;
         width: 100%;

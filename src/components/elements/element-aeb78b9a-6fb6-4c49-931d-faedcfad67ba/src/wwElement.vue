@@ -81,6 +81,8 @@ const INPUT_STYLE_PROPERTIES = [
     'cursor',
 ];
 
+const ELEMENT_ROOT_CLASS_PREFIXES = ['ww-element-', 'ww-e-', 'ww-a-'];
+
 function normalizeClasses(value) {
     if (typeof value === 'string') return value.split(/\s+/).filter(Boolean);
     if (Array.isArray(value)) return value.flatMap(normalizeClasses);
@@ -96,7 +98,7 @@ function normalizeClasses(value) {
 function isElementRootClass(className) {
     return (
         className === 'ww-element' ||
-        className.startsWith('ww-element-') ||
+        ELEMENT_ROOT_CLASS_PREFIXES.some(prefix => className.startsWith(prefix)) ||
         /^ww-(?:flexbox|grid|layout)__object$/.test(className)
     );
 }

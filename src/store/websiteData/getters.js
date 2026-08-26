@@ -35,6 +35,7 @@ export default {
     getPageId(state) {
         return state.pageId;
     },
+    getStyleSourceUids: state => state.styleSourceUids,
 
     /*=============================================m_ÔÔ_m=============================================\
         WWOBJECTS

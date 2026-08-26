@@ -31,7 +31,7 @@ export type StyleSurface = {
      * Selector fragment replaced by the runtime instance selector when writing dynamic CSS vars.
      *
      * This can be narrower than `selector` for layout surfaces, for example replacing the owning
-     * element selector inside `.ww-element-x [data-ww-layout-style-scopes~="x"]`.
+     * element selector inside `.ww-e-x [data-ww-ls~="x"]`.
      */
     runtimeScopeSelector?: string;
     /**
@@ -435,6 +435,7 @@ export type StyleLibraryComponentReader = {
  */
 export type StyleParentRef = {
     uid: string;
+    styleSourceId?: number;
     /**
      * Testing-only selector override.
      *
@@ -448,6 +449,7 @@ export type StyleParentRef = {
  */
 export type StyleSourceReader = {
     uid(): string;
+    styleSourceId?(): number | undefined;
     baseId(): string | undefined;
     /**
      * Normalized component configuration relevant to CSS generation.
@@ -508,6 +510,12 @@ export type StylePropertyDomain = 'style' | 'content';
  * Stateful responsive property tree for one source domain.
  */
 export type StylePropertyTreeReader = {
+    /**
+     * Whether this property participates in state-specific source, class, and subclass slots.
+     *
+     * Omit this hook when every property in the domain is stateful.
+     */
+    supportsState?(property: string): boolean;
     state(name: string): StyleStateReader;
 };
 
@@ -569,6 +577,12 @@ export type StyleSheetAdapter<TResult = unknown> = {
      */
     dynamicVariable?(variable: StyleDynamicVariable): StyleScopeStop | void;
     /**
+     * Associates a compiler-owned atomic class with the rendered source surface.
+     *
+     * Adapters that omit this capability receive the traditional source-selector declarations.
+     */
+    atomicClass?(assignment: StyleAtomicClassAssignment): StyleScopeStop | void;
+    /**
      * Registers a typed custom property emitted for dynamic CSS variables.
      *
      * Static adapters serialize this as `@property`; DOM adapters insert it before generated layers.
@@ -579,6 +593,12 @@ export type StyleSheetAdapter<TResult = unknown> = {
      */
     batch?(callback: () => void): void;
     result(): TResult;
+};
+
+export type StyleAtomicClassAssignment = {
+    sourceUid: string;
+    surfaceKind: StyleSurfaceKind;
+    className: string;
 };
 
 /**

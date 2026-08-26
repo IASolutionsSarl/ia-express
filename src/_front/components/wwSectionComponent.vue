@@ -10,7 +10,8 @@
         :data-ww-forced-states="forcedStatesAttribute"
         :data-ww-component-id="sectionContainerComponentId"
         :class="[
-             `ww-section-${uid}`,
+             sectionStyleClass,
+            ...sectionContainerAtomicStyleClasses,
         ]"
         @mouseenter="onMouseEnter"
         @mouseleave="onMouseLeave"
@@ -23,9 +24,10 @@
          <!-- wwFront:start -->
         <component
             :is="vueComponentName"
+            v-if="shouldRenderClientIslandContent"
             ref="component"
             class="ww-section-element"
-            :class="state.class || ''"
+            :class="[state.class || '', ...sectionElementAtomicStyleClasses]"
             v-bind="componentAttributes"
             ww-responsive="ww-section-element"
             :data-ww-states="currentStatesAttribute"
@@ -58,7 +60,10 @@ import { useComponentStates } from '@/_front/use/useComponentStates';
 import { useComponentAdvancedInteractions } from '@/_front/use/useComponentAdvancedInteractions';
 import { useComponentActions } from '@/_common/use/useActions';
 import { useStyleCompilerDynamicVariables } from '@/_front/use/useStyleCompilerDynamicVariables';
+import { getStyleAtomicClassesForSource } from '@/_front/services/styleCompilerAtomicClasses';
 import { createComponentId } from '@/_front/services/componentIds';
+import { useClientIslandRendering } from '@/_front/rendering/useClientIslandRendering';
+import { createSectionClassName } from '@/_common/helpers/styleCompiler';
 
  
 import { inheritFrom } from '@/_common/helpers/configuration/configuration';
@@ -106,6 +111,13 @@ export default {
             uid: props.uid,
             currentStates,
          });
+        const vueComponentName = getComponentVueComponentName('section', props.uid);
+        const shouldRenderClientIslandContent = useClientIslandRendering({
+            type: 'section',
+            uid: props.uid,
+            componentName: vueComponentName,
+            forceClientOnly: () => configuration?.staticRendering === false,
+        });
 
         useStyleCompilerDynamicVariables({
             sourceUid: toRef(props, 'uid'),
@@ -114,6 +126,12 @@ export default {
                 sectionElement: component,
             },
         });
+        const sectionContainerAtomicStyleClasses = computed(() =>
+            getStyleAtomicClassesForSource(props.uid, 'section-container')
+        );
+        const sectionElementAtomicStyleClasses = computed(() =>
+            getStyleAtomicClassesForSource(props.uid, 'section-element')
+        );
 
         // When component is unmount, we reset state (the mouse leave event is not fired)
         watch(isRendering, isRendering => {
@@ -144,6 +162,12 @@ export default {
             component,
             sectionContainerComponentId,
             sectionElementComponentId,
+            sectionStyleClass: computed(() =>
+                createSectionClassName(props.uid, wwLib.$store.getters['websiteData/getSections']?.[props.uid]?._si)
+            ),
+            sectionContainerAtomicStyleClasses,
+            sectionElementAtomicStyleClasses,
+            shouldRenderClientIslandContent,
             content,
             state,
             configuration,
@@ -154,7 +178,7 @@ export default {
             addInternalState,
             removeInternalState,
             toggleInternalState,
-            vueComponentName: getComponentVueComponentName('section', props.uid), // this can never change, as this component is uid keyed and objectbase cannot change
+            vueComponentName, // this can never change, as this component is uid keyed and objectbase cannot change
             wwSectionState,
             wwFrontState: inject('wwFrontState'),
             anchorId: computed(() => {

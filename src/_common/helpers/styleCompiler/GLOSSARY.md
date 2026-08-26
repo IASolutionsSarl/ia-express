@@ -5,8 +5,8 @@
 - scope disposal: cleanup callback registered by the compiler to remove rules or properties when a reactive scope stops or reruns.
 - target chunk: all CSS rules owned by one compiled source target; it can include more than one rendered surface.
 - surface: one compiled styling surface, such as an element, section container, section inner element, or layout node.
-- layout style scope: element or renderless library uid exposed as a token in
-  `data-ww-layout-style-scopes`; it identifies which generated sources may style a `wwLayout` node.
+- layout style scope: compact token for an element or renderless library persisted `_si` exposed in
+  `data-ww-ls`; it identifies which generated sources may style a `wwLayout` node.
 - style domain: generic visual data stored under `_state.style`.
 - content domain: component-specific data stored under `content`; only CSS-producing content keys are compiled.
 - rule: selector plus CSS declarations, inserted or deleted as one stylesheet unit.

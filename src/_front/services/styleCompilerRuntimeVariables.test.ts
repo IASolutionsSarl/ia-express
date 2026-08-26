@@ -39,6 +39,43 @@ describe('styleCompilerRuntimeVariables', () => {
         expect(getStyleDynamicVariablesForSource('manifestA')).toEqual([]);
         expect(getStyleDynamicVariablesForSource('manifestB')).toEqual([]);
     });
+
+    it('restores an equivalent live registration when the latest compiler chunk is disposed', () => {
+        const firstVariable = createVariable('sharedSource', 'element');
+        const latestVariable = { ...firstVariable };
+        const stopFirst = registerStyleDynamicVariable(firstVariable);
+        const stopLatest = registerStyleDynamicVariable(latestVariable);
+
+        expect(getStyleDynamicVariablesForSource('sharedSource')).toEqual([latestVariable]);
+
+        stopLatest();
+
+        expect(getStyleDynamicVariablesForSource('sharedSource')).toEqual([firstVariable]);
+
+        stopFirst();
+
+        expect(getStyleDynamicVariablesForSource('sharedSource')).toEqual([]);
+    });
+
+    it('detaches replaced registrations when compiler chunks are disposed oldest first', () => {
+        let currentVariable = createVariable('replacedSource', 'element');
+        let stopCurrent = registerStyleDynamicVariable(currentVariable);
+
+        for (let index = 0; index < 100; index++) {
+            const nextVariable = { ...currentVariable };
+            const stopNext = registerStyleDynamicVariable(nextVariable);
+
+            stopCurrent();
+
+            expect(getStyleDynamicVariablesForSource('replacedSource')).toEqual([nextVariable]);
+            currentVariable = nextVariable;
+            stopCurrent = stopNext;
+        }
+
+        stopCurrent();
+
+        expect(getStyleDynamicVariablesForSource('replacedSource')).toEqual([]);
+    });
 });
 
 function createVariable(sourceUid: string, kind: StyleSurface['kind']): StyleDynamicVariable {

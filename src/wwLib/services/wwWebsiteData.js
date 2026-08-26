@@ -99,6 +99,26 @@ async function fetchData(pageId) {
     let page;
 
     /* wwFront:start */
+    if (import.meta.env.SSR) {
+        const payload = await readPageDataFromDisk(pageId);
+        const { page: pageData, sections, wwObjects, collections, variables, formulas, workflows, libraryComponents } =
+            payload;
+
+        page = { page: pageData, sections, wwObjects };
+        await wwLib.$store.dispatch('websiteData/setAllData', {
+            page,
+            collections,
+            variables,
+            formulas,
+            workflows,
+            libraryComponents,
+        });
+
+        // eslint-disable-next-line vue/custom-event-name-casing
+        wwLib.$emit('wwStore:dataLoaded');
+        return;
+    }
+
     try {
         const base = wwLib.useBaseTag() ? wwLib.getBaseTag() : '/';
         const lang = window.location.pathname.replace(base, '/').startsWith(`/${wwLib.wwLang.lang}/`)
@@ -171,3 +191,21 @@ async function fetchData(pageId) {
     // eslint-disable-next-line vue/custom-event-name-casing
     wwLib.$emit('wwStore:dataLoaded');
 }
+
+/* wwFront:start */
+async function readPageDataFromDisk(pageId) {
+    const { readFile } = await import('node:fs/promises');
+    const { resolve } = await import('node:path');
+    const basePageId = pageId.split('_')[0];
+    const payload = JSON.parse(await readFile(resolve(process.cwd(), 'public', 'data', `${basePageId}.json`), 'utf8'));
+
+    if (payload.page.cmsDataSetPath) {
+        const pageRowPayload = JSON.parse(
+            await readFile(resolve(process.cwd(), 'public', 'data', `${pageId}.json`), 'utf8')
+        );
+        Object.assign(payload.page, pageRowPayload.page);
+    }
+
+    return payload;
+}
+/* wwFront:end */

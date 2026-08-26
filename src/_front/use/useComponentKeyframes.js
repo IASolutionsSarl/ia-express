@@ -4,7 +4,7 @@ import { computed } from 'vue';
  * Editor-only animation preview override.
  *
  * The published animation (the `animation-*` longhands and the `@keyframes` block) is rendered by the
- * style compiler on the `.ww-element-<uid>` rule. Two editor-canvas behaviors cannot live in the pure
+ * style compiler on the element's compact style rule. Two editor-canvas behaviors cannot live in the pure
  * compiler and are driven here with an inline override (inline styles win over the compiler layer):
  *  - non-selected elements stay static (`animation: none`);
  *  - the selected element previews the keyframe editor (`keyframe-edition-animation`, played/paused

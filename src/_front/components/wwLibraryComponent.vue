@@ -6,7 +6,7 @@
         ref="elementComponent"
         :uid="rootUid"
         is-library-component-root
-        :class="instanceStyleClass"
+        :class="[instanceStyleClass, ...instanceAtomicStyleClasses]"
         :library-component-data="componentData"
         :library-component-trigger-event="triggerEvent"
         :library-component-trigger-library-component-event="triggerLibraryComponentEvent"
@@ -33,6 +33,7 @@ import { useInner } from '@/_front/use/useInner.js';
 import { useComponentStates } from '@/_front/use/useComponentStates.js';
 import { useLibraryComponentActions } from '@/_common/use/useActions.js';
 import { useStyleCompilerDynamicVariables } from '@/_front/use/useStyleCompilerDynamicVariables';
+import { getStyleAtomicClassesForSource } from '@/_front/services/styleCompilerAtomicClasses';
 import { provideLibraryComponentLayoutStyleScope } from '@/_front/use/useLayoutStyleScopes';
 import { usePopupStore } from '@/pinia/popup';
 
@@ -55,11 +56,14 @@ export default {
         const wwLayoutContext = inject('wwLayoutContext', {});
         const bindingContext = inject('bindingContext', null);
         const isACopy = computed(() => bindingContext && bindingContext.isACopy);
+        const modalsStore = usePopupStore();
+        const componentDataRef = computed(
+            () => wwLib.$store.getters['websiteData/getWwObjects']?.[props.uid] || modalsStore.instances?.[props.uid]
+        );
+        const styleSourceId = computed(() => componentDataRef.value?._si);
 
         provide('wwLibraryComponentUid_', props.uid);
-        provideLibraryComponentLayoutStyleScope(toRef(props, 'uid'));
-
-        const modalsStore = usePopupStore();
+        provideLibraryComponentLayoutStyleScope(toRef(props, 'uid'), styleSourceId);
 
  
         const elementComponent = ref(null);
@@ -114,7 +118,8 @@ export default {
                 element: computed(() => elementComponent.value?.component),
             },
         });
-        const instanceStyleClass = createElementClassName(props.uid);
+        const instanceStyleClass = computed(() => createElementClassName(props.uid, styleSourceId.value));
+        const instanceAtomicStyleClasses = computed(() => getStyleAtomicClassesForSource(props.uid, 'element'));
 
  
         const { variables, updateVariable, formulas, componentVariablesConfiguration } = useInner(
@@ -214,6 +219,7 @@ export default {
             triggerEvent,
             triggerLibraryComponentEvent,
             instanceStyleClass,
+            instanceAtomicStyleClasses,
             currentStatesAttribute,
             forcedStatesAttribute,
             componentData: reactive({

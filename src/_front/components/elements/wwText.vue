@@ -15,7 +15,7 @@
 <script>
 /* eslint-disable no-unreachable */
 import { inject } from 'vue';
-
+ 
 export default {
     props: {
         text: { type: [String, Object], default: undefined },
@@ -28,7 +28,7 @@ export default {
              wwFrontState: inject('wwFrontState'),
         };
     },
-    computed: {
+     computed: {
         canEditText() {
              /* wwFront:start */
             // eslint-disable-next-line no-unreachable
@@ -66,10 +66,10 @@ export default {
             /* wwFront:end */
             // eslint-disable-next-line no-unreachable
             if (!this.isTextBound) {
-                this.updateContent({ '_ww-text_text': text });
+                 this.updateContent({ '_ww-text_text': text });
             }
         },
-        async addLink({ id, value }) {
+         async addLink({ id, value }) {
             /* wwFront:start */
             return;
             /* wwFront:end */

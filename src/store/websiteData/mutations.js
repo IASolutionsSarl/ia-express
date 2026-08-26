@@ -1,5 +1,11 @@
  
 import { getPath } from '@/_common/helpers/pathResolver';
+import { assignDenseStyleSourceIds, createStyleSourceIdRegistry } from '@/_common/helpers/styleCompiler';
+
+function ensureStyleSourceIds(state, sources) {
+    state.styleSourceIdRegistry ||= createStyleSourceIdRegistry();
+    assignDenseStyleSourceIds(sources.filter(Boolean), state.styleSourceIdRegistry);
+}
 
 export default {
     /*=============================================m_ÔÔ_m=============================================\
@@ -23,6 +29,12 @@ export default {
         PAGE
     \================================================================================================*/
     setPageData(state, data) {
+        // Atomic style manifests use page-local indexes. Capture the incoming dictionaries before
+        // merging them into the long-lived store, whose insertion order can retain sources from a
+        // previously visited page.
+        ensureStyleSourceIds(state, [...Object.values(data.sections), ...Object.values(data.wwObjects)]);
+        state.styleSourceUids = [...Object.keys(data.sections), ...Object.keys(data.wwObjects)];
+
         for (const sectionId in data.sections) {
             if (!state.sections[sectionId]) state.sections[sectionId] = data.sections[sectionId];
         }

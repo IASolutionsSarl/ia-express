@@ -55,9 +55,9 @@ describe('styleCompiler layout compatibility', () => {
             stylesheet,
         });
 
-        expect(run.result).toContain('.ww-element-elementA.ww-layout');
-        expect(run.result).toContain('.ww-element-elementA [data-ww-layout-style-scopes~="elementA"]');
-        expect(run.result).not.toContain('.ww-element-elementA .ww-layout');
+        expect(run.result).toContain('.ww-e-sZWxlbWVudEE.ww-layout');
+        expect(run.result).toContain('.ww-e-sZWxlbWVudEE [data-ww-ls~="sZWxlbWVudEE"]');
+        expect(run.result).not.toContain('.ww-e-sZWxlbWVudEE .ww-layout');
         expect(run.result).toContain('display: flex;');
         expect(run.result).toContain('flex-direction: row-reverse;');
         expect(run.result).toContain('justify-content: space-between;');
@@ -104,14 +104,14 @@ describe('styleCompiler layout compatibility', () => {
 
         const layoutRule =
             run.result.match(
-                /\.ww-element-elementA\.ww-layout,\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]\s*\{[^}]*\}/
+                /\.ww-e-sZWxlbWVudEE\.ww-layout,\n\s*\.ww-e-sZWxlbWVudEE \[data-ww-ls~="sZWxlbWVudEE"\]\s*\{[^}]*\}/
             )?.[0] || '';
 
         expect(layoutRule).toContain('display: flex;');
         expect(layoutRule).toContain('flex-direction: column;');
     });
 
-    it('uses the component display when responsive wwLayout content changes without an explicit display', () => {
+    it('inherits the component display when responsive wwLayout content changes without an explicit display', () => {
         const run = createStyleCompiler().compileStylesheet({
             scope: {
                 elementUids: ['elementA'],
@@ -149,7 +149,7 @@ describe('styleCompiler layout compatibility', () => {
         });
         const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
 
-        expect(tabletCss).toContain('display: flex;');
+        expect(tabletCss).not.toContain('display: flex;');
         expect(tabletCss).toContain('flex-direction: column;');
         expect(tabletCss).toContain('justify-content: space-between;');
     });
@@ -345,6 +345,70 @@ describe('styleCompiler layout compatibility', () => {
         expect(run.result.indexOf('row-gap: 8px;')).toBeLessThan(run.result.indexOf('row-gap: 12px;'));
     });
 
+    it('keeps stateful class values while ignoring non-stateful content values from the same class', () => {
+        const run = createStyleCompiler().compileStylesheet({
+            scope: {
+                elementUids: ['elementA'],
+                sectionUids: [],
+                libraryComponentIds: [],
+            },
+            reader: createReader({
+                elements: {
+                    elementA: {
+                        uid: 'elementA',
+                        capabilities: { inherits: ['ww-layout'] },
+                        stateNames: ['_wwHover'],
+                        classIds: { _wwHover: ['hoverClass'] },
+                        nonStatefulProperties: {
+                            content: [
+                                '_ww-layout_flexDirection',
+                                '_ww-layout_justifyContent',
+                                '_ww-layout_alignItems',
+                            ],
+                        },
+                        styles: {
+                            base: {
+                                default: { display: 'flex' },
+                            },
+                        },
+                        content: {
+                            base: {
+                                default: { '_ww-layout_flexDirection': 'column' },
+                            },
+                        },
+                    },
+                },
+                classes: {
+                    hoverClass: {
+                        uid: 'hoverClass',
+                        styles: {
+                            base: {
+                                default: { opacity: '0.5' },
+                            },
+                        },
+                        content: {
+                            base: {
+                                default: {
+                                    '_ww-layout_flexDirection': 'row',
+                                    '_ww-layout_justifyContent': 'center',
+                                    '_ww-layout_alignItems': 'center',
+                                    '_ww-layout_rowGap': '12px',
+                                },
+                            },
+                        },
+                    },
+                },
+            }),
+            stylesheet: createStringStyleSheetAdapter(),
+        });
+
+        expect(run.result).toContain('opacity: 0.5;');
+        expect(run.result).toContain('row-gap: 12px;');
+        expect(run.result).not.toContain('flex-direction: row;');
+        expect(run.result).not.toContain('justify-content: center;');
+        expect(run.result).not.toContain('align-items: center;');
+    });
+
     it('resolves class wwLayout content in the source layout rule', () => {
         const stylesheet = createStringStyleSheetAdapter();
         const run = createStyleCompiler().compileStylesheet({
@@ -387,7 +451,7 @@ describe('styleCompiler layout compatibility', () => {
         });
         const layoutRule =
             run.result.match(
-                /\.ww-element-elementA\.ww-layout,\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]\s*\{[^}]*\}/
+                /\.ww-e-sZWxlbWVudEE\.ww-layout,\n\s*\.ww-e-sZWxlbWVudEE \[data-ww-ls~="sZWxlbWVudEE"\]\s*\{[^}]*\}/
             )?.[0] || '';
 
         expect(layoutRule).toContain('display: flex;');
@@ -436,10 +500,10 @@ describe('styleCompiler layout compatibility', () => {
         });
         const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
 
-        expect(tabletCss).toContain('.ww-element-elementA.ww-layout');
+        expect(tabletCss).toContain('.ww-e-sZWxlbWVudEE.ww-layout');
         expect(tabletCss).toContain('row-gap: 20px;');
         expect(run.result).toMatch(
-            /\.ww-element-elementA\.ww-layout:where\(:hover\),\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]:where\(:hover\)/
+            /\.ww-e-sZWxlbWVudEE\.ww-layout:where\(:hover\),\n\s*\.ww-e-sZWxlbWVudEE \[data-ww-ls~="sZWxlbWVudEE"\]:where\(:hover\)/
         );
         expect(run.result).toContain('align-items: flex-end;');
     });
@@ -493,19 +557,19 @@ describe('styleCompiler layout compatibility', () => {
         const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
         const baseLayoutRule =
             run.result.match(
-                /\.ww-element-elementA\.ww-layout,\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]\s*\{[^}]*\}/
+                /\.ww-e-sZWxlbWVudEE\.ww-layout,\n\s*\.ww-e-sZWxlbWVudEE \[data-ww-ls~="sZWxlbWVudEE"\]\s*\{[^}]*\}/
             )?.[0] || '';
         const tabletLayoutRule =
             [
                 ...tabletCss.matchAll(
-                    /\.ww-element-elementA\.ww-layout,\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]\s*\{[^}]*\}/g
+                    /\.ww-e-sZWxlbWVudEE\.ww-layout,\n\s*\.ww-e-sZWxlbWVudEE \[data-ww-ls~="sZWxlbWVudEE"\]\s*\{[^}]*\}/g
                 ),
             ]
                 .map(match => match[0])
                 .find(rule => rule.includes('display: flex;')) || '';
         const hoverLayoutRule =
             run.result.match(
-                /\.ww-element-elementA\.ww-layout:where\(:hover\),\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]:where\(:hover\)\s*\{[^}]*\}/
+                /\.ww-e-sZWxlbWVudEE\.ww-layout:where\(:hover\),\n\s*\.ww-e-sZWxlbWVudEE \[data-ww-ls~="sZWxlbWVudEE"\]:where\(:hover\)\s*\{[^}]*\}/
             )?.[0] || '';
 
         expect(baseLayoutRule).toContain('display: none;');
@@ -561,7 +625,7 @@ describe('styleCompiler layout compatibility', () => {
         });
         const openLayoutRule =
             run.result.match(
-                /\.ww-element-elementA\.ww-layout:where\(\[data-ww-states~="open"\]\),\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]:where\(\[data-ww-states~="open"\]\)[^{]*\{[^}]*\}/
+                /\.ww-e-sZWxlbWVudEE\.ww-layout:where\(\[data-ww-states~="open"\]\),\n\s*\.ww-e-sZWxlbWVudEE \[data-ww-ls~="sZWxlbWVudEE"\]:where\(\[data-ww-states~="open"\]\)[^{]*\{[^}]*\}/
             )?.[0] || '';
 
         expect(openLayoutRule).toContain('display: flex;');
@@ -601,9 +665,9 @@ describe('styleCompiler layout compatibility', () => {
         });
         const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
         const baseLayoutRule =
-            run.result.match(/\.ww-section-sectionA > \.ww-section-element\.ww-layout\s*\{[^}]*\}/)?.[0] || '';
+            run.result.match(/\.ww-s-sc2VjdGlvbkE > \.ww-section-element\.ww-layout\s*\{[^}]*\}/)?.[0] || '';
         const tabletLayoutRule =
-            [...tabletCss.matchAll(/\.ww-section-sectionA > \.ww-section-element\.ww-layout\s*\{[^}]*\}/g)]
+            [...tabletCss.matchAll(/\.ww-s-sc2VjdGlvbkE > \.ww-section-element\.ww-layout\s*\{[^}]*\}/g)]
                 .map(match => match[0])
                 .find(rule => rule.includes('display: flex;')) || '';
 
@@ -776,7 +840,7 @@ describe('styleCompiler layout compatibility', () => {
         });
         const overrideCss = run.result.slice(run.result.indexOf('@layer ww-style-layout-override'));
         const instancePushRules =
-            overrideCss.match(/[^{}]*ww-element-instance[^{}]*\{[^}]*margin-(?:left|top):[^}]*\}/g) || [];
+            overrideCss.match(/[^{}]*ww-e-saW5zdGFuY2U[^{}]*\{[^}]*margin-(?:left|top):[^}]*\}/g) || [];
 
         expect(instancePushRules).toEqual([]);
     });
@@ -822,7 +886,7 @@ describe('styleCompiler layout compatibility', () => {
         });
         const instanceLayoutRules =
             run.result
-                .match(/[^{}]*ww-element-instance\.ww-layout[^{}]*\{[^}]*\}/g)
+                .match(/[^{}]*ww-e-saW5zdGFuY2U\.ww-layout[^{}]*\{[^}]*\}/g)
                 ?.filter(rule => rule.includes('flex-direction')) || [];
 
         expect(instanceLayoutRules).toEqual(
@@ -831,6 +895,7 @@ describe('styleCompiler layout compatibility', () => {
                 expect.stringContaining('flex-direction: column-reverse;'),
             ])
         );
+        expect(instanceLayoutRules.every(rule => rule.includes('display: flex;'))).toBe(true);
         expect(instanceLayoutRules.some(rule => rule.includes('flex-wrap: nowrap;'))).toBe(true);
     });
 
@@ -885,7 +950,7 @@ describe('styleCompiler layout compatibility', () => {
             stylesheet: createStringStyleSheetAdapter(),
             runtime: STATIC_STYLE_RUNTIME,
         });
-        const instanceCss = run.result.slice(run.result.indexOf('.ww-element-instance'));
+        const instanceCss = run.result.slice(run.result.indexOf('.ww-e-saW5zdGFuY2U'));
 
         expect(instanceCss).not.toContain('flex-wrap: wrap;');
     });
@@ -926,7 +991,7 @@ describe('styleCompiler layout compatibility', () => {
             stylesheet: createStringStyleSheetAdapter(),
             runtime: STATIC_STYLE_RUNTIME,
         });
-        const instanceCss = run.result.slice(run.result.indexOf('.ww-element-instance'));
+        const instanceCss = run.result.slice(run.result.indexOf('.ww-e-saW5zdGFuY2U'));
         expect(instanceCss).toContain('flex-direction: row;');
         expect(instanceCss).not.toContain('flex-direction: column-reverse;');
         expect(instanceCss).not.toContain('margin-top: auto;');
@@ -977,7 +1042,7 @@ describe('styleCompiler layout compatibility', () => {
         const definitionVariables = variables.filter(variable => variable.sourceUid === 'definitionRoot');
         const serializedVariables = JSON.stringify(variables);
 
-        expect(run.result).toMatch(/\.ww-element-definitionRoot\.ww-layout[^}]*flex-direction: var\(/);
+        expect(run.result).toMatch(/\.ww-e-sZGVmaW5pdGlvblJvb3Q\.ww-layout[^}]*flex-direction: var\(/);
         expect(definitionVariables.length).toBeGreaterThan(0);
         expect(serializedVariables).toContain('variables.inheritedDirection');
         expect(serializedVariables).not.toContain('variables.instanceReverse');
@@ -1076,6 +1141,75 @@ describe('styleCompiler layout compatibility', () => {
         expect(variables.some(variable => variable.property === '_ww-layout_flexDirection')).toBe(true);
     });
 
+    it('registers bound layout variables nested behind a bound display layout gate', () => {
+        const variables: StyleDynamicVariable[] = [];
+        createStyleCompiler().compileStylesheet({
+            scope: { elementUids: ['layout'], sectionUids: [], libraryComponentIds: [] },
+            reader: createReader({
+                elements: {
+                    layout: {
+                        uid: 'layout',
+                        capabilities: {
+                            inherits: ['ww-layout'],
+                            displayAllowedValues: ['flex', 'grid'],
+                        },
+                        styles: {
+                            base: {
+                                default: {
+                                    display: {
+                                        __wwtype: 'f',
+                                        code: 'context.component.props.display',
+                                        defaultValue: 'flex',
+                                    },
+                                },
+                            },
+                        },
+                        content: {
+                            base: {
+                                default: {
+                                    '_ww-layout_flexDirection': {
+                                        __wwtype: 'f',
+                                        code: 'context.component.props.direction',
+                                        defaultValue: 'column',
+                                    },
+                                    '_ww-layout_reverse': {
+                                        __wwtype: 'f',
+                                        code: 'context.component.props.reverse',
+                                        defaultValue: false,
+                                    },
+                                    '_ww-layout_flexWrap': {
+                                        __wwtype: 'f',
+                                        code: 'context.component.props.wrap',
+                                        defaultValue: false,
+                                    },
+                                    '_ww-layout_alignContent': 'center',
+                                },
+                            },
+                        },
+                    },
+                },
+            }),
+            stylesheet: createDynamicVariableStringStyleSheetAdapter(variables),
+            runtime: STATIC_STYLE_RUNTIME,
+        });
+
+        const outputKeys = (property: string) =>
+            variables
+                .filter(variable => variable.property === property && variable.outputKey)
+                .map(variable => variable.outputKey)
+                .sort();
+
+        expect(outputKeys('_ww-layout_flexDirection')).toEqual([
+            'as-authored',
+            'column-forward',
+            'column-reverse',
+            'row-forward',
+            'row-reverse',
+        ]);
+        expect(outputKeys('_ww-layout_flexWrap')).toEqual(['column', 'row-wrap']);
+        expect(outputKeys('_ww-layout_alignContent')).toEqual(['when-wrapped']);
+    });
+
     it('does not expand concrete-root states for a runtime-owned text alignment override', () => {
         const definition: TestSourceData = {
             uid: 'definitionRoot',
@@ -1109,7 +1243,7 @@ describe('styleCompiler layout compatibility', () => {
             runtime: STATIC_STYLE_RUNTIME,
         });
 
-        expect(run.result).toMatch(/\.ww-element-definitionRoot\.ww-layout:where\(\[data-ww-states~="active"\]\)/);
-        expect(run.result).not.toMatch(/\.ww-element-instance[^{}]*:where\(\[data-ww-states~="active"\]\)/);
+        expect(run.result).toMatch(/\.ww-e-sZGVmaW5pdGlvblJvb3Q\.ww-layout:where\(\[data-ww-states~="active"\]\)/);
+        expect(run.result).not.toMatch(/\.ww-e-saW5zdGFuY2U[^{}]*:where\(\[data-ww-states~="active"\]\)/);
     });
 });

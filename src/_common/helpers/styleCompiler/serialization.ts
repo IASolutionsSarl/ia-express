@@ -50,7 +50,7 @@ export function registerCssDeclarationDynamicReferences(
             selector: options.selector,
             directDeclaration: true,
         });
-        registerNestedDynamicReferences(cssProperty, value, options);
+        registerNestedDynamicReferences(cssProperty, value, options, new Set([createDynamicReferenceKey(value)]));
         return;
     }
     if (!options.dynamicReferences?.length) return;
@@ -59,19 +59,16 @@ export function registerCssDeclarationDynamicReferences(
     for (const occurrence of options.dynamicReferences) {
         if (!cssValue.includes(occurrence.cssText)) continue;
 
-        const key = createStringifiedDynamicReferenceKey(occurrence.reference);
-        if (registeredReferences.has(key)) continue;
-
-        registeredReferences.add(key);
-        occurrence.reference.register({ cssProperty, selector: options.selector });
+        registerDynamicReference(cssProperty, occurrence.reference, options, registeredReferences);
     }
 }
 
-/** Registers concrete-root variables referenced by a renderless instance's conditional layout gate. */
+/** Registers every dynamic variable reachable through conditional layout gates. */
 function registerNestedDynamicReferences(
     cssProperty: string,
     value: StyleDynamicVariableReference,
-    options: { selector?: string; dynamicReferences?: readonly StyleStringifiedDynamicVariableReference[] }
+    options: { selector?: string; dynamicReferences?: readonly StyleStringifiedDynamicVariableReference[] },
+    registeredReferences: Set<string>
 ) {
     if (
         value.variable.domain !== 'content' ||
@@ -82,7 +79,6 @@ function registerNestedDynamicReferences(
         return;
     }
 
-    const registeredReferences = new Set<string>();
     for (const occurrence of options.dynamicReferences) {
         const variablePrefix = `var(${occurrence.reference.name}`;
         if (
@@ -92,15 +88,25 @@ function registerNestedDynamicReferences(
             continue;
         }
 
-        const key = createStringifiedDynamicReferenceKey(occurrence.reference);
-        if (registeredReferences.has(key)) continue;
-
-        registeredReferences.add(key);
-        occurrence.reference.register({ cssProperty, selector: options.selector });
+        registerDynamicReference(cssProperty, occurrence.reference, options, registeredReferences);
     }
 }
 
-function createStringifiedDynamicReferenceKey(reference: StyleDynamicVariableReference) {
+function registerDynamicReference(
+    cssProperty: string,
+    reference: StyleDynamicVariableReference,
+    options: { selector?: string; dynamicReferences?: readonly StyleStringifiedDynamicVariableReference[] },
+    registeredReferences: Set<string>
+) {
+    const key = createDynamicReferenceKey(reference);
+    if (registeredReferences.has(key)) return;
+
+    registeredReferences.add(key);
+    reference.register({ cssProperty, selector: options.selector });
+    registerNestedDynamicReferences(cssProperty, reference, options, registeredReferences);
+}
+
+function createDynamicReferenceKey(reference: StyleDynamicVariableReference) {
     const variable = reference.variable;
     return [
         variable.name,

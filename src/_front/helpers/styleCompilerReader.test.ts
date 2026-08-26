@@ -2,10 +2,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, nextTick, reactive, watchEffect } from 'vue';
 
 import {
+    createElementSelector,
     createStringStyleSheetAdapter,
     createStyleCompiler,
     STATIC_STYLE_RUNTIME,
 } from '@/_common/helpers/styleCompiler';
+import {
+    BACKGROUND_VIDEO_CONFIGURATION,
+    GRID_CONFIGURATION,
+    LAYOUT_CONFIGURATION,
+    TEXT_CONFIGURATION,
+} from '@/_common/helpers/configuration/configurationInherit';
+import { getInheritedConfiguration } from '@/_common/helpers/configuration/configuration';
+import { getContentPropertyStateSupport } from '@/_common/helpers/styleCompiler/propertyCapabilities';
 import { createReactiveCompileScope } from './styleCompilerRuntimeScope';
 import { createEditorStyleCompilerSources } from './styleCompilerReader';
 
@@ -14,9 +23,10 @@ const componentConfigurations = vi.hoisted(
         new Map<
             string,
             {
-                inherit?: unknown[];
+                inherit?: unknown;
                 states?: Array<string | { label: string; selectors?: string[] }>;
                 options?: { autoByContent?: boolean; displayAllowedValues?: string[] };
+                properties?: Record<string, { states?: boolean }>;
             }
         >()
 );
@@ -42,6 +52,7 @@ vi.mock('@/pinia/componentBases', () => ({
 
 type StyleSourceData = {
     uid?: string;
+    _si?: number;
     rootElementId?: string;
     wwObjectBaseId?: string | null;
     libraryComponentBaseId?: string | null;
@@ -428,7 +439,7 @@ describe('styleCompilerReader source indexing', () => {
         expect(parentState?.parent).toMatchObject({
             uid: 'parent',
             stateId: 'hover',
-            selector: '.ww-element-parent',
+            selector: createElementSelector('parent'),
         });
     });
 
@@ -508,7 +519,7 @@ describe('styleCompilerReader source indexing', () => {
                 parent: {
                     uid: 'parent',
                     stateId: '_wwHover',
-                    selector: '.ww-element-parent',
+                    selector: createElementSelector('parent'),
                 },
             },
         ]);
@@ -642,13 +653,13 @@ describe('styleCompilerReader target lifecycle', () => {
 
         try {
             await nextTick();
-            expect(stylesheet.result()).toContain('.ww-element-elementA');
+            expect(stylesheet.result()).toContain(createElementSelector('elementA'));
             expect(stylesheet.result()).toContain('width: 100px;');
 
             delete elements.elementA;
             await nextTick();
 
-            expect(stylesheet.result()).not.toContain('.ww-element-elementA');
+            expect(stylesheet.result()).not.toContain(createElementSelector('elementA'));
         } finally {
             run.stop();
         }
@@ -685,6 +696,16 @@ describe('styleCompilerReader target lifecycle', () => {
 });
 
 describe('styleCompilerReader section roots', () => {
+    it('exposes persisted dense ids without deriving them reactively', () => {
+        elements.element = { uid: 'element', _si: 42 };
+        sections.sectionA = { uid: 'sectionA', _si: 7 };
+
+        const reader = createEditorStyleCompilerSources().reader;
+
+        expect(reader.element('element')?.styleSourceId?.()).toBe(42);
+        expect(reader.section('sectionA')?.styleSourceId?.()).toBe(7);
+    });
+
     it('reactively distinguishes direct section children from nested elements sharing the section id', async () => {
         const sectionRootElements = reactive([{ uid: 'root' }]);
         sections.sectionA = {
@@ -729,6 +750,50 @@ describe('styleCompilerReader component capabilities', () => {
         expect(reader.element('libraryInstance')?.capabilities?.().omitUndefinedDynamicValues).toBe(true);
         expect(reader.element('regularElement')?.capabilities?.().omitUndefinedDynamicValues).toBe(false);
     });
+
+    it('exposes inherited and component content property state capabilities', () => {
+        componentConfigurations.set('element:customBase', {
+            inherit: 'ww-layout',
+            properties: {
+                statefulProperty: { states: true },
+                staticProperty: {},
+                '_ww-layout_flexDirection': { states: true },
+            },
+        });
+        elements.element = createElement('element', 'customBase');
+
+        const content = createEditorStyleCompilerSources().reader.element('element')?.content();
+
+        expect(content?.supportsState?.('_ww-layout_rowGap')).toBe(true);
+        expect(content?.supportsState?.('_ww-layout_flexDirection')).toBe(false);
+        expect(content?.supportsState?.('statefulProperty')).toBe(true);
+        expect(content?.supportsState?.('staticProperty')).toBe(false);
+        expect(content?.supportsState?.('unknownProperty')).toBe(false);
+
+        componentConfigurations.get('element:customBase')!.properties!.statefulProperty.states = false;
+        expect(content?.supportsState?.('statefulProperty')).toBe(false);
+    });
+
+    it('keeps inherited state capabilities aligned with the authoritative configurations', () => {
+        const inheritedConfigurations = [
+            ['ww-text', TEXT_CONFIGURATION.properties],
+            [
+                'ww-layout',
+                {
+                    ...LAYOUT_CONFIGURATION.properties,
+                    ...GRID_CONFIGURATION.properties,
+                },
+            ],
+            ['ww-background-video', BACKGROUND_VIDEO_CONFIGURATION.properties],
+        ] as const;
+
+        for (const [inherit, properties] of inheritedConfigurations) {
+            const supportsState = getContentPropertyStateSupport(getInheritedConfiguration({ inherit }));
+            for (const [property, configuration] of Object.entries(properties)) {
+                expect(supportsState(property), `${inherit}.${property}`).toBe(configuration.states === true);
+            }
+        }
+    });
 });
 
 describe('styleCompilerReader library component display capabilities', () => {
@@ -766,7 +831,9 @@ describe('styleCompilerReader library component display capabilities', () => {
             stylesheet,
             runtime: STATIC_STYLE_RUNTIME,
         });
-        const instanceRule = run.result.match(/\.ww-element-pageInstance\s*\{[^}]*\}/)?.[0] || '';
+        const instanceSelector = createElementSelector('pageInstance');
+        const instanceRuleStart = run.result.indexOf(`${instanceSelector} {`);
+        const instanceRule = run.result.slice(instanceRuleStart, run.result.indexOf('}', instanceRuleStart) + 1);
 
         expect(instanceRule).toContain('display: flex;');
         expect(instanceRule).not.toContain('display: block;');

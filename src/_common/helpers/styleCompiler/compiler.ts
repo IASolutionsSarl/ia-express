@@ -1,4 +1,9 @@
-import { getStyleBreakpointRangeMediaQuery, STYLE_BREAKPOINTS, type StyleBreakpointDefinition } from './breakpoints';
+import {
+    getStyleBreakpointRangeMediaQuery,
+    STYLE_BREAKPOINTS,
+    type StyleBreakpointDefinition,
+    type StyleBreakpointName,
+} from './breakpoints';
 import {
     createCustomCssDeclaration,
     createKeyframesRule,
@@ -29,9 +34,12 @@ import {
     resolveCustomCssProperties,
     resolveRawStyleProperty,
 } from './values';
+import { createAtomicStyleClassName } from './atomic';
 import type {
     StyleCompiler,
+    StyleAtomicClassAssignment,
     StyleCompilerInput,
+    StyleDeclarationPriority,
     StyleDynamicVariable,
     StyleElementReader,
     StyleLibraryLayer,
@@ -64,10 +72,24 @@ const STYLE_DECLARATION_LAYER_ORDER = ['normal', 'custom'] as const;
 type StyleDeclarationLayer = (typeof STYLE_DECLARATION_LAYER_ORDER)[number];
 type StyleRuleEmissionLayer = StyleDeclarationLayer | 'layout-override';
 type StyleSurfaceLayerContainerKey = Exclude<StyleRuleGroup, 'library'> | `library:${StyleLibraryLayer}`;
-type StyleDeclarationLayerContainers = Record<StyleDeclarationLayer, StyleRuleContainerAdapter>;
+type StyleDeclarationLayerContainers = Record<StyleDeclarationLayer, StyleRuleContainerAdapter> & {
+    atomic?: StyleRuleContainerAdapter;
+};
+type AtomicRuleRegistration = {
+    className: string;
+    canonicalDeclarations: string;
+    references: number;
+    rule: StyleRuleAdapter;
+};
+type AtomicCompiledDeclaration = {
+    property: string;
+    value: string;
+    priority: StyleDeclarationPriority;
+};
 type StyleCompilerLayerContainers = {
     declarations: Map<StyleSurfaceLayerContainerKey, StyleDeclarationLayerContainers>;
     layoutOverride: StyleRuleContainerAdapter;
+    atomicRules: Map<string, AtomicRuleRegistration>;
 };
 type StyleTargetLayoutOverrideContainer = StyleRuleContainerAdapter & {
     reserve(): void;
@@ -130,7 +152,7 @@ class StyleCompilerImpl implements StyleCompiler {
                 runtime !== STATIC_STYLE_RUNTIME && target.group === 'library'
             );
             const stopTargetScope = createStyleEffectScope(runtime, onDispose => {
-                this.compileTarget(input, onDispose, target, layerContainers.declarations, layoutOverrideContainer);
+                this.compileTarget(input, onDispose, target, layerContainers, layoutOverrideContainer);
             });
             targetStops.set(target.key, () => {
                 stopTargetScope();
@@ -190,7 +212,7 @@ class StyleCompilerImpl implements StyleCompiler {
         input: StyleCompilerInput,
         onDispose: StyleScopeDispose,
         target: StyleTargetDescriptor,
-        declarationLayerContainers: Map<StyleSurfaceLayerContainerKey, StyleDeclarationLayerContainers>,
+        layerContainers: StyleCompilerLayerContainers,
         layoutOverrideContainer: StyleTargetLayoutOverrideContainer
     ) {
         const sourceData = readStyleTargetSource(input.reader, target);
@@ -212,7 +234,7 @@ class StyleCompilerImpl implements StyleCompiler {
 
         for (const surface of createStyleTargetSurfaces(source, target)) {
             const surfaceLayerContainerKey = getStyleLayerContainerKey(surface);
-            const surfaceDeclarationLayerContainers = declarationLayerContainers.get(surfaceLayerContainerKey);
+            const surfaceDeclarationLayerContainers = layerContainers.declarations.get(surfaceLayerContainerKey);
             if (!surfaceDeclarationLayerContainers) continue;
 
             this.compileSurfaceRules(
@@ -223,7 +245,8 @@ class StyleCompilerImpl implements StyleCompiler {
                 surfaceDeclarationLayerContainers,
                 { normal: layoutOverrideContainer, custom: layoutOverrideContainer },
                 target,
-                states
+                states,
+                layerContainers.atomicRules
             );
         }
     }
@@ -236,7 +259,8 @@ class StyleCompilerImpl implements StyleCompiler {
         layerContainers: StyleDeclarationLayerContainers,
         layoutOverrideLayerContainers: StyleDeclarationLayerContainers,
         target: StyleTargetDescriptor,
-        states: readonly StyleStateDescriptor[]
+        states: readonly StyleStateDescriptor[],
+        atomicRules: Map<string, AtomicRuleRegistration>
     ) {
         for (const state of states) {
             const selectorResult =
@@ -268,7 +292,8 @@ class StyleCompilerImpl implements StyleCompiler {
                     state.id,
                     breakpoint,
                     selectorResult.selector,
-                    getTargetEmitDefaultDeclarations(source, target)
+                    getTargetEmitDefaultDeclarations(source, target),
+                    atomicRules
                 );
             }
         }
@@ -284,7 +309,8 @@ class StyleCompilerImpl implements StyleCompiler {
         state: string,
         breakpoint: StyleBreakpointDefinition,
         selector: string,
-        emitDefaultDeclarations: boolean
+        emitDefaultDeclarations: boolean,
+        atomicRules: Map<string, AtomicRuleRegistration>
     ) {
         const slots = new Map<StylePropertyDomain, ReturnType<typeof createStyleSlotContext>>();
         const scope: DeclarationScope = {
@@ -314,6 +340,7 @@ class StyleCompilerImpl implements StyleCompiler {
             layoutOverrideLayerContainers.normal,
             'layout-override'
         );
+        const atomicDeclarationsByProperty = new Map<string, AtomicCompiledDeclaration>();
 
         for (const resolveDeclarations of getDeclarationResolvers(surface)) {
             const { result: declarations, references } = collectStringifiedDynamicCssVariableReferences(() =>
@@ -323,7 +350,42 @@ class StyleCompilerImpl implements StyleCompiler {
                 if (!declaration) continue;
 
                 const rules = declaration.rule?.layer === 'layout-override' ? layoutOverrideRules : normalRules;
-                this.applyDeclaration(input, rules.getRule, declaration, surface, selector, references);
+                this.applyDeclaration(
+                    input,
+                    rules.getRule,
+                    declaration,
+                    surface,
+                    selector,
+                    references,
+                    {
+                        state,
+                        breakpoint: breakpoint.name,
+                        container: layerContainers.atomic,
+                        declarations: atomicDeclarationsByProperty,
+                    }
+                );
+            }
+        }
+
+        if (atomicDeclarationsByProperty.size) {
+            const atomicAssignment = registerAtomicDefaults({
+                input,
+                surface,
+                sourceUid: source.uid(),
+                declarations: [...atomicDeclarationsByProperty.values()],
+                container: layerContainers.atomic,
+                rules: atomicRules,
+            });
+            if (atomicAssignment) {
+                ruleAdapters.push(atomicAssignment);
+            } else {
+                for (const declaration of atomicDeclarationsByProperty.values()) {
+                    normalRules.getRule().style.setProperty(
+                        declaration.property,
+                        declaration.value,
+                        declaration.priority
+                    );
+                }
             }
         }
 
@@ -443,7 +505,13 @@ class StyleCompilerImpl implements StyleCompiler {
         declaration: CompiledStyleDeclaration,
         surface: StyleSurface,
         selector: string,
-        dynamicReferences: readonly StyleStringifiedDynamicVariableReference[] = []
+        dynamicReferences: readonly StyleStringifiedDynamicVariableReference[] = [],
+        atomicContext?: {
+            state: string;
+            breakpoint: StyleBreakpointName;
+            container?: StyleRuleContainerAdapter;
+            declarations: Map<string, AtomicCompiledDeclaration>;
+        }
     ) {
         const cssProperty = serializeCssProperty(declaration.property);
         const ruleTarget = declaration.rule;
@@ -475,6 +543,23 @@ class StyleCompilerImpl implements StyleCompiler {
         }
 
         const { value, priority } = splitLegacyCssPriority(cssProperty, cssValue);
+        if (
+            atomicContext &&
+            shouldEmitAtomicDefault({
+                input,
+                declaration,
+                surface,
+                dynamicReferences,
+                priority,
+                state: atomicContext.state,
+                breakpoint: atomicContext.breakpoint,
+                container: atomicContext.container,
+            })
+        ) {
+            atomicContext.declarations.set(cssProperty, { property: cssProperty, value, priority });
+            return;
+        }
+
         const accepted = getRule(ruleTarget).style.setProperty(cssProperty, value, priority);
         if (accepted === false) {
             addSerializationDiagnostic(
@@ -492,6 +577,118 @@ class StyleCompilerImpl implements StyleCompiler {
             dynamicReferences,
         });
     }
+}
+
+function shouldEmitAtomicDefault({
+    input,
+    declaration,
+    surface,
+    dynamicReferences,
+    priority,
+    state,
+    breakpoint,
+    container,
+}: {
+    input: StyleCompilerInput;
+    declaration: CompiledStyleDeclaration;
+    surface: StyleSurface;
+    dynamicReferences: readonly StyleStringifiedDynamicVariableReference[];
+    priority: StyleDeclarationPriority;
+    state: string;
+    breakpoint: StyleBreakpointName;
+    container?: StyleRuleContainerAdapter;
+}) {
+    return (
+        !!input.stylesheet.atomicClass &&
+        !!container &&
+        declaration.isDefault === true &&
+        !declaration.rule &&
+        !dynamicReferences.length &&
+        priority === '' &&
+        state === 'base' &&
+        breakpoint === 'default' &&
+        surface.group !== 'library' &&
+        surface.kind !== 'element-layout' &&
+        surface.kind !== 'section-layout'
+    );
+}
+
+function registerAtomicDefaults({
+    input,
+    surface,
+    sourceUid,
+    declarations,
+    container,
+    rules,
+}: {
+    input: StyleCompilerInput;
+    surface: StyleSurface;
+    sourceUid: string;
+    declarations: readonly AtomicCompiledDeclaration[];
+    container?: StyleRuleContainerAdapter;
+    rules: Map<string, AtomicRuleRegistration>;
+}): StyleRuleAdapter | null {
+    if (!container || !input.stylesheet.atomicClass) return null;
+
+    // Keep compiler declaration order: shorthand/longhand pairs are order-sensitive.
+    const orderedDeclarations = [...declarations];
+    const canonicalDeclarations = orderedDeclarations
+        .map(({ property, value, priority }) => `${property}\u001f${value}\u001f${priority}`)
+        .join('\u001e');
+    const identity = `${surface.group}\u001d${canonicalDeclarations}`;
+    let registration = rules.get(identity);
+
+    if (!registration) {
+        const className = createAtomicStyleClassName({
+            group: surface.group,
+            declarations: orderedDeclarations,
+        });
+        for (const existing of rules.values()) {
+            if (existing.className === className && existing.canonicalDeclarations !== canonicalDeclarations) {
+                return null;
+            }
+        }
+        const rule = container.insertRule({
+            kind: 'style',
+            key: `atomic:${className}`,
+            surface,
+            selector: `.${className}`,
+        });
+        for (const { property, value, priority } of orderedDeclarations) {
+            if (rule.style.setProperty(property, value, priority) === false) {
+                rule.dispose();
+                return null;
+            }
+        }
+
+        registration = { className, canonicalDeclarations, references: 0, rule };
+        rules.set(identity, registration);
+    }
+
+    registration.references++;
+    const assignment: StyleAtomicClassAssignment = {
+        sourceUid,
+        surfaceKind: surface.kind,
+        className: registration.className,
+    };
+    const disposeAssignment = input.stylesheet.atomicClass(assignment) || (() => {});
+    let active = true;
+
+    return {
+        dispose() {
+            if (!active) return;
+
+            active = false;
+            disposeAssignment();
+            if (!registration) return;
+
+            registration.references--;
+            if (registration.references > 0) return;
+
+            registration.rule.dispose();
+            rules.delete(identity);
+        },
+    };
 }
 
 /**
@@ -586,7 +783,10 @@ function createGeneratedLayerContainers(stylesheet: StyleCompilerInput['styleshe
             name: STYLE_RULE_GROUP_LAYERS[group],
         });
         if (group !== 'library') {
-            declarationLayerContainers.set(group, createDeclarationLayerContainers(groupLayer, group));
+            declarationLayerContainers.set(
+                group,
+                createDeclarationLayerContainers(groupLayer, group, !!stylesheet.atomicClass)
+            );
             continue;
         }
 
@@ -613,12 +813,13 @@ function createGeneratedLayerContainers(stylesheet: StyleCompilerInput['styleshe
         key: 'layout-override',
         name: STYLE_LAYOUT_OVERRIDE_LAYER,
     });
-    return { declarations: declarationLayerContainers, layoutOverride: layoutOverrideLayer };
+    return { declarations: declarationLayerContainers, layoutOverride: layoutOverrideLayer, atomicRules: new Map() };
 }
 
 function createDeclarationLayerContainers(
     parent: StyleRuleContainerAdapter,
-    keyPrefix: string
+    keyPrefix: string,
+    supportsAtomicClasses = false
 ): StyleDeclarationLayerContainers {
     parent.insertRule({
         kind: 'layer-statement',
@@ -626,17 +827,39 @@ function createDeclarationLayerContainers(
         names: STYLE_DECLARATION_LAYER_ORDER,
     });
 
-    return {
-        normal: parent.insertRule({
+    const normal = parent.insertRule({
+        kind: 'layer',
+        key: `${keyPrefix}:normal`,
+        name: 'normal',
+    });
+    let orderedNormal = normal;
+    let atomic: StyleRuleContainerAdapter | undefined;
+    if (supportsAtomicClasses) {
+        normal.insertRule({
+            kind: 'layer-statement',
+            key: `${keyPrefix}:normal:atomic-layer-order`,
+            names: ['atomic', 'ordered'],
+        });
+        atomic = normal.insertRule({
             kind: 'layer',
-            key: `${keyPrefix}:normal`,
-            name: 'normal',
-        }),
+            key: `${keyPrefix}:normal:atomic`,
+            name: 'atomic',
+        });
+        orderedNormal = normal.insertRule({
+            kind: 'layer',
+            key: `${keyPrefix}:normal:ordered`,
+            name: 'ordered',
+        });
+    }
+
+    return {
+        normal: orderedNormal,
         custom: parent.insertRule({
             kind: 'layer',
             key: `${keyPrefix}:custom`,
             name: 'custom',
         }),
+        atomic,
     };
 }
 
@@ -659,7 +882,7 @@ function createNoopLayerContainers() {
         }
     }
 
-    return { declarations: declarationLayerContainers, layoutOverride: container };
+    return { declarations: declarationLayerContainers, layoutOverride: container, atomicRules: new Map() };
 }
 
 /**

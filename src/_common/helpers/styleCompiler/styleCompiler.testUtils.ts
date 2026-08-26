@@ -2,6 +2,7 @@ import { expect } from 'vitest';
 import { effectScope, watchEffect } from 'vue';
 
 import {
+    createElementSelector,
     createStringStyleSheetAdapter,
     type StyleBreakpointPropertyReader,
     type StyleClassReader,
@@ -21,6 +22,7 @@ import {
 
 export type TestSourceData = {
     uid: string;
+    styleSourceId?: number;
     baseId?: string;
     libraryComponentBaseId?: string;
     parentLibraryComponentId?: string;
@@ -33,6 +35,7 @@ export type TestSourceData = {
     emitDefaultDeclarations?: boolean;
     classIds?: Record<string, string[]>;
     subClassIds?: Record<string, Record<string, string[]>>;
+    nonStatefulProperties?: Partial<Record<'styles' | 'content', readonly string[]>>;
     styles?: Record<string, Record<string, Record<string, unknown>>>;
     content?: Record<string, Record<string, Record<string, unknown>>>;
     effectiveFallback?: TestSourceData;
@@ -189,9 +192,10 @@ export function createWidthElement(uid: string, width: string): TestSourceData {
 }
 
 export function expectTargetChunkOrder(css: string, uid: string) {
-    const baseIndex = css.indexOf(`.ww-element-${uid} {`);
+    const selector = createElementSelector(uid);
+    const baseIndex = css.indexOf(`${selector} {`);
     const tabletIndex = css.indexOf('@media (max-width: 991px)', baseIndex);
-    const hoverIndex = css.indexOf(`.ww-element-${uid}:where(:hover) {`);
+    const hoverIndex = css.indexOf(`${selector}:where(:hover) {`);
 
     expect(baseIndex).toBeGreaterThanOrEqual(0);
     expect(tabletIndex).toBeGreaterThan(baseIndex);
@@ -254,6 +258,7 @@ function createSectionReader(data: TestSourceData): StyleSectionReader {
 function createSourceReader(data: TestSourceData) {
     return {
         uid: () => data.uid,
+        styleSourceId: () => data.styleSourceId,
         baseId: () => data.baseId,
         capabilities: () => data.capabilities || {},
         states: () => data.states || (data.stateNames || inferStateNames(data)).map(id => ({ id })),
@@ -278,6 +283,7 @@ function createClassReader(data: TestClassData): StyleClassReader {
 
 function createPropertyTreeReader(data: TestSourceData, domain: 'styles' | 'content') {
     return {
+        supportsState: (property: string) => !data.nonStatefulProperties?.[domain]?.includes(property),
         state: (name: string) => createStateReader(data, domain, name),
     };
 }
@@ -358,6 +364,6 @@ export function createTestStyleSurface(uid: string): StyleSurface {
         key: `element:${uid}`,
         group: 'element',
         kind: 'element',
-        selector: `.ww-element-${uid}`,
+        selector: createElementSelector(uid),
     };
 }

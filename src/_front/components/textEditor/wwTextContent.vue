@@ -1,6 +1,12 @@
 <script>
 import { h, resolveComponent } from 'vue';
 import TextLink from './TextLink.vue';
+import { renderMode } from '@/_front/rendering/renderMode';
+import {
+    assertRichTextStaticRenderingSafe,
+    createNormalizedRichTextContent,
+    isNativeRichTextRootTag,
+} from '@/_front/rendering/richTextStaticRendering';
 
 function createNode(node, options) {
     const nodeName = node.nodeName.toLowerCase();
@@ -50,20 +56,12 @@ export default {
         },
     },
     render() {
-        let text = this.text;
-        text = text.replace(/<p>/g, '<div>');
-        text = text.replace(/<\/p>/g, '</div>');
-        text = text.replace(/<br><\/div>/g, '<br>');
-        text = text.replace(/<\/div><div>/g, '<br>');
-        text = text.replace(/\n/g, '<br>');
-        text = text.replace(/<\/div>/g, '');
-        text = text.replace(/<div>/g, '');
-
-        // remove useless characters from Word
-        text = text.replace(/\u2028/g, ' ');
-
-        const contentText = document.createElement('div');
-        contentText.innerHTML = text;
+        const contentText = createNormalizedRichTextContent(this.text, document);
+        assertRichTextStaticRenderingSafe({
+            mode: renderMode,
+            rootTag: this.tag,
+            content: contentText,
+        });
 
         const children = Array.from(contentText.childNodes)
             .map(child =>
@@ -74,9 +72,7 @@ export default {
             )
             .filter(n => !!n);
 
-        const component = ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h5', 'button'].includes(this.tag)
-            ? this.tag
-            : resolveComponent(this.tag);
+        const component = isNativeRichTextRootTag(this.tag) ? this.tag : resolveComponent(this.tag);
 
         return h(
             component,

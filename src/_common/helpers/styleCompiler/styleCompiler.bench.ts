@@ -2,6 +2,7 @@ import { bench, describe } from 'vitest';
 import { effectScope, nextTick, reactive, watchEffect } from 'vue';
 
 import {
+    createElementSelector,
     createStringStyleSheetAdapter,
     createStyleCompiler,
     STATIC_STYLE_RUNTIME,
@@ -824,7 +825,7 @@ function createSourceReader(data: SourceData, kind: 'element' | 'section') {
         baseId: () => undefined,
         states: () => data.states.map(id => ({ id })),
         parentRef: () => null,
-        selector: () => (kind === 'element' ? `.ww-element-${data.uid}` : undefined),
+        selector: () => (kind === 'element' ? createElementSelector(data.uid) : undefined),
         style: () => createPropertyTreeReader(data, 'styles'),
         content: () => createPropertyTreeReader(data, 'content'),
     };
@@ -874,13 +875,27 @@ function createBreakpointReader(style: Record<string, unknown>): StyleBreakpoint
 
 function createCountingStyleSheetAdapter() {
     const entries = new Map<string, Map<string, string>>();
+    const atomicClassReferences = new Map<string, number>();
     const root = createCountingRuleContainerAdapter(entries);
 
     return {
         insertRule: root.insertRule,
         dispose: root.dispose,
+        atomicClass(assignment) {
+            const key = `${assignment.sourceUid}\u001f${assignment.surfaceKind}\u001f${assignment.className}`;
+            atomicClassReferences.set(key, (atomicClassReferences.get(key) || 0) + 1);
+            let active = true;
+
+            return () => {
+                if (!active) return;
+                active = false;
+                const nextReferences = (atomicClassReferences.get(key) || 1) - 1;
+                if (nextReferences > 0) atomicClassReferences.set(key, nextReferences);
+                else atomicClassReferences.delete(key);
+            };
+        },
         result() {
-            return entries.size;
+            return entries.size + atomicClassReferences.size;
         },
     };
 }

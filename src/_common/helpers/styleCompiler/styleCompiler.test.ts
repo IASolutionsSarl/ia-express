@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { nextTick, reactive } from 'vue';
 
 import {
+    createElementSelector,
     createStringStyleSheetAdapter,
     createStyleCompiler,
     serializeRuntimeCssVariableValue,
@@ -9,6 +10,7 @@ import {
     splitCssSelectorList,
     STATIC_STYLE_RUNTIME,
     STYLE_RULE_GROUP_LAYERS,
+    type StyleAtomicClassAssignment,
     type StyleDiagnostic,
     type StyleDynamicVariable,
     type StyleReader,
@@ -27,6 +29,37 @@ import {
 } from './styleCompiler.testUtils';
 
 describe('styleCompiler', () => {
+    it('uses persisted dense identities for element, layout, and section surfaces', () => {
+        const run = createStyleCompiler().compileStylesheet({
+            scope: { elementUids: ['elementA'], sectionUids: ['sectionA'], libraryComponentIds: [] },
+            reader: createReader({
+                elements: {
+                    elementA: {
+                        uid: 'elementA',
+                        styleSourceId: 62,
+                        capabilities: { inherits: ['ww-layout'] },
+                        styles: { base: { default: { display: 'flex', width: '100px' } } },
+                    },
+                },
+                sections: {
+                    sectionA: {
+                        uid: 'sectionA',
+                        styleSourceId: 63,
+                        styles: { base: { default: { backgroundColor: 'red' } } },
+                    },
+                },
+            }),
+            stylesheet: createStringStyleSheetAdapter(),
+            runtime: STATIC_STYLE_RUNTIME,
+        });
+
+        expect(run.result).toContain('.ww-e-d10');
+        expect(run.result).toContain('[data-ww-ls~="d10"]');
+        expect(run.result).toContain('.ww-s-d11');
+        expect(run.result).not.toContain('sZWxlbWVudEE');
+        expect(run.result).not.toContain('sc2VjdGlvbkE');
+    });
+
     it('batches each structural target reconciliation through the stylesheet adapter', () => {
         const baseStylesheet = createStringStyleSheetAdapter();
         const manualRuntime = createManualStyleReactivityRuntime();
@@ -510,8 +543,8 @@ describe('styleCompiler', () => {
         return {
             run,
             variables,
-            definitionRule: run.result.match(/\.ww-element-libraryRoot\s*\{[^}]*\}/)?.[0] || '',
-            instanceRule: run.result.match(/\.ww-element-libraryInstance\s*\{[^}]*\}/)?.[0] || '',
+            definitionRule: run.result.match(/\.ww-e-sbGlicmFyeVJvb3Q\s*\{[^}]*\}/)?.[0] || '',
+            instanceRule: run.result.match(/\.ww-e-sbGlicmFyeUluc3RhbmNl\s*\{[^}]*\}/)?.[0] || '',
         };
     }
 
@@ -589,9 +622,10 @@ describe('styleCompiler', () => {
             },
         });
         const tabletRule = run.result.match(
-            /@media \(max-width: 991px\)[\s\S]*?\.ww-element-libraryInstance\s*\{[^}]*\}/
+            /@media \(max-width: 991px\)[\s\S]*?\.ww-e-sbGlicmFyeUluc3RhbmNl\s*\{[^}]*\}/
         )?.[0];
-        const hoverRule = run.result.match(/\.ww-element-libraryInstance:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
+        const hoverRule =
+            run.result.match(/\.ww-e-sbGlicmFyeUluc3RhbmNl:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
 
         expect(instanceRule).toContain('width: 60%;');
         expect(tabletRule).toContain('width: var(--ww-section-root-auto-width, auto);');
@@ -846,7 +880,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const hoverCss = run.result.slice(run.result.indexOf('.ww-element-root:where(:hover)'));
+        const hoverCss = run.result.slice(run.result.indexOf('.ww-e-scm9vdA:where(:hover)'));
 
         expect(hoverCss).toContain('align-self: var(--ww-section-root-auto-align, unset);');
     });
@@ -990,7 +1024,7 @@ describe('styleCompiler', () => {
             stylesheet,
         });
         const hoverCss = run.result.slice(
-            run.result.indexOf('.ww-section-sectionA > .ww-section-element:where(:hover)')
+            run.result.indexOf('.ww-s-sc2VjdGlvbkE > .ww-section-element:where(:hover)')
         );
 
         expect(hoverCss).toContain('--ww-section-root-auto-align: initial;');
@@ -1305,7 +1339,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const hoverRule = run.result.match(/\.ww-element-animated:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
+        const hoverRule = run.result.match(/\.ww-e-sYW5pbWF0ZWQ:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
 
         expect(hoverRule).toContain('animation-iteration-count: infinite;');
     });
@@ -1477,8 +1511,8 @@ describe('styleCompiler', () => {
             }),
             stylesheet,
         });
-        const elementARule = run.result.match(/\.ww-element-elementA\s*\{[^}]*\}/)?.[0] || '';
-        const elementBRule = run.result.match(/\.ww-element-elementB\s*\{[^}]*\}/)?.[0] || '';
+        const elementARule = run.result.match(/\.ww-e-sZWxlbWVudEE\s*\{[^}]*\}/)?.[0] || '';
+        const elementBRule = run.result.match(/\.ww-e-sZWxlbWVudEI\s*\{[^}]*\}/)?.[0] || '';
 
         expect(elementARule).toContain('width: 120px;');
         expect(elementBRule).toContain('width: 90px;');
@@ -1515,7 +1549,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet,
         });
-        const elementRule = run.result.match(/\.ww-element-elementA\s*\{[^}]*\}/)?.[0] || '';
+        const elementRule = run.result.match(/\.ww-e-sZWxlbWVudEE\s*\{[^}]*\}/)?.[0] || '';
 
         expect(elementRule).toContain('display: flex;');
         expect(elementRule).not.toContain('display: block;');
@@ -1565,8 +1599,8 @@ describe('styleCompiler', () => {
             }),
             stylesheet,
         });
-        const elementARule = run.result.match(/\.ww-element-elementA\s*\{[^}]*\}/)?.[0] || '';
-        const elementBRule = run.result.match(/\.ww-element-elementB\s*\{[^}]*\}/)?.[0] || '';
+        const elementARule = run.result.match(/\.ww-e-sZWxlbWVudEE\s*\{[^}]*\}/)?.[0] || '';
+        const elementBRule = run.result.match(/\.ww-e-sZWxlbWVudEI\s*\{[^}]*\}/)?.[0] || '';
 
         expect(elementARule).toContain('width: 200px;');
         expect(elementBRule).toContain('width: 100px;');
@@ -1615,7 +1649,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet,
         });
-        const elementRule = run.result.match(/\.ww-element-elementA\s*\{[^}]*\}/)?.[0] || '';
+        const elementRule = run.result.match(/\.ww-e-sZWxlbWVudEE\s*\{[^}]*\}/)?.[0] || '';
 
         expect(elementRule).toContain('border-radius: 12px;');
         expect(elementRule).not.toContain('border-radius: 4px;');
@@ -1651,7 +1685,7 @@ describe('styleCompiler', () => {
             stylesheet: createStringStyleSheetAdapter(),
         });
         const errorRule =
-            run.result.match(/\.ww-element-elementA:where\(\[data-ww-states~="error"\]\)\s*\{[^}]*\}/)?.[0] || '';
+            run.result.match(/\.ww-e-sZWxlbWVudEE:where\(\[data-ww-states~="error"\]\)\s*\{[^}]*\}/)?.[0] || '';
 
         expect(errorRule).toContain('border: 1px solid red;');
         expect(errorRule).toContain('border-left: 0px;');
@@ -1689,8 +1723,8 @@ describe('styleCompiler', () => {
             }),
             stylesheet,
         });
-        const containerRule = run.result.match(/\.ww-section-sectionA\s*\{[^}]*\}/)?.[0] || '';
-        const elementRule = run.result.match(/\.ww-section-sectionA > \.ww-section-element\s*\{[^}]*\}/)?.[0] || '';
+        const containerRule = run.result.match(/\.ww-s-sc2VjdGlvbkE\s*\{[^}]*\}/)?.[0] || '';
+        const elementRule = run.result.match(/\.ww-s-sc2VjdGlvbkE > \.ww-section-element\s*\{[^}]*\}/)?.[0] || '';
 
         expect(containerRule).toContain('height: 300px;');
         expect(elementRule).toContain('width: 960px;');
@@ -1713,7 +1747,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const elementRule = run.result.match(/\.ww-section-sectionA > \.ww-section-element\s*\{[^}]*\}/)?.[0] || '';
+        const elementRule = run.result.match(/\.ww-s-sc2VjdGlvbkE > \.ww-section-element\s*\{[^}]*\}/)?.[0] || '';
 
         expect(elementRule).toContain('width: 100%;');
     });
@@ -1737,7 +1771,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createDynamicVariableStringStyleSheetAdapter(variables),
         });
-        const elementRule = run.result.match(/\.ww-section-sectionA > \.ww-section-element\s*\{[^}]*\}/)?.[0] || '';
+        const elementRule = run.result.match(/\.ww-s-sc2VjdGlvbkE > \.ww-section-element\s*\{[^}]*\}/)?.[0] || '';
         const widthVariable = variables.find(variable => variable.property === 'width');
 
         expect(elementRule).toContain('width: var(--ww-style-width, 100%);');
@@ -1767,7 +1801,7 @@ describe('styleCompiler', () => {
             stylesheet: createDynamicVariableStringStyleSheetAdapter(variables),
             resolveFormulaFallback: () => ({ status: 'resolved', value: '320px' }),
         });
-        const elementRule = run.result.match(/\.ww-section-sectionA > \.ww-section-element\s*\{[^}]*\}/)?.[0] || '';
+        const elementRule = run.result.match(/\.ww-s-sc2VjdGlvbkE > \.ww-section-element\s*\{[^}]*\}/)?.[0] || '';
 
         expect(elementRule).toContain('width: var(--ww-style-width, 320px);');
     });
@@ -1798,7 +1832,7 @@ describe('styleCompiler', () => {
         });
         const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
         const hoverRule =
-            run.result.match(/\.ww-section-sectionA > \.ww-section-element:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
+            run.result.match(/\.ww-s-sc2VjdGlvbkE > \.ww-section-element:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
 
         expect(tabletCss).toContain('width: 100%;');
         expect(hoverRule).toContain('width: 100%;');
@@ -1821,7 +1855,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const elementRule = run.result.match(/\.ww-section-sectionA > \.ww-section-element\s*\{[^}]*\}/)?.[0] || '';
+        const elementRule = run.result.match(/\.ww-s-sc2VjdGlvbkE > \.ww-section-element\s*\{[^}]*\}/)?.[0] || '';
 
         expect(elementRule).toContain('max-width: unset;');
         expect(elementRule).not.toContain('max-width: auto;');
@@ -1848,7 +1882,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const elementRule = run.result.match(/\.ww-section-sectionA > \.ww-section-element\s*\{[^}]*\}/)?.[0] || '';
+        const elementRule = run.result.match(/\.ww-s-sc2VjdGlvbkE > \.ww-section-element\s*\{[^}]*\}/)?.[0] || '';
 
         expect(elementRule).toContain(`${cssProperty}: unset;`);
         expect(elementRule).not.toContain(`${cssProperty}: auto;`);
@@ -1876,7 +1910,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const elementRule = run.result.match(/\.ww-element-elementA\s*\{[^}]*\}/)?.[0] || '';
+        const elementRule = run.result.match(/\.ww-e-sZWxlbWVudEE\s*\{[^}]*\}/)?.[0] || '';
 
         expect(elementRule).toContain(`${cssProperty}: unset;`);
         expect(elementRule).not.toContain(`${cssProperty}: auto;`);
@@ -1903,7 +1937,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const containerRule = run.result.match(/\.ww-section-sectionA\s*\{[^}]*\}/)?.[0] || '';
+        const containerRule = run.result.match(/\.ww-s-sc2VjdGlvbkE\s*\{[^}]*\}/)?.[0] || '';
 
         expect(containerRule).toContain(`${cssProperty}: ${expectedValue};`);
     });
@@ -1925,7 +1959,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const elementRule = run.result.match(/\.ww-element-elementA\s*\{[^}]*\}/)?.[0] || '';
+        const elementRule = run.result.match(/\.ww-e-sZWxlbWVudEE\s*\{[^}]*\}/)?.[0] || '';
 
         expect(elementRule).toContain('width: revert-layer;');
         expect(elementRule).not.toContain('width: auto;');
@@ -1950,7 +1984,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createDynamicVariableStringStyleSheetAdapter(variables),
         });
-        const elementRule = run.result.match(/\.ww-element-elementA\s*\{[^}]*\}/)?.[0] || '';
+        const elementRule = run.result.match(/\.ww-e-sZWxlbWVudEE\s*\{[^}]*\}/)?.[0] || '';
         const widthVariable = variables.find(variable => variable.property === 'width');
 
         expect(elementRule).toContain('width: var(--ww-style-width);');
@@ -1980,8 +2014,8 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const elementRule = run.result.match(/\.ww-element-elementA\s*\{[^}]*\}/)?.[0] || '';
-        const sectionRule = run.result.match(/\.ww-section-sectionA\s*\{[^}]*\}/)?.[0] || '';
+        const elementRule = run.result.match(/\.ww-e-sZWxlbWVudEE\s*\{[^}]*\}/)?.[0] || '';
+        const sectionRule = run.result.match(/\.ww-s-sc2VjdGlvbkE\s*\{[^}]*\}/)?.[0] || '';
 
         expect(elementRule).toContain('margin: 0;');
         expect(elementRule).toContain('padding: 0;');
@@ -2008,7 +2042,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createDynamicVariableStringStyleSheetAdapter(variables),
         });
-        const elementRule = run.result.match(/\.ww-element-elementA\s*\{[^}]*\}/)?.[0] || '';
+        const elementRule = run.result.match(/\.ww-e-sZWxlbWVudEE\s*\{[^}]*\}/)?.[0] || '';
         const heightVariable = variables.find(variable => variable.property === 'height');
 
         expect(elementRule).toContain('height: var(--ww-style-height, auto);');
@@ -2044,7 +2078,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createDynamicVariableStringStyleSheetAdapter(variables),
         });
-        const elementRule = run.result.match(/\.ww-element-elementA\s*\{[^}]*\}/)?.[0] || '';
+        const elementRule = run.result.match(/\.ww-e-sZWxlbWVudEE\s*\{[^}]*\}/)?.[0] || '';
 
         expect(elementRule).toContain('margin: var(--ww-style-margin, 0);');
         expect(elementRule).toContain('padding: var(--ww-style-padding, 0);');
@@ -2109,7 +2143,7 @@ describe('styleCompiler', () => {
                 property: 'width',
                 cssProperty: 'width',
                 validationProperty: 'width',
-                selector: '.ww-element-elementA',
+                selector: '.ww-e-sZWxlbWVudEE',
                 domain: 'style',
             }),
         ]);
@@ -2239,7 +2273,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet,
         });
-        const hoverRule = run.result.match(/\.ww-element-elementA:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
+        const hoverRule = run.result.match(/\.ww-e-sZWxlbWVudEE:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
 
         expect(hoverRule).toContain('opacity: 0.5;');
         expect(run.result).not.toContain('ww-style-class');
@@ -2323,9 +2357,10 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const restrictedRule = run.result.match(/\.ww-element-restrictedElement\s*\{[^}]*\}/)?.[0] || '';
-        const defaultRestrictedRule = run.result.match(/\.ww-element-defaultRestrictedElement\s*\{[^}]*\}/)?.[0] || '';
-        const genericRule = run.result.match(/\.ww-element-genericElement\s*\{[^}]*\}/)?.[0] || '';
+        const restrictedRule = run.result.match(/\.ww-e-scmVzdHJpY3RlZEVsZW1lbnQ\s*\{[^}]*\}/)?.[0] || '';
+        const defaultRestrictedRule =
+            run.result.match(/\.ww-e-sZGVmYXVsdFJlc3RyaWN0ZWRFbGVtZW50\s*\{[^}]*\}/)?.[0] || '';
+        const genericRule = run.result.match(/\.ww-e-sZ2VuZXJpY0VsZW1lbnQ\s*\{[^}]*\}/)?.[0] || '';
 
         expect(restrictedRule).toContain('display: flex;');
         expect(defaultRestrictedRule).toContain('display: block;');
@@ -2480,7 +2515,7 @@ describe('styleCompiler', () => {
         });
         const layoutRule =
             run.result.match(
-                /\.ww-element-elementA\.ww-layout,\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]\s*\{[^}]*\}/
+                /\.ww-e-sZWxlbWVudEE\.ww-layout,\n\s*\.ww-e-sZWxlbWVudEE \[data-ww-ls~="sZWxlbWVudEE"\]\s*\{[^}]*\}/
             )?.[0] || '';
 
         expect(layoutRule).toContain('display: var(--ww-style-display);');
@@ -2532,7 +2567,7 @@ describe('styleCompiler', () => {
         });
         const layoutRule =
             run.result.match(
-                /\.ww-element-elementA\.ww-layout,\n\s*\.ww-element-elementA \[data-ww-layout-style-scopes~="elementA"\]\s*\{[^}]*\}/
+                /\.ww-e-sZWxlbWVudEE\.ww-layout,\n\s*\.ww-e-sZWxlbWVudEE \[data-ww-ls~="sZWxlbWVudEE"\]\s*\{[^}]*\}/
             )?.[0] || '';
         const justifyContentVariable = variables.find(variable => variable.cssProperty === 'justify-content');
         const gridColumnsVariable = variables.find(variable => variable.cssProperty === 'grid-template-columns');
@@ -2795,13 +2830,14 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const textRule = run.result.match(/\.ww-element-textElement\s*\{[^}]*\}/)?.[0] || '';
-        const plainRule = run.result.match(/\.ww-element-plainElement\s*\{[^}]*\}/)?.[0] || '';
+        const textRule = run.result.match(/\.ww-e-sdGV4dEVsZW1lbnQ\s*\{[^}]*\}/)?.[0] || '';
+        const plainRule = run.result.match(/\.ww-e-scGxhaW5FbGVtZW50\s*\{[^}]*\}/)?.[0] || '';
 
         expect(textRule).toContain('font-family: var(--ww-default-font-family);');
         expect(textRule).toContain('font-size: 16px;');
         expect(textRule).toContain('color: #123456;');
         expect(textRule).toContain('white-space-collapse: preserve;');
+        expect(run.result.match(/white-space-collapse: preserve;/g)).toHaveLength(1);
         expect(textRule).not.toContain('--ww-text-background-color: #abcdef;');
         expect(textRule).not.toContain('--ww-text-white-space: nowrap;');
         expect(textRule).not.toContain('--ww-text-overflow: hidden;');
@@ -2866,10 +2902,10 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const baseRule = run.result.match(/\.ww-element-textElement\s*\{[^}]*\}/)?.[0] || '';
+        const baseRule = run.result.match(/\.ww-e-sdGV4dEVsZW1lbnQ\s*\{[^}]*\}/)?.[0] || '';
         const mobileCss = run.result.slice(run.result.indexOf('@media (max-width: 767px)'));
-        const mobileRule = mobileCss.match(/\.ww-element-textElement\s*\{[^}]*\}/)?.[0] || '';
-        const hoverRule = run.result.match(/\.ww-element-textElement:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
+        const mobileRule = mobileCss.match(/\.ww-e-sdGV4dEVsZW1lbnQ\s*\{[^}]*\}/)?.[0] || '';
+        const hoverRule = run.result.match(/\.ww-e-sdGV4dEVsZW1lbnQ:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
 
         expect(baseRule).toContain('box-shadow: 4px 4px 8px #0008;');
         expect(baseRule).toContain('transition: all 200ms ease;');
@@ -2930,7 +2966,9 @@ describe('styleCompiler', () => {
             stylesheet: createStringStyleSheetAdapter(),
         });
         const rulesFor = (uid: string) =>
-            [...run.result.matchAll(new RegExp(`\\.ww-element-${uid}\\s*\\{[^}]*\\}`, 'g'))].map(match => match[0]);
+            [...run.result.matchAll(new RegExp(`\\${createElementSelector(uid)}\\s*\\{[^}]*\\}`, 'g'))].map(
+                match => match[0]
+            );
         const [defaultRule, ...defaultResponsiveRules] = rulesFor('defaultText');
         const [emptyRule] = rulesFor('emptyText');
         const [explicitRule] = rulesFor('explicitText');
@@ -2981,10 +3019,10 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const baseRule = run.result.match(/\.ww-element-textElement\s*\{[^}]*\}/)?.[0] || '';
+        const baseRule = run.result.match(/\.ww-e-sdGV4dEVsZW1lbnQ\s*\{[^}]*\}/)?.[0] || '';
         const activeRule =
             run.result.match(
-                /\.ww-element-textElement:where\(\[data-ww-states~="_wwLinkActive"\]\)\s*\{[^}]*\}/
+                /\.ww-e-sdGV4dEVsZW1lbnQ:where\(\[data-ww-states~="_wwLinkActive"\]\)\s*\{[^}]*\}/
             )?.[0] || '';
 
         expect(baseRule).toContain("font: 400 14px/20px 'Inter', sans-serif;");
@@ -3030,7 +3068,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const textRule = run.result.match(/\.ww-element-textElement\s*\{[^}]*\}/)?.[0] || '';
+        const textRule = run.result.match(/\.ww-e-sdGV4dEVsZW1lbnQ\s*\{[^}]*\}/)?.[0] || '';
 
         expect(textRule).toContain("font: var(--title-typography, 700 30px/36px 'Antonio', sans-serif);");
         expect(textRule).not.toContain('font-size: 48px;');
@@ -3066,7 +3104,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const textRule = run.result.match(/\.ww-element-textElement\s*\{[^}]*\}/)?.[0] || '';
+        const textRule = run.result.match(/\.ww-e-sdGV4dEVsZW1lbnQ\s*\{[^}]*\}/)?.[0] || '';
 
         expect(textRule).toContain("font: var(--title-typography, 500 64px/60px 'Inter', sans-serif);");
         expect(textRule).not.toContain('font-size: 64px;');
@@ -3107,7 +3145,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const baseRule = run.result.match(/\.ww-element-textElement\s*\{[^}]*\}/)?.[0] || '';
+        const baseRule = run.result.match(/\.ww-e-sdGV4dEVsZW1lbnQ\s*\{[^}]*\}/)?.[0] || '';
         const mobileRules = run.result.match(/@media \(max-width: 767px\)\s*\{([\s\S]*?)\n\}/)?.[1] || '';
 
         expect(baseRule).toContain("font: var(--button-typography, 900 14px/1.4 'Roboto', sans-serif);");
@@ -3157,7 +3195,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const textRule = run.result.match(/\.ww-element-textElement\s*\{[^}]*\}/)?.[0] || '';
+        const textRule = run.result.match(/\.ww-e-sdGV4dEVsZW1lbnQ\s*\{[^}]*\}/)?.[0] || '';
 
         expect(textRule).toContain("font: 700 30px/36px 'Antonio', sans-serif;");
         expect(textRule).toContain('font-size: 32px;');
@@ -3216,7 +3254,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const buttonRule = run.result.match(/\.ww-element-buttonElement\s*\{[^}]*\}/)?.[0] || '';
+        const buttonRule = run.result.match(/\.ww-e-sYnV0dG9uRWxlbWVudA\s*\{[^}]*\}/)?.[0] || '';
 
         expect(buttonRule).toContain('--ww-text-background-color: #abcdef;');
         expect(buttonRule).toContain('--ww-element-transition: color 120ms ease;');
@@ -3250,7 +3288,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const textRule = run.result.match(/\.ww-element-textElement\s*\{[^}]*\}/)?.[0] || '';
+        const textRule = run.result.match(/\.ww-e-sdGV4dEVsZW1lbnQ\s*\{[^}]*\}/)?.[0] || '';
 
         expect(textRule).toContain('font-size: 16px;');
         expect(textRule).not.toContain('color: #123456;');
@@ -3292,8 +3330,8 @@ describe('styleCompiler', () => {
             stylesheet,
         });
 
-        expect(run.result).toContain(':where(.scoped-parent:hover) .ww-element-child');
-        expect(run.result).not.toContain(':where(.scoped-parent[data-ww-states~="_wwHover"]) .ww-element-child');
+        expect(run.result).toContain(':where(.scoped-parent:hover) .ww-e-sY2hpbGQ');
+        expect(run.result).not.toContain(':where(.scoped-parent[data-ww-states~="_wwHover"]) .ww-e-sY2hpbGQ');
         expect(run.result).toContain('opacity: 0.5;');
     });
 
@@ -3333,8 +3371,8 @@ describe('styleCompiler', () => {
             mode: 'editor',
         });
 
-        expect(run.result).toContain(':where(#app.-ww-preview) :where(.scoped-parent:hover) .ww-element-child');
-        expect(run.result).toContain(':where(.scoped-parent[data-ww-forced-states~="_wwHover"]) .ww-element-child');
+        expect(run.result).toContain(':where(#app.-ww-preview) :where(.scoped-parent:hover) .ww-e-sY2hpbGQ');
+        expect(run.result).toContain(':where(.scoped-parent[data-ww-forced-states~="_wwHover"]) .ww-e-sY2hpbGQ');
         expect(run.result).toContain('opacity: 0.5;');
     });
 
@@ -3375,13 +3413,13 @@ describe('styleCompiler', () => {
             mode: 'editor',
         });
 
-        expect(run.result).toContain(':where(#app.-ww-preview) :where(.scoped-parent:focus-within) .ww-element-child');
+        expect(run.result).toContain(':where(#app.-ww-preview) :where(.scoped-parent:focus-within) .ww-e-sY2hpbGQ');
         expect(run.result).toContain(
-            ':where(#app.-ww-preview) :where(.scoped-parent:has(input:focus)) .ww-element-child'
+            ':where(#app.-ww-preview) :where(.scoped-parent:has(input:focus)) .ww-e-sY2hpbGQ'
         );
-        expect(run.result).toContain(':where(.scoped-parent[data-ww-states~="stored-focus-id"]) .ww-element-child');
+        expect(run.result).toContain(':where(.scoped-parent[data-ww-states~="stored-focus-id"]) .ww-e-sY2hpbGQ');
         expect(run.result).toContain(
-            ':where(.scoped-parent[data-ww-forced-states~="stored-focus-id"]) .ww-element-child'
+            ':where(.scoped-parent[data-ww-forced-states~="stored-focus-id"]) .ww-e-sY2hpbGQ'
         );
         expect(run.result).toContain('opacity: 0.5;');
     });
@@ -3423,7 +3461,7 @@ describe('styleCompiler', () => {
         });
 
         expect(run.result).toMatch(
-            /:where\(\.scoped-parent\[data-ww-states~="open"\]\) \.ww-element-child,\n\s*:where\(\.scoped-parent\[data-ww-forced-states~="open"\]\) \.ww-element-child/
+            /:where\(\.scoped-parent\[data-ww-states~="open"\]\) \.ww-e-sY2hpbGQ,\n\s*:where\(\.scoped-parent\[data-ww-forced-states~="open"\]\) \.ww-e-sY2hpbGQ/
         );
         expect(run.result).toContain('opacity: 0.5;');
     });
@@ -3470,8 +3508,8 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const parentStateSelector = ':where(.scoped-parent[data-ww-states~="open"]) .ww-element-child';
-        const focusStateSelector = '.ww-element-child:where(:focus-within)';
+        const parentStateSelector = ':where(.scoped-parent[data-ww-states~="open"]) .ww-e-sY2hpbGQ';
+        const focusStateSelector = '.ww-e-sY2hpbGQ:where(:focus-within)';
 
         expect(run.result).toContain(parentStateSelector);
         expect(run.result).toContain(focusStateSelector);
@@ -3513,7 +3551,7 @@ describe('styleCompiler', () => {
             stylesheet,
         });
         const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
-        const hoverRule = run.result.match(/\.ww-element-elementA:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
+        const hoverRule = run.result.match(/\.ww-e-sZWxlbWVudEE:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
 
         expect(run.result).toContain('width: 100px;');
         expect(tabletCss).toContain('width: 80px;');
@@ -3801,7 +3839,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createDynamicVariableStringStyleSheetAdapter(variables),
         });
-        const containerRule = run.result.match(/\.ww-section-sectionA\s*\{[^}]*\}/)?.[0] || '';
+        const containerRule = run.result.match(/\.ww-s-sc2VjdGlvbkE\s*\{[^}]*\}/)?.[0] || '';
 
         expect(containerRule).toContain('width: var(--ww-style-width-positioned, revert-layer);');
         expect(variables).toEqual(
@@ -3846,7 +3884,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createDynamicVariableStringStyleSheetAdapter(variables),
         });
-        const containerRule = run.result.match(/\.ww-section-sectionA\s*\{[^}]*\}/)?.[0] || '';
+        const containerRule = run.result.match(/\.ww-s-sc2VjdGlvbkE\s*\{[^}]*\}/)?.[0] || '';
         const widthVariable = variables.find(variable => variable.name === '--ww-style-width-positioned');
 
         expect(containerRule).toContain('width: var(--ww-style-width-positioned, revert-layer);');
@@ -4400,9 +4438,9 @@ describe('styleCompiler', () => {
 
         expect(manualRuntime.scopes.map(scope => scope.runCount)).toEqual([4, 1, 1, 1]);
         expect(manualRuntime.scopes[1].stopCount).toBe(1);
-        expect(stylesheet.result()).not.toContain('.ww-element-elementA');
-        expect(stylesheet.result()).toContain('.ww-element-elementB');
-        expect(stylesheet.result()).toContain('.ww-element-elementC');
+        expect(stylesheet.result()).not.toContain('.ww-e-sZWxlbWVudEE');
+        expect(stylesheet.result()).toContain('.ww-e-sZWxlbWVudEI');
+        expect(stylesheet.result()).toContain('.ww-e-sZWxlbWVudEM');
 
         run.stop();
     });
@@ -4449,7 +4487,7 @@ describe('styleCompiler', () => {
         manualRuntime.scopes[1].rerun();
         const rerunCss = stylesheet.result();
 
-        expect(rerunCss.indexOf('.ww-element-elementB')).toBeLessThan(rerunCss.indexOf('.ww-element-elementA'));
+        expect(rerunCss.indexOf('.ww-e-sZWxlbWVudEI')).toBeLessThan(rerunCss.indexOf('.ww-e-sZWxlbWVudEE'));
         expectTargetChunkOrder(rerunCss, 'elementA');
 
         run.stop();
@@ -4477,14 +4515,14 @@ describe('styleCompiler', () => {
             runtime: manualRuntime.runtime,
         });
 
-        expect(stylesheet.result().indexOf('.ww-element-libraryRoot')).toBeLessThan(
-            stylesheet.result().indexOf('.ww-element-elementA')
+        expect(stylesheet.result().indexOf('.ww-e-sbGlicmFyeVJvb3Q')).toBeLessThan(
+            stylesheet.result().indexOf('.ww-e-sZWxlbWVudEE')
         );
 
         manualRuntime.scopes[1].rerun();
         const rerunCss = stylesheet.result();
 
-        expect(rerunCss.indexOf('.ww-element-libraryRoot')).toBeLessThan(rerunCss.indexOf('.ww-element-elementA'));
+        expect(rerunCss.indexOf('.ww-e-sbGlicmFyeVJvb3Q')).toBeLessThan(rerunCss.indexOf('.ww-e-sZWxlbWVudEE'));
 
         run.stop();
     });
@@ -4514,8 +4552,8 @@ describe('styleCompiler', () => {
 
         const css = run.result;
 
-        expect(css.indexOf('.ww-element-libraryRootC')).toBeLessThan(css.indexOf('.ww-element-libraryRootB'));
-        expect(css.indexOf('.ww-element-libraryRootB')).toBeLessThan(css.indexOf('.ww-element-libraryRootA'));
+        expect(css.indexOf('.ww-e-sbGlicmFyeVJvb3RD')).toBeLessThan(css.indexOf('.ww-e-sbGlicmFyeVJvb3RC'));
+        expect(css.indexOf('.ww-e-sbGlicmFyeVJvb3RC')).toBeLessThan(css.indexOf('.ww-e-sbGlicmFyeVJvb3RB'));
 
         run.stop();
     });
@@ -4577,17 +4615,17 @@ describe('styleCompiler', () => {
         });
         const css = run.result;
         const definitionLayerIndex = css.indexOf('@layer definition');
-        const rootLayoutRuleIndex = css.indexOf('.ww-element-concreteRoot.ww-layout');
+        const rootLayoutRuleIndex = css.indexOf('.ww-e-sY29uY3JldGVSb290.ww-layout');
         const instanceLayerIndex = css.indexOf('@layer instance');
-        const instanceRuleIndex = css.indexOf('.ww-element-buttonInstance');
+        const instanceRuleIndex = css.indexOf('.ww-e-sYnV0dG9uSW5zdGFuY2U');
 
         expect(css).toContain('@layer definition, instance;');
         expect(definitionLayerIndex).toBeGreaterThanOrEqual(0);
         expect(rootLayoutRuleIndex).toBeGreaterThan(definitionLayerIndex);
         expect(instanceLayerIndex).toBeGreaterThan(rootLayoutRuleIndex);
         expect(instanceRuleIndex).toBeGreaterThan(instanceLayerIndex);
-        expect(css).toMatch(/\.ww-element-buttonInstance\s*\{[^}]*display: none;/);
-        expect(css).not.toContain('.ww-element-buttonInstance.ww-layout');
+        expect(css).toMatch(/\.ww-e-sYnV0dG9uSW5zdGFuY2U\s*\{[^}]*display: none;/);
+        expect(css).not.toContain('.ww-e-sYnV0dG9uSW5zdGFuY2U.ww-layout');
 
         run.stop();
     });
@@ -4625,10 +4663,10 @@ describe('styleCompiler', () => {
         });
         const css = run.result;
         const definitionLayerIndex = css.indexOf('@layer definition');
-        const concreteRootIndex = css.indexOf('.ww-element-concreteRoot');
+        const concreteRootIndex = css.indexOf('.ww-e-sY29uY3JldGVSb290');
         const instanceLayerIndex = css.indexOf('@layer instance');
-        const innerInstanceIndex = css.indexOf('.ww-element-innerInstance');
-        const outerInstanceIndex = css.indexOf('.ww-element-outerInstance');
+        const innerInstanceIndex = css.indexOf('.ww-e-saW5uZXJJbnN0YW5jZQ');
+        const outerInstanceIndex = css.indexOf('.ww-e-sb3V0ZXJJbnN0YW5jZQ');
 
         expect(concreteRootIndex).toBeGreaterThan(definitionLayerIndex);
         expect(instanceLayerIndex).toBeGreaterThan(concreteRootIndex);
@@ -4662,8 +4700,8 @@ describe('styleCompiler', () => {
             runtime: manualRuntime.runtime,
         });
 
-        expect(stylesheet.result().indexOf('.ww-element-libraryRootA')).toBeLessThan(
-            stylesheet.result().indexOf('.ww-element-libraryRootB')
+        expect(stylesheet.result().indexOf('.ww-e-sbGlicmFyeVJvb3RB')).toBeLessThan(
+            stylesheet.result().indexOf('.ww-e-sbGlicmFyeVJvb3RC')
         );
 
         libraryComponents.libraryA.childLibraryComponentIds = ['libraryB'];
@@ -4671,7 +4709,7 @@ describe('styleCompiler', () => {
 
         const rerunCss = stylesheet.result();
 
-        expect(rerunCss.indexOf('.ww-element-libraryRootB')).toBeLessThan(rerunCss.indexOf('.ww-element-libraryRootA'));
+        expect(rerunCss.indexOf('.ww-e-sbGlicmFyeVJvb3RC')).toBeLessThan(rerunCss.indexOf('.ww-e-sbGlicmFyeVJvb3RB'));
         expect(manualRuntime.scopes[1].stopCount).toBe(1);
         expect(manualRuntime.scopes[2].stopCount).toBe(0);
         expect(manualRuntime.scopes).toHaveLength(4);
@@ -4778,8 +4816,8 @@ describe('styleCompiler', () => {
         manualRuntime.scopes[0].rerun();
 
         const css = stylesheet.result();
-        expect(css.indexOf('.ww-element-libraryRootA')).toBeLessThan(css.indexOf('.ww-element-libraryRootB'));
-        expect(css.indexOf('.ww-element-libraryRootB')).toBeLessThan(css.indexOf('.ww-element-libraryRootC'));
+        expect(css.indexOf('.ww-e-sbGlicmFyeVJvb3RB')).toBeLessThan(css.indexOf('.ww-e-sbGlicmFyeVJvb3RC'));
+        expect(css.indexOf('.ww-e-sbGlicmFyeVJvb3RC')).toBeLessThan(css.indexOf('.ww-e-sbGlicmFyeVJvb3RD'));
         expect(manualRuntime.scopes[1].stopCount).toBe(0);
         expect(manualRuntime.scopes[2].stopCount).toBe(1);
         expect(manualRuntime.scopes).toHaveLength(5);
@@ -4806,7 +4844,7 @@ describe('styleCompiler', () => {
             runtime: STATIC_STYLE_RUNTIME,
         });
 
-        expect(run.result.match(/\.ww-element-rootElementA\s*\{/g)).toHaveLength(1);
+        expect(run.result.match(/\.ww-e-scm9vdEVsZW1lbnRB\s*\{/g)).toHaveLength(1);
 
         run.stop();
     });
@@ -4830,10 +4868,10 @@ describe('styleCompiler', () => {
             runtime: STATIC_STYLE_RUNTIME,
         });
 
-        expect(run.result.match(/\.ww-element-libraryChild\s*\{/g)).toHaveLength(1);
-        expect(run.result).toContain('.ww-element-pageElement');
-        expect(run.result.indexOf('.ww-element-libraryChild')).toBeLessThan(
-            run.result.indexOf('.ww-element-pageElement')
+        expect(run.result.match(/\.ww-e-sbGlicmFyeUNoaWxk\s*\{/g)).toHaveLength(1);
+        expect(run.result).toContain('.ww-e-scGFnZUVsZW1lbnQ');
+        expect(run.result.indexOf('.ww-e-sbGlicmFyeUNoaWxk')).toBeLessThan(
+            run.result.indexOf('.ww-e-scGFnZUVsZW1lbnQ')
         );
 
         run.stop();
@@ -4879,8 +4917,8 @@ describe('styleCompiler', () => {
             stylesheet,
             runtime: STATIC_STYLE_RUNTIME,
         });
-        const libraryRule = run.result.match(/\.ww-element-libraryRoot\s*\{[^}]*\}/)?.[0] || '';
-        const instanceRule = run.result.match(/\.ww-element-cardInstance\s*\{[^}]*\}/)?.[0] || '';
+        const libraryRule = run.result.match(/\.ww-e-sbGlicmFyeVJvb3Q\s*\{[^}]*\}/)?.[0] || '';
+        const instanceRule = run.result.match(/\.ww-e-sY2FyZEluc3RhbmNl\s*\{[^}]*\}/)?.[0] || '';
 
         expect(libraryRule).toContain('height: 100%;');
         expect(libraryRule).toContain('padding: 5px;');
@@ -4916,8 +4954,8 @@ describe('styleCompiler', () => {
             stylesheet: createStringStyleSheetAdapter(),
             runtime: STATIC_STYLE_RUNTIME,
         });
-        const libraryRule = run.result.match(/\.ww-element-libraryRoot\s*\{[^}]*\}/)?.[0] || '';
-        const instanceRule = run.result.match(/\.ww-element-cardInstance\s*\{[^}]*\}/)?.[0] || '';
+        const libraryRule = run.result.match(/\.ww-e-sbGlicmFyeVJvb3Q\s*\{[^}]*\}/)?.[0] || '';
+        const instanceRule = run.result.match(/\.ww-e-sY2FyZEluc3RhbmNl\s*\{[^}]*\}/)?.[0] || '';
 
         expect(libraryRule).toContain('max-width: 640px;');
         expect(instanceRule).toContain('max-width: unset;');
@@ -4960,8 +4998,8 @@ describe('styleCompiler', () => {
             stylesheet,
             runtime: STATIC_STYLE_RUNTIME,
         });
-        const libraryRule = run.result.match(/\.ww-element-libraryRoot\s*\{[^}]*\}/)?.[0] || '';
-        const instanceRule = run.result.match(/\.ww-element-cardInstance\s*\{[^}]*\}/)?.[0] || '';
+        const libraryRule = run.result.match(/\.ww-e-sbGlicmFyeVJvb3Q\s*\{[^}]*\}/)?.[0] || '';
+        const instanceRule = run.result.match(/\.ww-e-sY2FyZEluc3RhbmNl\s*\{[^}]*\}/)?.[0] || '';
 
         expect(libraryRule).toContain('height: 100%;');
         expect(instanceRule).toContain('height: var(--ww-style-height, auto);');
@@ -5014,12 +5052,12 @@ describe('styleCompiler', () => {
             }),
             stylesheet,
         });
-        const libraryRule = run.result.match(/\.ww-element-libraryRoot\s*\{[^}]*\}/)?.[0] || '';
-        const slottedChildRule = run.result.match(/\.ww-element-slottedChild\s*\{[^}]*\}/)?.[0] || '';
+        const libraryRule = run.result.match(/\.ww-e-sbGlicmFyeVJvb3Q\s*\{[^}]*\}/)?.[0] || '';
+        const slottedChildRule = run.result.match(/\.ww-e-sc2xvdHRlZENoaWxk\s*\{[^}]*\}/)?.[0] || '';
 
         expect(libraryRule).toContain('padding: 12px;');
         expect(slottedChildRule).toContain('width: 220px;');
-        expect(run.result).not.toContain('.ww-element-cardInstance .ww-element-dropzone');
+        expect(run.result).not.toContain('.ww-e-sY2FyZEluc3RhbmNl .ww-e-sZHJvcHpvbmU');
     });
 
     it('keeps Vue target scopes alive after the target-list scope reruns', async () => {
@@ -5050,8 +5088,8 @@ describe('styleCompiler', () => {
         data.scope.elementUids.reverse();
         await nextTick();
 
-        expect(stylesheet.result()).toContain('.ww-element-elementA');
-        expect(stylesheet.result()).toContain('.ww-element-elementB');
+        expect(stylesheet.result()).toContain('.ww-e-sZWxlbWVudEE');
+        expect(stylesheet.result()).toContain('.ww-e-sZWxlbWVudEI');
 
         data.elements.elementA.styles!.base.default.width = '150px';
         await nextTick();
@@ -5128,10 +5166,9 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const containerRule = run.result.match(/\.ww-section-sectionA\s*\{[^}]*background-image[^}]*\}/)?.[0] || '';
+        const containerRule = run.result.match(/\.ww-s-sc2VjdGlvbkE\s*\{[^}]*background-image[^}]*\}/)?.[0] || '';
         const elementRule =
-            run.result.match(/\.ww-section-sectionA > \.ww-section-element\s*\{[^}]*background-image[^}]*\}/)?.[0] ||
-            '';
+            run.result.match(/\.ww-s-sc2VjdGlvbkE > \.ww-section-element\s*\{[^}]*background-image[^}]*\}/)?.[0] || '';
 
         expect(containerRule).toContain('background-image: linear-gradient(red, blue);');
         expect(containerRule).toContain('background-size: 50px 50px;');
@@ -5301,7 +5338,7 @@ describe('styleCompiler', () => {
             }),
             stylesheet: createStringStyleSheetAdapter(),
         });
-        const hoverRule = run.result.match(/\.ww-element-elementA:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
+        const hoverRule = run.result.match(/\.ww-e-sZWxlbWVudEE:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
 
         expect(hoverRule).toContain('color: blue !important;');
         expect(hoverRule).toContain('overflow: revert-layer;');
@@ -5389,7 +5426,7 @@ describe('styleCompiler', () => {
             stylesheet,
         });
 
-        expect(run.result).toContain('.ww-section-sectionA');
+        expect(run.result).toContain('.ww-s-sc2VjdGlvbkE');
         expect(run.result).toContain('margin: 16px 0;');
         expect(run.result).toContain('min-height: 320px;');
         expect(run.result).toContain('> .ww-section-element');
@@ -5765,7 +5802,7 @@ describe('styleCompiler', () => {
             stylesheet: createStringStyleSheetAdapter(),
         });
         const tabletCss = run.result.slice(run.result.indexOf('@media (max-width: 991px)'));
-        const hoverRule = run.result.match(/\.ww-element-elementA:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
+        const hoverRule = run.result.match(/\.ww-e-sZWxlbWVudEE:where\(:hover\)\s*\{[^}]*\}/)?.[0] || '';
 
         expect(tabletCss).toContain(
             "background: url('tablet.png') center center / cover no-repeat scroll, var(--ww-style-background-color, #FB1818);"
@@ -5810,7 +5847,7 @@ describe('styleCompiler', () => {
             run.result.indexOf('@layer ww-style-section')
         );
 
-        expect(libraryCss).toContain('.ww-element-libraryRoot');
+        expect(libraryCss).toContain('.ww-e-sbGlicmFyeVJvb3Q');
         expect(libraryCss).toContain('background: var(--ww-style-background-color, #FB1818);');
     });
 
@@ -6236,13 +6273,13 @@ describe('styleCompiler', () => {
             expect.arrayContaining([
                 expect.objectContaining({
                     name: '--ww-style-width',
-                    selector: '.ww-element-elementA',
+                    selector: '.ww-e-sZWxlbWVudEE',
                     state: 'base',
                     cssProperty: 'width',
                 }),
                 expect.objectContaining({
                     name: '--ww-style-width',
-                    selector: '.ww-element-elementA:where(:hover)',
+                    selector: '.ww-e-sZWxlbWVudEE:where(:hover)',
                     state: '_wwHover',
                     cssProperty: 'width',
                 }),
@@ -6616,7 +6653,7 @@ describe('styleCompiler', () => {
             runtime: STATIC_STYLE_RUNTIME,
         });
 
-        expect(run.result).toContain('.ww-element-rootElementA');
+        expect(run.result).toContain('.ww-e-scm9vdEVsZW1lbnRB');
         expect(run.result).toContain('width: 240px;');
     });
 
@@ -6656,6 +6693,44 @@ describe('styleCompiler', () => {
         secondRule.dispose();
 
         expect(stylesheet.result()).toBe('');
+    });
+
+    it('emits compiler-owned base defaults through shared atomic classes when the adapter supports them', () => {
+        const atomicClasses: StyleAtomicClassAssignment[] = [];
+        const baseStylesheet = createStringStyleSheetAdapter();
+        const stylesheet = {
+            ...baseStylesheet,
+            atomicClass(assignment: StyleAtomicClassAssignment) {
+                atomicClasses.push(assignment);
+                return () => {};
+            },
+        };
+
+        const run = createStyleCompiler().compileStylesheet({
+            scope: {
+                elementUids: ['elementA', 'elementB'],
+                sectionUids: [],
+                libraryComponentIds: [],
+            },
+            reader: createReader({
+                elements: {
+                    elementA: { uid: 'elementA' },
+                    elementB: { uid: 'elementB' },
+                },
+            }),
+            stylesheet,
+        });
+
+        expect(run.result).toMatch(/\.ww-a-[\w-]+\s*\{[\s\S]*margin: 0;/);
+        expect(run.result.match(/margin: 0;/g)).toHaveLength(1);
+        expect(atomicClasses).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ sourceUid: 'elementA', surfaceKind: 'element' }),
+                expect.objectContaining({ sourceUid: 'elementB', surfaceKind: 'element' }),
+            ])
+        );
+        expect(atomicClasses).toHaveLength(2);
+        expect(new Set(atomicClasses.map(assignment => assignment.className)).size).toBe(1);
     });
 
     it('serializes active groups in insertion order', () => {

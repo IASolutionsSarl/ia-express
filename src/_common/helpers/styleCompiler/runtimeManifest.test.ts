@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import type { StyleDynamicVariable } from './types';
-import { decodeStyleRuntimeManifest, encodeStyleRuntimeManifest } from './runtimeManifest';
+import type { StyleAtomicClassAssignment, StyleDynamicVariable } from './types';
+import { createElementSelector } from './selectors';
+import {
+    decodeStyleRuntimeManifest,
+    decodeStyleRuntimeManifestData,
+    encodeStyleRuntimeManifest,
+} from './runtimeManifest';
 
 describe('style runtime manifest', () => {
     it('keeps the cross-repository wire format stable', () => {
@@ -15,7 +20,7 @@ describe('style runtime manifest', () => {
                     'element-0',
                     'element:element-0',
                     0,
-                    '.ww-element-element-0',
+                    '.ww-e-sZWxlbWVudC0w',
                     2,
                     0,
                     'property-0',
@@ -23,9 +28,9 @@ describe('style runtime manifest', () => {
                     0,
                     { __wwtype: 'f', code: 'variables.value0' },
                     'property-0',
-                    '.ww-element-element-0',
+                    '.ww-e-sZWxlbWVudC0w',
                     0,
-                    '.ww-element-element-0',
+                    '.ww-e-sZWxlbWVudC0w',
                 ],
             ],
         ]);
@@ -38,8 +43,8 @@ describe('style runtime manifest', () => {
                 surface: {
                     key: 'element-layout:card',
                     kind: 'element-layout',
-                    selector: '.ww-element-card [data-ww-layout-style-scopes~="card"]',
-                    runtimeScopeSelector: '.ww-element-card',
+                    selector: '.ww-e-sY2FyZA [data-ww-ls~="sY2FyZA"]',
+                    runtimeScopeSelector: '.ww-e-sY2FyZA',
                     group: 'library',
                     libraryLayer: 'instance',
                 },
@@ -51,7 +56,7 @@ describe('style runtime manifest', () => {
                 breakpoint: 'tablet',
                 value: { __wwtype: 'f', code: 'variables.width' },
                 cssProperty: 'width',
-                selector: '.ww-element-card:hover [data-ww-layout-style-scopes~="card"]',
+                selector: '.ww-e-sY2FyZA:hover [data-ww-ls~="sY2FyZA"]',
                 outputKey: 'width',
                 valueNormalizer: { type: 'component-size', fallbackValue: 'auto' },
                 validationProperty: 'width',
@@ -69,7 +74,7 @@ describe('style runtime manifest', () => {
                 surface: {
                     key: 'element:card',
                     kind: 'element',
-                    selector: '.ww-element-card',
+                    selector: '.ww-e-sY2FyZA',
                     group: 'element',
                 },
                 group: 'element',
@@ -80,7 +85,7 @@ describe('style runtime manifest', () => {
                 breakpoint: 'default',
                 value: { __wwtype: 'f', code: 'variables.top' },
                 cssProperty: 'top',
-                selector: '.ww-element-card',
+                selector: '.ww-e-sY2FyZA',
                 runtimeFallback: {
                     type: 'when-all-empty',
                     dependencies: [{ __wwtype: 'f', code: 'variables.right' }],
@@ -92,7 +97,7 @@ describe('style runtime manifest', () => {
                 surface: {
                     key: 'element:card',
                     kind: 'element',
-                    selector: '.ww-element-card',
+                    selector: '.ww-e-sY2FyZA',
                     group: 'element',
                 },
                 group: 'element',
@@ -103,7 +108,7 @@ describe('style runtime manifest', () => {
                 breakpoint: 'mobile',
                 value: { __wwtype: 'f', code: 'variables.animation' },
                 cssProperty: 'animation-name',
-                selector: '.ww-element-card',
+                selector: '.ww-e-sY2FyZA',
                 kind: 'keyframes',
                 keyframesName: 'ww-keyframes-card',
             },
@@ -115,6 +120,62 @@ describe('style runtime manifest', () => {
             value: 0,
         });
         expect(decodeStyleRuntimeManifest(JSON.parse(JSON.stringify(manifest)))).toEqual(variables);
+    });
+
+    it('groups atomic class assignments by source and surface in the published manifest', () => {
+        const atomicClasses: StyleAtomicClassAssignment[] = [
+            { sourceUid: 'element-a', surfaceKind: 'element', className: 'ww-a-width' },
+            { sourceUid: 'element-a', surfaceKind: 'element', className: 'ww-a-height' },
+            { sourceUid: 'section-a', surfaceKind: 'section-container', className: 'ww-a-section' },
+        ];
+
+        const manifest = encodeStyleRuntimeManifest([], atomicClasses);
+
+        expect(manifest).toEqual([
+            2,
+            [],
+            [
+                ['element-a', [0, ['ww-a-width', 'ww-a-height']]],
+                ['section-a', [2, ['ww-a-section']]],
+            ],
+        ]);
+        expect(decodeStyleRuntimeManifestData(JSON.parse(JSON.stringify(manifest)))).toEqual({
+            variables: [],
+            atomicClasses,
+        });
+        expect(decodeStyleRuntimeManifest(manifest)).toEqual([]);
+    });
+
+    it('uses page-local source indexes when the Publisher provides them', () => {
+        const atomicClasses: StyleAtomicClassAssignment[] = [
+            { sourceUid: 'section-a', surfaceKind: 'section-container', className: 'ww-a-section' },
+            { sourceUid: 'element-a', surfaceKind: 'element', className: 'ww-a-element' },
+            { sourceUid: 'element-b', surfaceKind: 'element', className: 'ww-a-element' },
+        ];
+
+        const manifest = encodeStyleRuntimeManifest(
+            [],
+            atomicClasses,
+            new Map([
+                ['section-a', 0],
+                ['element-a', 1],
+                ['element-b', 2],
+            ])
+        );
+
+        expect(manifest).toEqual([
+            2,
+            [],
+            [
+                [2, 'ww-a-section', [0]],
+                [0, 'ww-a-element', [1, 2]],
+            ],
+        ]);
+        expect(decodeStyleRuntimeManifestData(manifest)?.atomicClasses).toEqual([
+            { sourceIndex: 0, surfaceKind: 'section-container', className: 'ww-a-section' },
+            { sourceIndex: 1, surfaceKind: 'element', className: 'ww-a-element' },
+            { sourceIndex: 2, surfaceKind: 'element', className: 'ww-a-element' },
+        ]);
     });
 
     it('is smaller than serializing repeated variable objects directly', () => {
@@ -156,7 +217,7 @@ describe('style runtime manifest', () => {
 
 function createVariable(index: number): StyleDynamicVariable {
     const sourceUid = `element-${Math.floor(index / 6)}`;
-    const selector = `.ww-element-${sourceUid}`;
+    const selector = createElementSelector(sourceUid);
 
     return {
         name: `--ww-style-${sourceUid}-property-${index % 6}`,

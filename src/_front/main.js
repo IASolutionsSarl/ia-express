@@ -1,4 +1,4 @@
-import { createApp } from 'vue';
+import { createApp, createSSRApp } from 'vue';
 import axios from 'axios';
 import { VueCookieNext } from 'vue-cookie-next';
 import { isEqual, isEmpty, cloneDeep, get, set, merge } from 'lodash-es';
@@ -15,41 +15,38 @@ import router from '@/_front/router.js';
 
 let store;
 let pinia;
-/* wwFront:start */
-if (window.localStorage?.getItem('ww-app-theme') === 'dark')
-    document.documentElement.classList.add('ww-app-theme-dark');
-else if (window.localStorage?.getItem('ww-app-theme') === 'light')
-    document.documentElement.classList.remove('ww-app-theme-dark');
+let currentRenderMode = 'runtime';
+let isServerRendering = false;
+let isHydrating = false;
+let isStaticRendering = false;
+let browserRuntimeActivationError;
 
+/* wwFront:start */
 import storeImport from '@/store';
 import wwLibImport from '@/wwLib';
 import { createPinia } from 'pinia';
+import { initializeCurrentRouteRuntime, startCurrentRouteDataInitialization } from '@/_front/router.js';
+import { activateHydratedRuntime } from '@/_front/rendering/hydrationRuntime.ts';
+import { releaseClientIslandHydrationState } from '@/_front/rendering/clientIslandContext';
+import { deactivateStaticRendering } from '@/_front/rendering/staticRenderingContext';
+import { isServerRenderMode, isStaticRenderMode, renderMode } from '@/_front/rendering/renderMode';
+import { activateRuntimeLifecycle, discardRuntimeLifecycle } from '@/_front/rendering/runtimeLifecycleScheduler';
+
+currentRenderMode = renderMode;
+isServerRendering = isServerRenderMode(renderMode);
+isHydrating = renderMode === 'hydrate';
+isStaticRendering = isStaticRenderMode(renderMode);
+
+if (!isServerRendering && window.localStorage?.getItem('ww-app-theme') === 'dark')
+    document.documentElement.classList.add('ww-app-theme-dark');
+else if (!isServerRendering && window.localStorage?.getItem('ww-app-theme') === 'light')
+    document.documentElement.classList.remove('ww-app-theme-dark');
+
 store = storeImport;
 pinia = createPinia();
-window.wwLib = wwLibImport;
-
-if ('serviceWorker' in navigator) {
-    if (window.wwg_disableManifest) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-            for (const registration of registrations) {
-                registration.unregister();
-            }
-        });
-    } else {
-        const baseTag = window.wwg_designInfo?.baseTag;
-        let href = baseTag?.href || null;
-        if (href) {
-            if (!href.startsWith('/')) href = `/${href}`;
-            if (!href.endsWith('/')) href = `${href}/`;
-        }
-        navigator.serviceWorker
-            .register(`${href ?? '/'}serviceworker.js?_wwcv=${window.wwg_cacheVersion}`)
-            .catch(error => {
-                console.error('Service worker registration failed:', error);
-            });
-    }
-}
+globalThis.wwLib = wwLibImport;
 /* wwFront:end */
+
  
 import wwElements from '@/_front/components/index.js';
 import { addMediaQueriesListener } from '../helpers/mediaQueriesListener.js';
@@ -58,8 +55,7 @@ import globalServices from '@/_common/plugins/globalServices.js';
  
 import '@/assets/css';
 
-//Set window libraries
-window._ = {
+globalThis._ = {
     isEqual,
     isEmpty,
     cloneDeep,
@@ -67,63 +63,207 @@ window._ = {
     set,
     merge,
 };
-window.axios = axios.create({});
+globalThis.axios = axios.create({});
 
-// Register hooks
 import { useHooksStore } from '@/pinia/hooks.js';
 const hooksStore = useHooksStore(pinia);
 hooksStore.registerIntegrationHooks();
 
  /* wwFront:start */
-window.wwServerClient = wwServerClient;
+globalThis.wwServerClient = wwServerClient;
 /* wwFront:end */
 
-const app = createApp(App);
+export const app = currentRenderMode === 'runtime' ? createApp(App) : createSSRApp(App);
+export { pinia, router, store };
 
-const init = async function () {
-    window.vm = app;
-    app.use(pinia);
-    app.use(store);
-    app.use(VueCookieNext);
-    app.use(wwElements);
-    app.use(globalServices);
-    app.config.unwrapInjectedRef = true;
-    /* wwFront:start */
-    app.use(createHead());
-    /* wwFront:end */
+let setupPromise;
+let browserRuntimeActivated = false;
+
+export function setupApp({ url } = {}) {
+    if (setupPromise) return setupPromise;
+
+    setupPromise = (async () => {
+        window.vm = app;
+        app.use(pinia);
+        app.use(store);
+        app.use(VueCookieNext);
+        app.use(wwElements);
+        app.use(globalServices);
+        app.config.unwrapInjectedRef = true;
+        /* wwFront:start */
+        app.use(createHead());
+        /* wwFront:end */
 
  
- 
-    await wwLib.initFront({ store, router });
+        await wwLib.initFront({
+            store,
+            router,
+            staticRendering: isStaticRendering,
+        });
 
-    app.use(router);
+        /* wwFront:start */
+        if (currentRenderMode === 'runtime') activateBrowserRuntime();
+        /* wwFront:end */
 
-    addMediaQueriesListener(wwLib.$store.getters['front/getScreenSizes'], (screenSize, isActive) => {
-        wwLib.$store.dispatch('front/setIsScreenSizeActive', { screenSize, isActive });
-    });
+        app.use(router);
 
-    await router.isReady();
+        if (isServerRendering && url) {
+            await router.push(url);
+        }
 
-    // We select ourself app element, because Vue does not know how to do it properly (Editor + Front Iframe)
-    const el = document.getElementById('app');
-    app.mount(el);
+        await router.isReady();
+
+        return { app, pinia, router, store };
+    })();
+
+    return setupPromise;
+}
+
+export async function mountApp() {
+    await setupApp();
+
+    const element = document.getElementById('app');
+    if (isHydrating) {
+        /* wwFront:start */
+        const hydration = await activateHydratedRuntime({
+            blockRuntimeInteractions: () => blockHydrationInteractions(element),
+            releaseRuntimeInteractions: () => releaseHydrationInteractions(element),
+            hydrateApp: () => mountHydratedApp(element),
+            initializeRouteRuntime: initializeCurrentRouteRuntime,
+            activateBrowserRuntime,
+            releaseStaticProjection,
+            activateRuntimeLifecycle,
+            discardRuntimeLifecycle,
+            startRouteDataInitialization: startCurrentRouteDataInitialization,
+            reportFailure: reportHydrationRuntimeFailure,
+        });
+        if (hydration.status !== 'ready') return { app, pinia, router, store };
+        /* wwFront:end */
+    } else app.mount(element);
 
     /* wwFront:start */
-    // Needed or reactivity is not working in deployed app
     wwLib.scrollStore.setValues();
     /* wwFront:end */
 
     wwLib.$emit('wwLib:isMounted');
     wwLib.isMounted = true;
-};
 
-init();
+    return { app, pinia, router, store };
+}
+
+if (!isServerRendering) {
+    mountApp();
+}
 
 /* wwFront:start */
-wwLib.getFrontWindow().addEventListener('beforeinstallprompt', e => {
-    e.preventDefault();
-    wwLib.installPwaPrompt = e;
-});
+/**
+ * Hydrates the pre-rendered application while surfacing Vue hydration failures
+ * with a stable prefix and the affected URL. Vue performs hydration synchronously
+ * during `mount()`, so the console override is restored immediately afterwards.
+ */
+function mountHydratedApp(element) {
+    const originalError = console.error;
+    let mismatchReported = false;
+
+    console.error = (...values) => {
+        originalError(...values);
+        if (mismatchReported || !values.some(value => /hydrat|mismatch/i.test(`${value}`))) return;
+
+        mismatchReported = true;
+        originalError('[weweb-hydration] Hydration mismatch detected.', {
+            url: window.location.href,
+        });
+    };
+
+    try {
+        return app.mount(element);
+    } catch (error) {
+        originalError('[weweb-hydration] Hydration failed.', {
+            url: window.location.href,
+            error,
+        });
+        throw error;
+    } finally {
+        console.error = originalError;
+    }
+}
+
+const HYDRATION_RUNTIME_FAILURE_MESSAGES = {
+    'runtime-initialization': 'Runtime initialization failed; preserving the static projection.',
+    'browser-runtime-activation': 'Browser runtime activation failed; preserving the static projection.',
+    'lifecycle-activation': 'Runtime lifecycle activation failed after hydration.',
+    'route-data-initialization': 'Route data initialization failed after hydration.',
+};
+
+function reportHydrationRuntimeFailure(phase, error) {
+    console.error(`[weweb-hydration] ${HYDRATION_RUNTIME_FAILURE_MESSAGES[phase]}`, {
+        url: window.location.href,
+        error,
+    });
+}
+
+function releaseStaticProjection() {
+    deactivateStaticRendering();
+    releaseClientIslandHydrationState();
+}
+
+function blockHydrationInteractions(element) {
+    element.setAttribute('inert', '');
+}
+
+function releaseHydrationInteractions(element) {
+    element.removeAttribute('inert');
+}
+
+/**
+ * Starts browser-only services once. During hydration this runs only after Vue has
+ * consumed the static projection and the route runtime prerequisites are ready.
+ */
+function activateBrowserRuntime() {
+    if (browserRuntimeActivated || isServerRendering) return;
+    if (browserRuntimeActivationError) throw browserRuntimeActivationError;
+
+    try {
+        wwLib.activateRuntime();
+        addMediaQueriesListener(wwLib.$store.getters['front/getScreenSizes'], (screenSize, isActive) => {
+            wwLib.$store.dispatch('front/setIsScreenSizeActive', { screenSize, isActive });
+        });
+        registerServiceWorker();
+
+        wwLib.getFrontWindow().addEventListener('beforeinstallprompt', event => {
+            event.preventDefault();
+            wwLib.installPwaPrompt = event;
+        });
+
+        browserRuntimeActivated = true;
+    } catch (error) {
+        browserRuntimeActivationError = error;
+        throw error;
+    }
+}
+
+function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+
+    if (window.wwg_disableManifest) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+            for (const registration of registrations) {
+                registration.unregister();
+            }
+        });
+        return;
+    }
+
+    const baseTag = window.wwg_designInfo?.baseTag;
+    let href = baseTag?.href || null;
+    if (href) {
+        if (!href.startsWith('/')) href = `/${href}`;
+        if (!href.endsWith('/')) href = `${href}/`;
+    }
+    navigator.serviceWorker.register(`${href ?? '/'}serviceworker.js?_wwcv=${window.wwg_cacheVersion}`).catch(error => {
+        console.error('Service worker registration failed:', error);
+    });
+}
 /* wwFront:end */
 
 export default app;

@@ -15,6 +15,7 @@ import {
     type StyleStyleRuleAdapter,
 } from '@/_common/helpers/styleCompiler';
 import { registerStyleDynamicVariable } from './styleCompilerRuntimeVariables';
+import { registerStyleAtomicClass } from './styleCompilerAtomicClasses';
 import {
     batchCssRuleMutations,
     deleteCssRuleFromParent,
@@ -69,6 +70,9 @@ export function createDomStyleSheetAdapter(): StyleSheetAdapter<readonly CSSStyl
         },
         dynamicVariable(variable) {
             return registerStyleDynamicVariable(variable);
+        },
+        atomicClass(assignment) {
+            return registerStyleAtomicClass(assignment);
         },
         registerProperty(property) {
             registerDomStyleProperty(property);

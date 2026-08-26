@@ -1,4 +1,5 @@
 import type {
+    StyleAtomicClassAssignment,
     StyleDynamicVariable,
     StyleDynamicVariableRuntimeFallback,
     StyleLibraryLayer,
@@ -7,7 +8,8 @@ import type {
     StyleSurfaceKind,
 } from './types';
 
-const MANIFEST_VERSION = 1 as const;
+const LEGACY_MANIFEST_VERSION = 1 as const;
+const ATOMIC_MANIFEST_VERSION = 2 as const;
 const SURFACE_KINDS: readonly StyleSurfaceKind[] = [
     'element',
     'element-layout',
@@ -27,9 +29,22 @@ const KEYFRAMES = 4;
 type RuntimeManifestEntry = readonly unknown[];
 
 export type StyleRuntimeManifest = readonly [
-    version: typeof MANIFEST_VERSION,
+    version: typeof LEGACY_MANIFEST_VERSION,
     variables: readonly RuntimeManifestEntry[],
+] | readonly [
+    version: typeof ATOMIC_MANIFEST_VERSION,
+    variables: readonly RuntimeManifestEntry[],
+    atomicClasses: readonly RuntimeManifestEntry[],
 ];
+
+export type StyleRuntimeManifestData = {
+    variables: StyleDynamicVariable[];
+    atomicClasses: StyleRuntimeAtomicClassAssignment[];
+};
+
+export type StyleRuntimeAtomicClassAssignment =
+    | StyleAtomicClassAssignment
+    | (Omit<StyleAtomicClassAssignment, 'sourceUid'> & { sourceIndex: number });
 
 /**
  * Encodes runtime style metadata as versioned dense tuples.
@@ -37,8 +52,19 @@ export type StyleRuntimeManifest = readonly [
  * Repeated strings are intentionally left in the payload: gzip/Brotli compress them more
  * efficiently than a JSON string table while tuples still remove all repeated object keys.
  */
-export function encodeStyleRuntimeManifest(variables: readonly StyleDynamicVariable[]): StyleRuntimeManifest {
-    return [MANIFEST_VERSION, variables.map(encodeVariable)];
+export function encodeStyleRuntimeManifest(
+    variables: readonly StyleDynamicVariable[],
+    atomicClasses: readonly StyleAtomicClassAssignment[] = [],
+    atomicSourceIndexByUid?: ReadonlyMap<string, number>
+): StyleRuntimeManifest {
+    const encodedVariables = variables.map(encodeVariable);
+    if (!atomicClasses.length) return [LEGACY_MANIFEST_VERSION, encodedVariables];
+
+    return [
+        ATOMIC_MANIFEST_VERSION,
+        encodedVariables,
+        encodeAtomicClasses(atomicClasses, atomicSourceIndexByUid),
+    ];
 }
 
 /**
@@ -46,7 +72,15 @@ export function encodeStyleRuntimeManifest(variables: readonly StyleDynamicVaria
  * to fall back to its legacy runtime compiler instead of breaking page rendering.
  */
 export function decodeStyleRuntimeManifest(value: unknown): StyleDynamicVariable[] | null {
-    if (!Array.isArray(value) || value.length !== 2 || value[0] !== MANIFEST_VERSION) return null;
+    return decodeStyleRuntimeManifestData(value)?.variables || null;
+}
+
+/** Decodes both the legacy variables-only format and the atomic class manifest. */
+export function decodeStyleRuntimeManifestData(value: unknown): StyleRuntimeManifestData | null {
+    if (!Array.isArray(value)) return null;
+    if (value[0] === LEGACY_MANIFEST_VERSION && value.length !== 2) return null;
+    if (value[0] === ATOMIC_MANIFEST_VERSION && value.length !== 3) return null;
+    if (value[0] !== LEGACY_MANIFEST_VERSION && value[0] !== ATOMIC_MANIFEST_VERSION) return null;
 
     const entries = value[1];
     if (!Array.isArray(entries)) return null;
@@ -58,7 +92,128 @@ export function decodeStyleRuntimeManifest(value: unknown): StyleDynamicVariable
         variables.push(variable);
     }
 
-    return variables;
+    if (value[0] === LEGACY_MANIFEST_VERSION) return { variables, atomicClasses: [] };
+
+    const atomicClasses = decodeAtomicClasses(value[2]);
+    return atomicClasses ? { variables, atomicClasses } : null;
+}
+
+function encodeAtomicClasses(
+    assignments: readonly StyleAtomicClassAssignment[],
+    sourceIndexByUid?: ReadonlyMap<string, number>
+): RuntimeManifestEntry[] {
+    if (sourceIndexByUid) return encodeIndexedAtomicClasses(assignments, sourceIndexByUid);
+
+    const sources = new Map<string | number, Map<StyleSurfaceKind, Set<string>>>();
+    for (const assignment of assignments) {
+        const source = sourceIndexByUid?.get(assignment.sourceUid) ?? assignment.sourceUid;
+        let surfaces = sources.get(source);
+        if (!surfaces) {
+            surfaces = new Map();
+            sources.set(source, surfaces);
+        }
+
+        let classNames = surfaces.get(assignment.surfaceKind);
+        if (!classNames) {
+            classNames = new Set();
+            surfaces.set(assignment.surfaceKind, classNames);
+        }
+        classNames.add(assignment.className);
+    }
+
+    return [...sources].map(([sourceUid, surfaces]) => [
+        sourceUid,
+        ...[...surfaces].map(([surfaceKind, classNames]) => [
+            SURFACE_KINDS.indexOf(surfaceKind),
+            [...classNames],
+        ]),
+    ]);
+}
+
+function encodeIndexedAtomicClasses(
+    assignments: readonly StyleAtomicClassAssignment[],
+    sourceIndexByUid: ReadonlyMap<string, number>
+): RuntimeManifestEntry[] {
+    const groups = new Map<string, { surfaceKind: StyleSurfaceKind; className: string; sourceIndexes: Set<number> }>();
+    for (const assignment of assignments) {
+        const sourceIndex = sourceIndexByUid.get(assignment.sourceUid);
+        if (sourceIndex === undefined) continue;
+        const key = `${assignment.surfaceKind}\u001f${assignment.className}`;
+        let group = groups.get(key);
+        if (!group) {
+            group = { surfaceKind: assignment.surfaceKind, className: assignment.className, sourceIndexes: new Set() };
+            groups.set(key, group);
+        }
+        group.sourceIndexes.add(sourceIndex);
+    }
+
+    return [...groups.values()].map(({ surfaceKind, className, sourceIndexes }) => [
+        SURFACE_KINDS.indexOf(surfaceKind),
+        className,
+        [...sourceIndexes],
+    ]);
+}
+
+function decodeAtomicClasses(value: unknown): StyleRuntimeAtomicClassAssignment[] | null {
+    if (!Array.isArray(value)) return null;
+
+    const assignments: StyleRuntimeAtomicClassAssignment[] = [];
+    for (const sourceEntry of value) {
+        if (
+            Array.isArray(sourceEntry) &&
+            sourceEntry.length === 3 &&
+            typeof sourceEntry[1] === 'string' &&
+            sourceEntry[1] &&
+            Array.isArray(sourceEntry[2])
+        ) {
+            const surfaceKind = readAtomicSurfaceKind(sourceEntry[0]);
+            if (!surfaceKind) return null;
+            for (const sourceIndex of sourceEntry[2]) {
+                if (!Number.isInteger(sourceIndex) || (sourceIndex as number) < 0) return null;
+                assignments.push({
+                    sourceIndex: sourceIndex as number,
+                    surfaceKind,
+                    className: sourceEntry[1],
+                });
+            }
+            continue;
+        }
+
+        if (
+            !Array.isArray(sourceEntry) ||
+            sourceEntry.length < 2 ||
+            (typeof sourceEntry[0] !== 'string' &&
+                (!Number.isInteger(sourceEntry[0]) || (sourceEntry[0] as number) < 0))
+        ) {
+            return null;
+        }
+
+        for (const surfaceEntry of sourceEntry.slice(1)) {
+            if (!Array.isArray(surfaceEntry) || surfaceEntry.length !== 2 || !Array.isArray(surfaceEntry[1])) {
+                return null;
+            }
+            const surfaceKind = readAtomicSurfaceKind(surfaceEntry[0]);
+            if (!surfaceKind) return null;
+
+            for (const className of surfaceEntry[1]) {
+                if (typeof className !== 'string' || !className) return null;
+                assignments.push({
+                    ...(typeof sourceEntry[0] === 'string'
+                        ? { sourceUid: sourceEntry[0] }
+                        : { sourceIndex: sourceEntry[0] as number }),
+                    surfaceKind,
+                    className,
+                });
+            }
+        }
+    }
+    return assignments;
+}
+
+function readAtomicSurfaceKind(value: unknown) {
+    return Number.isInteger(value) && (value as number) >= 0 && (value as number) < SURFACE_KINDS.length
+        ? SURFACE_KINDS[value as number]
+        : null;
 }
 
 function encodeVariable(variable: StyleDynamicVariable): RuntimeManifestEntry {

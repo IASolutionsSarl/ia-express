@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { isFile, isFileList } from '@/_common/helpers/code/filePayload.js';
 import { _wwFormulas } from '@/_common/helpers/code/wwFormulas';
 import { workflowFunctions } from '@/_common/helpers/code/workflows';
+import { resolveStaticBinding } from '@/_front/rendering/staticRenderingContext';
 
 const AsyncFunction = async function () {}.constructor;
 
@@ -463,6 +464,9 @@ export function getValue(
     context,
     { event, recursive = true, defaultUndefined, args, throwError = false } = {}
 ) {
+    const staticBinding = resolveStaticBinding(rawValue);
+    if (staticBinding) return _.cloneDeep(staticBinding.value);
+
     if (rawValue === undefined) return _.cloneDeep(defaultUndefined);
     if (!rawValue) return rawValue;
 

@@ -13,7 +13,7 @@ import {
     releaseClientIslandHydrationState,
     shouldRenderClientIsland,
 } from './clientIslandContext';
-import { activateStaticRendering, deactivateStaticRendering } from './staticRenderingContext';
+import { activateStaticRendering, deactivateStaticRendering, StaticRenderFatalError } from './staticRenderingContext';
 import type { RenderMode } from './renderMode';
 
 const islandId = createClientIslandId('element', 'hero-title');
@@ -405,6 +405,26 @@ describe('Client Island rendering', () => {
         deactivateStaticRendering();
 
         expect(unref(shouldRender)).toBe(true);
+    });
+
+    it('does not contain a fatal static renderer error as a client island', async () => {
+        activateStaticRendering();
+        prepareClientIslandServerRender();
+
+        await expect(
+            renderBoundary({
+                renderChild: () =>
+                    h(
+                        defineComponent({
+                            name: 'DeniedElement',
+                            setup: () => () => {
+                                throw new StaticRenderFatalError('Static renderer permission denied.');
+                            },
+                        })
+                    ),
+            })
+        ).rejects.toThrow('Static renderer permission denied.');
+        expect(completeClientIslandServerRender().clientIslandIds).toEqual([]);
     });
 });
 

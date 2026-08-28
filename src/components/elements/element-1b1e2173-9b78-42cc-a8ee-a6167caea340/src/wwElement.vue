@@ -1,7 +1,7 @@
 <template>
     <component
         :is="hasLink ? tag : 'div'"
-        v-html="iconHTML"
+        :innerHTML="iconHTML"
         v-bind="properties"
         :style="style"
         class="ww-icon"
@@ -10,7 +10,7 @@
 </template>
 
 <script>
-import { ref, watchEffect, computed } from 'vue';
+import { ref, watch, computed, onServerPrefetch } from 'vue';
 
 export default {
     props: {
@@ -38,13 +38,16 @@ export default {
 </svg>`;
         });
 
-        watchEffect(async () => {
+        const loadIcon = async () => {
             try {
                 iconText.value = await getIcon(icon.value);
             } catch (error) {
                 iconText.value = null;
             }
-        });
+        };
+
+        watch(icon, loadIcon, { immediate: true });
+        onServerPrefetch(loadIcon);
 
         return {
             getIcon,

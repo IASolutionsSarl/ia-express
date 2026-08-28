@@ -7,6 +7,7 @@ import type { ClientIslandRenderResult, PrerenderRoute, RouteRenderResult } from
 
 type RenderRouteInput = PrerenderRoute & {
     clientIslandIds?: string[];
+    publicUrlPrefix?: string;
 };
 
 const [frontRoot, routeFile, resultFile] = process.argv.slice(2);
@@ -17,7 +18,11 @@ if (!frontRoot || !routeFile || !resultFile) {
 const route = JSON.parse(await fs.readFile(routeFile, 'utf8')) as RenderRouteInput;
 const environment = createNetworklessDom(
     '<!doctype html><html><head></head><body><div id="app"></div></body></html>',
-    new URL(route.url, 'http://weweb.local').href
+    new URL(route.url, 'http://weweb.local').href,
+    {
+        publicPath: path.join(frontRoot, 'public'),
+        publicUrlPrefix: route.publicUrlPrefix,
+    }
 );
 
 try {
@@ -29,6 +34,7 @@ try {
         ) => Promise<{
             appHtml: string;
             clientIslands: ClientIslandRenderResult;
+            initialEnvironment?: unknown;
         }>;
     };
     const result: RouteRenderResult = {

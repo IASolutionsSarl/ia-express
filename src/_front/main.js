@@ -31,6 +31,7 @@ import { releaseClientIslandHydrationState } from '@/_front/rendering/clientIsla
 import { deactivateStaticRendering } from '@/_front/rendering/staticRenderingContext';
 import { isServerRenderMode, isStaticRenderMode, renderMode } from '@/_front/rendering/renderMode';
 import { activateRuntimeLifecycle, discardRuntimeLifecycle } from '@/_front/rendering/runtimeLifecycleScheduler';
+import { restoreInitialEnvironment } from '@/_front/rendering/prerenderBootstrap';
 
 currentRenderMode = renderMode;
 isServerRendering = isServerRenderMode(renderMode);
@@ -120,7 +121,12 @@ export function setupApp({ url } = {}) {
 }
 
 export async function mountApp() {
-    await setupApp();
+    try {
+        await setupApp();
+    } catch (error) {
+        if (isHydrating) restoreInitialEnvironment();
+        throw error;
+    }
 
     const element = document.getElementById('app');
     if (isHydrating) {
@@ -184,6 +190,7 @@ function mountHydratedApp(element) {
         });
         throw error;
     } finally {
+        restoreInitialEnvironment();
         console.error = originalError;
     }
 }

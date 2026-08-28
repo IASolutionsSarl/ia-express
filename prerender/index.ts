@@ -9,10 +9,11 @@ import {
 } from './core.ts';
 import { withPrerenderAttemptFiles } from './workFiles.ts';
 import { createRendererSandbox } from './rendererSandbox.ts';
+import { createNodeBuiltinsImportMap } from './nodeBuiltinsImportMap.ts';
 import { createProcessSupervisor } from './processSupervisor.ts';
 import { createProcessRunner } from './processRunner.ts';
 import { readRouteRenderResult } from './routeResult.ts';
-import { createPrerenderedRouteHtml } from './routeHtml.ts';
+import { createPrerenderedRouteHtml, readRouteBuildAssetPrefix } from './routeHtml.ts';
 import { addRouteReport, createPrerenderReport, createRouteReport, omitRouteReports } from './report.ts';
 import { createPrerenderFinalizer } from './finalization.ts';
 import { createPrerenderTerminationCoordinator } from './terminationCoordinator.ts';
@@ -31,6 +32,7 @@ const manifestPath = path.join(frontRoot, '.ww-prerender-manifest.json');
 const clientManifestPath = path.join(frontRoot, 'dist', '.ww-client-manifest.json');
 const reportPath = path.join(frontRoot, '.weweb', 'prerender-report.json');
 const workPath = path.join(frontRoot, '.weweb', 'prerender-work');
+const nodeBuiltinsImportMapPath = path.join(workPath, 'node-builtins-import-map.json');
 const deadline = Number.parseInt(process.env.WW_PRERENDER_DEADLINE_EPOCH_MS || '', 10) || null;
 const MAX_CLIENT_ISLAND_RENDER_ATTEMPTS = 10;
 const MAX_CLIENT_ISLAND_DIAGNOSTICS = 20;
@@ -83,6 +85,7 @@ process.on('SIGTERM', handleTermination);
 
 try {
     await fs.mkdir(workPath, { recursive: true });
+    await fs.writeFile(nodeBuiltinsImportMapPath, JSON.stringify(createNodeBuiltinsImportMap()), 'utf8');
     if (termination.isRequested()) throw createTerminationError();
     const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8')) as PrerenderManifest;
     candidates = getPrerenderCandidates(manifest);
@@ -154,7 +157,25 @@ try {
 async function renderRoute(route: PrerenderRoute, index: number): Promise<void> {
     const candidateFile = path.join(workPath, `${index}-candidate.html`);
     const baselineFile = path.join(frontRoot, 'dist', route.htmlFile);
-    const renderResult = await renderCanonicalRoute(route, index);
+    let publicUrlPrefix: string;
+    try {
+        const buildAssetPrefix = await readRouteBuildAssetPrefix(baselineFile);
+        if (termination.isRequested()) return;
+        if (!buildAssetPrefix.ok) {
+            fallbackRoute(route, buildAssetPrefix.diagnostic);
+            return;
+        }
+        publicUrlPrefix = buildAssetPrefix.prefix;
+    } catch (error) {
+        if (termination.isRequested()) return;
+        fallbackRoute(route, {
+            category: 'baseline-read-error',
+            message: getErrorMessage(error),
+        });
+        return;
+    }
+
+    const renderResult = await renderCanonicalRoute(route, index, publicUrlPrefix);
     if (termination.isRequested()) return;
     if (!renderResult.ok) {
         if (renderResult.category === 'deadline') {
@@ -180,6 +201,7 @@ async function renderRoute(route: PrerenderRoute, index: number): Promise<void> 
             appHtml: renderResult.appHtml,
             cssFiles: getRouteCssFiles(clientBuildManifest, route.pageId),
             clientIslandIds: renderResult.clientIslands?.clientIslandIds,
+            initialEnvironment: renderResult.initialEnvironment,
         });
         if (!candidate.ok) {
             fallbackRoute(route, candidate.diagnostic);
@@ -224,7 +246,11 @@ async function renderRoute(route: PrerenderRoute, index: number): Promise<void> 
     }
 }
 
-async function renderCanonicalRoute(route: PrerenderRoute, index: number): Promise<RouteRenderResult> {
+async function renderCanonicalRoute(
+    route: PrerenderRoute,
+    index: number,
+    publicUrlPrefix: string
+): Promise<RouteRenderResult> {
     let clientIslandIds: string[] = [];
     const diagnostics = new Map<string, ClientIslandDiagnostic>();
 
@@ -235,7 +261,7 @@ async function renderCanonicalRoute(route: PrerenderRoute, index: number): Promi
                 workPath,
                 routeIndex: index,
                 attempt,
-                input: { ...route, clientIslandIds },
+                input: { ...route, clientIslandIds, publicUrlPrefix },
             },
             async ({ routeFile, resultFile }) => {
                 if (termination.isRequested()) return createTerminationResult();
@@ -307,11 +333,22 @@ function skipRoutesAtDeadline(count: number): void {
 }
 
 function fallbackRoute(route: PrerenderRoute, diagnostic: Diagnostic): void {
+    console.warn('[weweb-prerender] route fallback', {
+        pageId: route.pageId,
+        lang: route.lang,
+        category: diagnostic.category,
+        message: diagnostic.message,
+    });
     report.totals.fallback++;
     addRouteReport(report, createRouteReport(route, 'csr-fallback', { diagnostic }));
 }
 
 function fallbackAllRoutes(count: number, diagnostic: Diagnostic): void {
+    console.warn('[weweb-prerender] global fallback', {
+        affectedRouteCount: count,
+        category: diagnostic.category,
+        message: diagnostic.message,
+    });
     report.status = 'renderer-fallback';
     report.totals.fallback += count;
     addRouteReport(report, {
@@ -350,19 +387,20 @@ async function runViteBuild(args: string[]): Promise<ProcessResult> {
 
 async function runRouteRenderer(routeFile: string, resultFile: string): Promise<ProcessResult> {
     const sandbox = createRendererSandbox({
+        importMapPath: nodeBuiltinsImportMapPath,
         readPaths: [
             routeFile,
             path.join(frontRoot, 'package.json'),
             path.join(frontRoot, 'prerender'),
             path.join(frontRoot, 'dist-ssr'),
-            path.join(frontRoot, 'public', 'data'),
+            path.join(frontRoot, 'public'),
             path.join(frontRoot, 'node_modules'),
         ],
         resultFile,
         scriptPath: path.join(frontRoot, 'prerender', 'renderRoute.ts'),
         scriptArguments: [frontRoot, routeFile, resultFile],
     });
-    return runProcess(process.execPath, sandbox.arguments, {
+    return runProcess(sandbox.command, sandbox.arguments, {
         environment: sandbox.environment,
         output: 'ignore',
         timeoutMs: ROUTE_RENDER_TIMEOUT_MS,

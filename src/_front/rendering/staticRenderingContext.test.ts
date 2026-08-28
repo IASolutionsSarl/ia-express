@@ -18,12 +18,10 @@ describe('Static Rendering Context', () => {
         expect(resolveStaticBinding('Static heading')).toBeUndefined();
     });
 
-    it('uses a neutral value instead of evaluating formulas', () => {
+    it('lets formulas without a static projection use the normal evaluator', () => {
         activateStaticRendering();
 
-        expect(resolveStaticBinding({ __wwtype: 'f', code: "collections['articles'].data[0].title" })).toEqual({
-            value: null,
-        });
+        expect(resolveStaticBinding({ __wwtype: 'f', code: "collections['articles'].data[0].title" })).toBeUndefined();
     });
 
     it.each([
@@ -46,18 +44,14 @@ describe('Static Rendering Context', () => {
 
         expect(
             resolveStaticBinding({ __wwtype: 'f', code: 'variables.value', defaultValue: 'legacy fallback' })
-        ).toEqual({ value: null });
+        ).toBeUndefined();
     });
 
-    it('uses a neutral value for every other dynamic binding', () => {
+    it('lets custom JavaScript and dynamic bindings use the normal evaluator', () => {
         activateStaticRendering();
 
-        expect(resolveStaticBinding({ __wwtype: 'js', code: 'return window.secret' })).toEqual({
-            value: null,
-        });
-        expect(resolveStaticBinding({ __wwtype: 'd', data: ['dynamic'] })).toEqual({
-            value: [],
-        });
+        expect(resolveStaticBinding({ __wwtype: 'js', code: 'return context.component.props.title' })).toBeUndefined();
+        expect(resolveStaticBinding({ __wwtype: 'd', data: ['dynamic'] })).toBeUndefined();
     });
 
     it('releases dynamic bindings during Runtime Activation', () => {
@@ -65,19 +59,21 @@ describe('Static Rendering Context', () => {
         deactivateStaticRendering();
 
         expect(resolveStaticBinding({ __wwtype: 'f', code: 'variables.value' })).toBeUndefined();
-        expect(
-            resolveStaticBinding({ __wwtype: 'f', code: 'variables.value', staticValue: 'static' })
-        ).toBeUndefined();
+        expect(resolveStaticBinding({ __wwtype: 'f', code: 'variables.value', staticValue: 'static' })).toBeUndefined();
     });
 
     it('invalidates static computed bindings when Runtime Activation starts', () => {
         activateStaticRendering();
         const resolution = computed(() =>
-            resolveStaticBinding({ __wwtype: 'f', code: "collections['articles'].data[0].title" })
+            resolveStaticBinding({
+                __wwtype: 'f',
+                code: "collections['articles'].data[0].title",
+                staticValue: 'Projected title',
+            })
         );
 
         expect(resolution.value).toEqual({
-            value: null,
+            value: 'Projected title',
         });
 
         deactivateStaticRendering();
@@ -88,12 +84,9 @@ describe('Static Rendering Context', () => {
     it('keeps the normal runtime context inactive', () => {
         deactivateStaticRendering();
         let trackedDependencies = 0;
-        const resolution = computed(
-            () => resolveStaticBinding({ __wwtype: 'f', code: 'variables.value' }),
-            {
-                onTrack: () => trackedDependencies++,
-            }
-        );
+        const resolution = computed(() => resolveStaticBinding({ __wwtype: 'f', code: 'variables.value' }), {
+            onTrack: () => trackedDependencies++,
+        });
 
         expect(isStaticRenderingActive()).toBe(false);
         expect(resolution.value).toBeUndefined();

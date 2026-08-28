@@ -3,7 +3,11 @@ import { computed } from 'vue';
 import { isFile, isFileList } from '@/_common/helpers/code/filePayload.js';
 import { _wwFormulas } from '@/_common/helpers/code/wwFormulas';
 import { workflowFunctions } from '@/_common/helpers/code/workflows';
-import { resolveStaticBinding } from '@/_front/rendering/staticRenderingContext';
+import {
+    isStaticRenderPermissionError,
+    resolveStaticBinding,
+    StaticRenderFatalError,
+} from '@/_front/rendering/staticRenderingContext';
 
 const AsyncFunction = async function () {}.constructor;
 
@@ -92,6 +96,7 @@ export function evaluateCode({ code, filter, sort, __wwmap, throwError = false }
         );
         return mapFilterSortData(rawValue, filter, sort, __wwmap, context, event, args, throwError);
     } catch (error) {
+        throwStaticRenderPermissionError(error);
         const formulaError = new FormulaError(`Formula evaluation error: ${error.message}`, {
             originalError: error,
             formulaCode: code,
@@ -176,6 +181,7 @@ export function evaluateFormula({ code, filter, sort, __wwmap, throwError = fals
         );
         return mapFilterSortData(rawValue, filter, sort, __wwmap, context, event, args, throwError);
     } catch (error) {
+        throwStaticRenderPermissionError(error);
         const message =
             error.message === ERROR_CODES.UNEXPECTED_END_OF_FORMULA ? 'Unexpected end of formula' : error.message;
         const formulaError = new FormulaError(`Formula evaluation error: ${message}`, {
@@ -249,6 +255,11 @@ export function getJsValue({ code, filter, sort, __wwmap, throwError = false }, 
 export function getFormulaValue({ code, filter, sort, __wwmap, throwError = false }, context, event, args) {
     const { value } = evaluateFormula({ code, filter, sort, __wwmap, throwError }, context, event, args);
     return value;
+}
+
+function throwStaticRenderPermissionError(error) {
+    if (!isStaticRenderPermissionError(error)) return;
+    throw new StaticRenderFatalError(`Static renderer permission denied: ${error.message}`, { cause: error });
 }
 
 export function sortData(data, sort, context, event, args, throwError = false) {

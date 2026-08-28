@@ -16,6 +16,7 @@ import {
     shouldRenderClientIsland,
 } from './clientIslandContext';
 import { renderMode, type RenderMode } from './renderMode';
+import { StaticRenderFatalError } from './staticRenderingContext';
 
 type ClientIslandOwnerType = 'element' | 'section';
 
@@ -55,6 +56,7 @@ export function useClientIslandRendering({
     const componentType = resolveDynamicComponent(componentName || '');
 
     onErrorCaptured((error, instance, phase) => {
+        if (error instanceof StaticRenderFatalError) return;
         if (!isOwnedComponentError(instance, owner, componentType)) return;
 
         const componentName = getComponentName(instance);

@@ -1,4 +1,5 @@
 import { createRequire, syncBuiltinESMExports } from 'node:module';
+import { denyStaticRenderNetwork } from './networkCapabilityError.ts';
 
 type MutableRecord = Record<PropertyKey, unknown>;
 type Restore = () => void;
@@ -57,9 +58,7 @@ function blockMethods(target: MutableRecord | undefined, keys: PropertyKey[], re
 
         Object.defineProperty(target, key, {
             ...descriptor,
-            value: () => {
-                throw new Error(`Network access is disabled during static rendering (${String(key)})`);
-            },
+            value: () => denyStaticRenderNetwork(String(key)),
         });
         restores.push(() => Object.defineProperty(target, key, descriptor));
     }

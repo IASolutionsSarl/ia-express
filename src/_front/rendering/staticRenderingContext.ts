@@ -3,9 +3,14 @@ import { isStaticRenderMode, renderMode } from './renderMode';
 
 type StaticBindingResolution = { value: unknown } | undefined;
 
+export class StaticRenderFatalError extends Error {
+    constructor(message: string, options?: ErrorOptions) {
+        super(message, options);
+        this.name = 'StaticRenderFatalError';
+    }
+}
+
 let active = isStaticRenderMode(renderMode) ? ref(true) : null;
-const staticCollectionBinding = { value: [] };
-const staticValueBinding = { value: null };
 
 export function activateStaticRendering(): void {
     if (active) return;
@@ -25,24 +30,24 @@ export function isStaticRenderingActive(): boolean {
     return active?.value === true;
 }
 
+export function isStaticRenderPermissionError(error: unknown): boolean {
+    if (!isStaticRenderingActive() || !(error instanceof Error)) return false;
+    return error.name === 'NotCapable' || error.name === 'PermissionDenied';
+}
+
 /**
- * Replaces dynamic bindings with deterministic neutral values while rendering
- * the static projection. SSR and the browser's initial hydration pass must
- * resolve these bindings identically; their real values are evaluated only
- * after static rendering is deactivated.
+ * Uses an explicitly persisted static projection when one exists. Other
+ * bindings fall through to the regular evaluator so Vue can resolve them with
+ * the same component context during SSR and initial hydration.
  */
 export function resolveStaticBinding(rawValue: unknown): StaticBindingResolution {
     if (!active?.value || !isDynamicBinding(rawValue)) return;
 
-    if (
-        rawValue.__wwtype === 'f' &&
-        Object.hasOwn(rawValue, 'staticValue') &&
-        rawValue.staticValue !== undefined
-    ) {
+    if (rawValue.__wwtype === 'f' && Object.hasOwn(rawValue, 'staticValue') && rawValue.staticValue !== undefined) {
         return { value: rawValue.staticValue };
     }
 
-    return rawValue.__wwtype === 'd' ? staticCollectionBinding : staticValueBinding;
+    return;
 }
 
 function isDynamicBinding(value: unknown): value is {

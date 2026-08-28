@@ -1,10 +1,20 @@
 import fs from 'node:fs/promises';
-import { enrichRouteHtml } from './core.ts';
+import { enrichRouteHtml, getBuildAssetPrefix } from './core.ts';
 import type { Diagnostic } from './core.ts';
 
 export const MAX_PRERENDERED_ROUTE_HTML_BYTES = 32 * 1024 * 1024;
 
-type PrerenderedRouteHtmlResult = { ok: true; html: string } | { ok: false; diagnostic: Diagnostic };
+type PrerenderFailure = { ok: false; diagnostic: Diagnostic };
+type PrerenderedRouteHtmlResult = { ok: true; html: string } | PrerenderFailure;
+type RouteBuildAssetPrefixResult = { ok: true; prefix: string } | PrerenderFailure;
+
+export async function readRouteBuildAssetPrefix(baselineFile: string): Promise<RouteBuildAssetPrefixResult> {
+    const baselineStats = await fs.stat(baselineFile);
+    if (baselineStats.size > MAX_PRERENDERED_ROUTE_HTML_BYTES) return createOversizedRouteResult();
+
+    const baselineHtml = await fs.readFile(baselineFile, 'utf8');
+    return { ok: true, prefix: getBuildAssetPrefix(baselineHtml) };
+}
 
 export async function createPrerenderedRouteHtml(
     baselineFile: string,
@@ -12,10 +22,12 @@ export async function createPrerenderedRouteHtml(
         appHtml,
         cssFiles = [],
         clientIslandIds = [],
+        initialEnvironment,
     }: {
         appHtml: string;
         cssFiles?: string[];
         clientIslandIds?: string[];
+        initialEnvironment?: unknown;
     }
 ): Promise<PrerenderedRouteHtmlResult> {
     const baselineStats = await fs.stat(baselineFile);
@@ -25,7 +37,7 @@ export async function createPrerenderedRouteHtml(
     }
 
     const baselineHtml = await fs.readFile(baselineFile, 'utf8');
-    const html = enrichRouteHtml(baselineHtml, { appHtml, cssFiles, clientIslandIds });
+    const html = enrichRouteHtml(baselineHtml, { appHtml, cssFiles, clientIslandIds, initialEnvironment });
     if (Buffer.byteLength(html, 'utf8') > MAX_PRERENDERED_ROUTE_HTML_BYTES) {
         return createOversizedRouteResult();
     }
@@ -33,7 +45,7 @@ export async function createPrerenderedRouteHtml(
     return { ok: true, html };
 }
 
-function createOversizedRouteResult(): PrerenderedRouteHtmlResult {
+function createOversizedRouteResult(): PrerenderFailure {
     return {
         ok: false,
         diagnostic: {

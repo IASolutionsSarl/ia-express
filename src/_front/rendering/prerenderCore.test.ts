@@ -46,12 +46,19 @@ describe('pre-rendering build contract', () => {
             appHtml: '<main>Static</main>',
             cssFiles: ['assets/section.css', 'assets/page.css'],
             clientIslandIds: ['element:browser-only'],
+            initialEnvironment: {
+                version: 1,
+                randomSeed: 42,
+                timestamp: 1_725_000_000_000,
+                performanceNow: 12.5,
+                viewport: { innerWidth: 1024, innerHeight: 768, devicePixelRatio: 1 },
+            },
         });
 
         expect(enriched).toContain('<link rel="stylesheet" href="/site/assets/section.css" />');
         expect(enriched).toContain('<link rel="stylesheet" href="/site/assets/page.css" />');
         expect(enriched).toContain(
-            '<div id="app" data-ww-prerendered="true" data-ww-client-islands="[&quot;element:browser-only&quot;]"><main>Static</main></div>'
+            '<div id="app" data-ww-prerendered="true" data-ww-client-islands="[&quot;element:browser-only&quot;]" data-ww-initial-environment="{&quot;version&quot;:1,&quot;randomSeed&quot;:42,&quot;timestamp&quot;:1725000000000,&quot;performanceNow&quot;:12.5,&quot;viewport&quot;:{&quot;innerWidth&quot;:1024,&quot;innerHeight&quot;:768,&quot;devicePixelRatio&quot;:1}}"><main>Static</main></div>'
         );
         expect(enriched).toContain('<script id="custom-head"></script>');
         expect(enriched).toContain('<script id="custom-body"></script>');
@@ -75,7 +82,7 @@ describe('pre-rendering build contract', () => {
         expect(enriched).toContain('<link rel="stylesheet" href="/site/assets/page.css" />');
         expect(enriched).not.toContain('https://third.example/assets/page.css');
         expect(enriched).toContain(
-            '<div id="app" data-ww-prerendered="true" data-ww-client-islands="[]"><main>Static</main></div>'
+            '<div id="app" data-ww-prerendered="true" data-ww-client-islands="[]" data-ww-initial-environment="null"><main>Static</main></div>'
         );
     });
 

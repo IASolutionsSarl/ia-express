@@ -1,6 +1,9 @@
+import { installInitialEnvironment } from './initialEnvironment.ts';
+
 export type PrerenderBootstrap = {
     prerendered: boolean;
     clientIslandIds: string[];
+    initialEnvironment?: unknown;
 };
 
 type BootstrapElement = {
@@ -31,11 +34,23 @@ export function consumePrerenderBootstrap(document: BootstrapDocument | undefine
     const bootstrap = {
         prerendered: true,
         clientIslandIds: parseClientIslandIds(mountPoint.getAttribute('data-ww-client-islands')),
+        initialEnvironment: parseInitialEnvironment(mountPoint.getAttribute('data-ww-initial-environment')),
     };
     mountPoint.removeAttribute('data-ww-prerendered');
     mountPoint.removeAttribute('data-ww-client-islands');
+    mountPoint.removeAttribute('data-ww-initial-environment');
 
     return bootstrap;
+}
+
+function parseInitialEnvironment(serializedEnvironment: string | null): unknown {
+    if (!serializedEnvironment) return;
+
+    try {
+        return JSON.parse(serializedEnvironment);
+    } catch {
+        return;
+    }
 }
 
 function parseClientIslandIds(serializedIds: string | null): string[] {
@@ -63,6 +78,9 @@ function parseClientIslandIds(serializedIds: string | null): string[] {
 
 const browserDocument = (globalThis as typeof globalThis & { document?: BootstrapDocument }).document;
 const browserBootstrap = consumePrerenderBootstrap(browserDocument);
+let restoreEnvironment = browserBootstrap.prerendered
+    ? installInitialEnvironment(browserBootstrap.initialEnvironment)
+    : () => {};
 let pendingClientIslandIds = browserBootstrap.clientIslandIds;
 
 export const isPrerenderedDocument = browserBootstrap.prerendered;
@@ -71,4 +89,9 @@ export function consumePrerenderClientIslandIds(): string[] {
     const clientIslandIds = pendingClientIslandIds;
     pendingClientIslandIds = [];
     return clientIslandIds;
+}
+
+export function restoreInitialEnvironment(): void {
+    restoreEnvironment();
+    restoreEnvironment = () => {};
 }

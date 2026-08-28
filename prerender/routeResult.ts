@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import { isValidClientIslandIdList, MAX_CLIENT_ISLAND_ID_LENGTH } from './core.ts';
+import { isValidClientIslandIdList, MAX_CLIENT_ISLAND_ID_LENGTH, normalizeInitialEnvironment } from './core.ts';
 import type { ProcessResult, RouteRenderResult } from './core.ts';
 
 export const MAX_PRERENDERED_APP_HTML_BYTES = 16 * 1024 * 1024;
@@ -73,7 +73,8 @@ function isRouteRenderResult(value: unknown): value is RouteRenderResult {
     if (result.ok === true) {
         return (
             typeof result.appHtml === 'string' &&
-            (result.clientIslands === undefined || isClientIslandRenderResult(result.clientIslands))
+            (result.clientIslands === undefined || isClientIslandRenderResult(result.clientIslands)) &&
+            (result.initialEnvironment === undefined || !!normalizeInitialEnvironment(result.initialEnvironment))
         );
     }
     return (

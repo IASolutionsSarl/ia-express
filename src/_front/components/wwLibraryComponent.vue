@@ -8,6 +8,8 @@
         is-library-component-root
         :class="[instanceStyleClass, ...instanceAtomicStyleClasses]"
         :library-component-data="componentData"
+        :library-component-runtime-style-source-uid="uid"
+        :library-component-runtime-style-context="runtimeStyleContext"
         :library-component-trigger-event="triggerEvent"
         :library-component-trigger-library-component-event="triggerLibraryComponentEvent"
         v-bind="$attrs"
@@ -32,7 +34,6 @@ import { createElementClassName } from '@/_common/helpers/styleCompiler';
 import { useInner } from '@/_front/use/useInner.js';
 import { useComponentStates } from '@/_front/use/useComponentStates.js';
 import { useLibraryComponentActions } from '@/_common/use/useActions.js';
-import { useStyleCompilerDynamicVariables } from '@/_front/use/useStyleCompilerDynamicVariables';
 import { getStyleAtomicClassesForSource } from '@/_front/services/styleCompilerAtomicClasses';
 import { provideLibraryComponentLayoutStyleScope } from '@/_front/use/useLayoutStyleScopes';
 import { usePopupStore } from '@/pinia/popup';
@@ -111,13 +112,6 @@ export default {
             context,
          });
 
-        useStyleCompilerDynamicVariables({
-            sourceUid: toRef(props, 'uid'),
-            context,
-            targets: {
-                element: computed(() => elementComponent.value?.component),
-            },
-        });
         const instanceStyleClass = computed(() => createElementClassName(props.uid, styleSourceId.value));
         const instanceAtomicStyleClasses = computed(() => getStyleAtomicClassesForSource(props.uid, 'element'));
 
@@ -242,6 +236,7 @@ export default {
              }),
             modalsStore,
             elementComponent,
+            runtimeStyleContext: context,
          };
     },
     computed: {

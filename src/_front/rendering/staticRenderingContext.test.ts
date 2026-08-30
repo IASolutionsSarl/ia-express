@@ -5,6 +5,7 @@ import {
     deactivateStaticRendering,
     isStaticRenderingActive,
     resolveStaticBinding,
+    withoutStaticBindingProjection,
 } from './staticRenderingContext';
 
 describe('Static Rendering Context', () => {
@@ -45,6 +46,26 @@ describe('Static Rendering Context', () => {
         expect(
             resolveStaticBinding({ __wwtype: 'f', code: 'variables.value', defaultValue: 'legacy fallback' })
         ).toBeUndefined();
+    });
+
+    it('temporarily bypasses a persisted projection for per-instance evaluation', () => {
+        const formula = { __wwtype: 'f', code: 'context.component.props.visible', staticValue: false };
+        activateStaticRendering();
+
+        expect(withoutStaticBindingProjection(() => resolveStaticBinding(formula))).toBeUndefined();
+        expect(resolveStaticBinding(formula)).toEqual({ value: false });
+    });
+
+    it('restores static projection after a bypassed evaluation throws', () => {
+        const formula = { __wwtype: 'f', code: 'variables.value', staticValue: 'projected' };
+        activateStaticRendering();
+
+        expect(() =>
+            withoutStaticBindingProjection(() => {
+                throw new Error('formula failed');
+            })
+        ).toThrow('formula failed');
+        expect(resolveStaticBinding(formula)).toEqual({ value: 'projected' });
     });
 
     it('lets custom JavaScript and dynamic bindings use the normal evaluator', () => {

@@ -9,9 +9,19 @@ import {
     StaticRenderFatalError,
 } from '@/_front/rendering/staticRenderingContext';
 import { denyStaticRenderNetwork } from '../../../../wwFront/prerender/networkCapabilityError';
-import { getValue } from './customCode.js';
+import { evaluateGlobalFormula, getValue } from './customCode.js';
 
 const runtime = globalThis as typeof globalThis & { wwLib?: unknown };
+const deniedGlobalFormula = {
+    id: 'denied',
+    name: 'denied',
+    type: 'js',
+    code: `
+        const error = new Error('Requires read access');
+        error.name = 'NotCapable';
+        throw error;
+    `,
+};
 
 describe('getValue during static rendering', () => {
     beforeEach(() => {
@@ -19,7 +29,7 @@ describe('getValue during static rendering', () => {
             $store: {
                 getters: {
                     'data/getCollections': {},
-                    'data/getFormulas': {},
+                    'data/getFormulas': { denied: deniedGlobalFormula },
                     'data/getPluginFormulas': {},
                     'manager/getSafeMode': false,
                 },
@@ -159,5 +169,13 @@ describe('getValue during static rendering', () => {
         } finally {
             globalThis.fetch = originalFetch;
         }
+    });
+
+    it('preserves fatal route errors through nested global formula evaluation', () => {
+        expect(() => getValue({ __wwtype: 'f', code: 'formulas.denied()' }, {})).toThrow(StaticRenderFatalError);
+    });
+
+    it('preserves fatal route errors through the global formula evaluator', () => {
+        expect(() => evaluateGlobalFormula(deniedGlobalFormula, {}, [])).toThrow(StaticRenderFatalError);
     });
 });

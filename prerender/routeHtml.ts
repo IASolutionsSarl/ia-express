@@ -23,21 +23,30 @@ export async function createPrerenderedRouteHtml(
         cssFiles = [],
         clientIslandIds = [],
         initialEnvironment,
+        runtimeCss = '',
     }: {
         appHtml: string;
         cssFiles?: string[];
         clientIslandIds?: string[];
         initialEnvironment?: unknown;
+        runtimeCss?: string;
     }
 ): Promise<PrerenderedRouteHtmlResult> {
     const baselineStats = await fs.stat(baselineFile);
     const appHtmlBytes = Buffer.byteLength(appHtml, 'utf8');
-    if (baselineStats.size + appHtmlBytes > MAX_PRERENDERED_ROUTE_HTML_BYTES) {
+    const runtimeCssBytes = Buffer.byteLength(runtimeCss, 'utf8');
+    if (baselineStats.size + appHtmlBytes + runtimeCssBytes > MAX_PRERENDERED_ROUTE_HTML_BYTES) {
         return createOversizedRouteResult();
     }
 
     const baselineHtml = await fs.readFile(baselineFile, 'utf8');
-    const html = enrichRouteHtml(baselineHtml, { appHtml, cssFiles, clientIslandIds, initialEnvironment });
+    const html = enrichRouteHtml(baselineHtml, {
+        appHtml,
+        cssFiles,
+        clientIslandIds,
+        initialEnvironment,
+        runtimeCss,
+    });
     if (Buffer.byteLength(html, 'utf8') > MAX_PRERENDERED_ROUTE_HTML_BYTES) {
         return createOversizedRouteResult();
     }

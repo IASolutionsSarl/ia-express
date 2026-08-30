@@ -1,5 +1,6 @@
 const APP_MOUNT_POINT = '<div id="app" data-ww-app-mount="true"></div>';
 const BUILD_ASSET_PREFIX_MARKER = '<meta name="ww-build-asset-prefix" content="';
+export const PRERENDERED_RUNTIME_STYLE_ATTRIBUTE = 'data-ww-style-compiler-prerendered';
 export const MAX_CLIENT_ISLAND_IDS = 100_000;
 export const MAX_CLIENT_ISLAND_ID_LENGTH = 256;
 
@@ -90,6 +91,7 @@ export type RouteRenderResult =
     | {
           ok: true;
           appHtml: string;
+          runtimeCss?: string;
           clientIslands?: ClientIslandRenderResult;
           initialEnvironment?: unknown;
       }
@@ -197,11 +199,13 @@ export function enrichRouteHtml(
         cssFiles = [],
         clientIslandIds = [],
         initialEnvironment,
+        runtimeCss = '',
     }: {
         appHtml: string;
         cssFiles?: string[];
         clientIslandIds?: string[];
         initialEnvironment?: unknown;
+        runtimeCss?: string;
     }
 ): string {
     if (!baselineHtml.includes(APP_MOUNT_POINT)) {
@@ -210,7 +214,7 @@ export function enrichRouteHtml(
     if (baselineHtml.indexOf(APP_MOUNT_POINT) !== baselineHtml.lastIndexOf(APP_MOUNT_POINT)) {
         throw new Error('The CSR mount point is ambiguous.');
     }
-    if (cssFiles.length && !baselineHtml.includes('</head>')) {
+    if ((cssFiles.length || runtimeCss) && !baselineHtml.includes('</head>')) {
         throw new Error('Unable to find the document head closing tag.');
     }
     if (!isValidClientIslandIdList(clientIslandIds)) {
@@ -228,7 +232,11 @@ export function enrichRouteHtml(
     const stylesheets = cssFiles
         .map(cssFile => `<link rel="stylesheet" href="${escapeHtmlAttribute(`${buildAssetPrefix}${cssFile}`)}" />`)
         .join('');
-    const htmlWithStyles = stylesheets ? baselineHtml.replace('</head>', `${stylesheets}</head>`) : baselineHtml;
+    const prerenderedRuntimeStyle = runtimeCss
+        ? `<style ${PRERENDERED_RUNTIME_STYLE_ATTRIBUTE}>${escapeStyleElementText(runtimeCss)}</style>`
+        : '';
+    const injectedStyles = `${stylesheets}${prerenderedRuntimeStyle}`;
+    const htmlWithStyles = injectedStyles ? baselineHtml.replace('</head>', `${injectedStyles}</head>`) : baselineHtml;
 
     return htmlWithStyles.replace(
         APP_MOUNT_POINT,
@@ -295,6 +303,10 @@ function isNonNegativeFiniteNumber(value: unknown): value is number {
 
 function escapeHtmlAttribute(value: string): string {
     return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
+
+function escapeStyleElementText(value: string): string {
+    return value.replaceAll('<', '\\3C ');
 }
 
 export function getBuildAssetPrefix(html: string): string {

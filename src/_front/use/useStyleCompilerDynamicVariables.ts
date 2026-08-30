@@ -1,8 +1,11 @@
 import { onScopeDispose, unref, watchEffect, type Ref } from 'vue';
 
+import type { FormulaExecutor } from '@/_common/helpers/formulaExecutor';
 import type { StyleSurfaceKind } from '@/_common/helpers/styleCompiler';
+import { isStaticRenderingActive } from '@/_front/rendering/staticRenderingContext';
+import { isStyleCompilerPrerenderRuntimeActive } from '@/_front/rendering/styleCompilerPrerenderRuntime';
 import { getMountedComponentId, WW_COMPONENT_ID_ATTRIBUTE } from '@/_front/services/componentIds';
-import { styleFormulaExecutor } from '@/_front/services/styleFormulaExecutor';
+import { prerenderStyleFormulaExecutor, styleFormulaExecutor } from '@/_front/services/styleFormulaExecutor';
 import {
     createStyleCompilerRuntimeVariableRegistrationKey,
     isStyleCompilerRuntimeVariableValueAccepted,
@@ -19,10 +22,19 @@ type RuntimeVariableTargetRefs = {
     sectionElement?: Ref<unknown>;
 };
 
+type RuntimeVariableTargetId = string | number | Ref<string | number | undefined>;
+
+type RuntimeVariableTargetIds = {
+    element?: RuntimeVariableTargetId;
+    sectionContainer?: RuntimeVariableTargetId;
+    sectionElement?: RuntimeVariableTargetId;
+};
+
 type UseStyleCompilerDynamicVariablesOptions = {
     sourceUid: string | Ref<string | undefined>;
     context?: Record<string, unknown>;
     targets: RuntimeVariableTargetRefs;
+    targetIds?: RuntimeVariableTargetIds;
 };
 
 type RuntimeStyleRegistration = {
@@ -31,6 +43,7 @@ type RuntimeStyleRegistration = {
 };
 
 const warnedMissingComponentIdElements = new WeakSet<HTMLElement>();
+const warnedUnresolvedPrerenderVariables = new Set<string>();
 
 /**
  * Writes dynamic/formula CSS variable values onto the rendered node that owns the matching CSS.
@@ -39,63 +52,38 @@ export function useStyleCompilerDynamicVariables({
     sourceUid,
     context = {},
     targets,
+    targetIds = {},
 }: UseStyleCompilerDynamicVariablesOptions) {
     const registrations = new Map<string, RuntimeStyleRegistration>();
 
-    watchEffect(() => {
-        const seenRegistrationKeys = new Set<string>();
-        const variables = getStyleDynamicVariablesForSource(sourceUid);
-        const executionResults = new Map();
-
-        for (const variable of variables) {
-            const element = resolveVariableTarget(variable.surface.kind, targets);
-            if (!element) continue;
-
-            const componentId = getRuntimeComponentId(element);
-            if (!componentId) continue;
-
-            const registrationKey = createStyleCompilerRuntimeVariableRegistrationKey(componentId, variable);
-            seenRegistrationKeys.add(registrationKey);
-
-            const resolution = resolveStyleCompilerRuntimeVariableResult({
-                variable,
+    if (isStyleCompilerPrerenderRuntimeActive()) {
+        watchEffect(() => {
+            synchronizeRuntimeStyleVariables({
+                sourceUid,
                 context,
-                executor: styleFormulaExecutor,
-                executionResults,
-            });
-            if (resolution.status === 'empty') {
-                replaceRuntimeStyleRegistration(registrations, registrationKey, 'empty', () =>
-                    setStyleCompilerRuntimeClear({ componentId, variable })
-                );
-                continue;
-            }
-            if (resolution.status === 'inactive') {
-                replaceRuntimeStyleRegistration(registrations, registrationKey, 'inactive', () =>
-                    setStyleCompilerRuntimeVariableClear({ componentId, variable })
-                );
-                continue;
-            }
-            if (resolution.status !== 'value') {
-                removeRuntimeStyleRegistration(registrations, registrationKey);
-                continue;
-            }
-            const fingerprint = `value\u001f${resolution.cssValue}`;
-            if (registrations.get(registrationKey)?.fingerprint === fingerprint) continue;
-            if (!isStyleCompilerRuntimeVariableValueAccepted(variable, resolution.cssValue)) continue;
-
-            replaceRuntimeStyleRegistration(
                 registrations,
-                registrationKey,
-                fingerprint,
-                () => setStyleCompilerRuntimeVariable({ componentId, variable, cssValue: resolution.cssValue })
-            );
-        }
+                executor: prerenderStyleFormulaExecutor,
+                resolveComponentId: kind => resolveVariableTargetId(kind, targetIds),
+                prerender: true,
+            });
+        });
 
-        for (const registrationKey of registrations.keys()) {
-            if (!seenRegistrationKeys.has(registrationKey)) {
-                removeRuntimeStyleRegistration(registrations, registrationKey);
-            }
-        }
+        // Vue disposes server-rendered scopes before renderToString resolves. The render-scoped
+        // stylesheet intentionally owns these registrations until it is serialized by entry-server.
+        return;
+    }
+
+    watchEffect(() => {
+        if (isStaticRenderingActive()) return;
+
+        synchronizeRuntimeStyleVariables({
+            sourceUid,
+            context,
+            registrations,
+            executor: styleFormulaExecutor,
+            resolveComponentId: kind => resolveMountedVariableTargetId(kind, targets),
+            prerender: false,
+        });
     });
 
     onScopeDispose(() => {
@@ -104,6 +92,83 @@ export function useStyleCompilerDynamicVariables({
         }
         registrations.clear();
     });
+}
+
+function synchronizeRuntimeStyleVariables({
+    sourceUid,
+    context,
+    registrations,
+    executor,
+    resolveComponentId,
+    prerender,
+}: {
+    sourceUid: string | Ref<string | undefined>;
+    context: Record<string, unknown>;
+    registrations: Map<string, RuntimeStyleRegistration>;
+    executor: FormulaExecutor<Record<string, unknown>>;
+    resolveComponentId: (kind: StyleSurfaceKind) => string | null;
+    prerender: boolean;
+}) {
+    const seenRegistrationKeys = new Set<string>();
+    const variables = getStyleDynamicVariablesForSource(sourceUid);
+    const executionResults = new Map();
+
+    for (const variable of variables) {
+        if (prerender && variable.breakpoint !== 'default') continue;
+
+        const componentId = resolveComponentId(variable.surface.kind);
+        if (!componentId) continue;
+
+        const registrationKey = createStyleCompilerRuntimeVariableRegistrationKey(componentId, variable);
+        seenRegistrationKeys.add(registrationKey);
+
+        const resolution = resolveStyleCompilerRuntimeVariableResult({
+            variable,
+            context,
+            executor,
+            executionResults,
+        });
+        if (resolution.status === 'empty') {
+            replaceRuntimeStyleRegistration(registrations, registrationKey, 'empty', () =>
+                setStyleCompilerRuntimeClear({ componentId, variable })
+            );
+            continue;
+        }
+        if (resolution.status === 'inactive') {
+            replaceRuntimeStyleRegistration(registrations, registrationKey, 'inactive', () =>
+                setStyleCompilerRuntimeVariableClear({ componentId, variable })
+            );
+            continue;
+        }
+        if (resolution.status !== 'value') {
+            removeRuntimeStyleRegistration(registrations, registrationKey);
+            if (prerender && !warnedUnresolvedPrerenderVariables.has(registrationKey)) {
+                warnedUnresolvedPrerenderVariables.add(registrationKey);
+                wwLib.wwLog.warn('[style-compiler] unable to resolve prerendered runtime CSS variable', {
+                    sourceUid: variable.sourceUid,
+                    surface: variable.surface.key,
+                    property: variable.property,
+                    state: variable.state,
+                    breakpoint: variable.breakpoint,
+                });
+            }
+            continue;
+        }
+
+        const fingerprint = `value\u001f${resolution.cssValue}`;
+        if (registrations.get(registrationKey)?.fingerprint === fingerprint) continue;
+        if (!isStyleCompilerRuntimeVariableValueAccepted(variable, resolution.cssValue)) continue;
+
+        replaceRuntimeStyleRegistration(registrations, registrationKey, fingerprint, () =>
+            setStyleCompilerRuntimeVariable({ componentId, variable, cssValue: resolution.cssValue })
+        );
+    }
+
+    for (const registrationKey of registrations.keys()) {
+        if (!seenRegistrationKeys.has(registrationKey)) {
+            removeRuntimeStyleRegistration(registrations, registrationKey);
+        }
+    }
 }
 
 function replaceRuntimeStyleRegistration(
@@ -119,10 +184,7 @@ function replaceRuntimeStyleRegistration(
     registrations.set(registrationKey, { fingerprint, stop: create() });
 }
 
-function removeRuntimeStyleRegistration(
-    registrations: Map<string, RuntimeStyleRegistration>,
-    registrationKey: string
-) {
+function removeRuntimeStyleRegistration(registrations: Map<string, RuntimeStyleRegistration>, registrationKey: string) {
     const registration = registrations.get(registrationKey);
     if (!registration) return;
 
@@ -130,11 +192,32 @@ function removeRuntimeStyleRegistration(
     registrations.delete(registrationKey);
 }
 
+function resolveMountedVariableTargetId(kind: StyleSurfaceKind, targets: RuntimeVariableTargetRefs) {
+    const element = resolveVariableTarget(kind, targets);
+    return element ? getRuntimeComponentId(element) : null;
+}
+
 function resolveVariableTarget(kind: StyleSurfaceKind, targets: RuntimeVariableTargetRefs) {
     if (kind === 'section-container') return toHtmlElement(targets.sectionContainer);
     if (kind === 'section-element' || kind === 'section-layout') return toHtmlElement(targets.sectionElement);
 
     return toHtmlElement(targets.element);
+}
+
+function resolveVariableTargetId(kind: StyleSurfaceKind, targetIds: RuntimeVariableTargetIds) {
+    if (kind === 'section-container') return toRuntimeComponentId(targetIds.sectionContainer);
+    if (kind === 'section-element' || kind === 'section-layout') {
+        return toRuntimeComponentId(targetIds.sectionElement);
+    }
+
+    return toRuntimeComponentId(targetIds.element);
+}
+
+function toRuntimeComponentId(value: RuntimeVariableTargetId | undefined): string | null {
+    const componentId = unref(value);
+    if (typeof componentId === 'string') return componentId || null;
+    if (typeof componentId === 'number') return `${componentId}`;
+    return null;
 }
 
 function toHtmlElement(refValue: Ref<unknown> | undefined): HTMLElement | null {

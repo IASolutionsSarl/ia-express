@@ -10,7 +10,7 @@ type HydrationRuntimeDependencies<Route> = {
     hydrateApp: () => void;
     initializeRouteRuntime: () => Promise<HydrationRouteInitialization<Route>>;
     activateBrowserRuntime: () => void | Promise<void>;
-    releaseStaticProjection: () => void;
+    releaseStaticProjection: () => void | Promise<void>;
     activateRuntimeLifecycle: () => void;
     discardRuntimeLifecycle: () => void;
     startRouteDataInitialization: (route: Route) => void | Promise<void>;
@@ -76,7 +76,7 @@ export async function activateHydratedRuntime<Route>({
         return { status: 'failed', phase: 'browser-runtime-activation' };
     }
 
-    releaseStaticProjection();
+    await releaseStaticProjection();
 
     try {
         activateRuntimeLifecycle();

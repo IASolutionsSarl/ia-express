@@ -27,7 +27,7 @@
  </template>
 
 <script>
-import { computed, ref, toRef, reactive, inject, provide, shallowRef, watch, onUnmounted } from 'vue';
+import { computed, ref, toRef, reactive, inject, provide, shallowRef, unref, watch, onUnmounted } from 'vue';
 
 import {
     getComponentVueComponentName,
@@ -81,6 +81,8 @@ export default {
         libraryComponentData: { type: Object, default: null },
         libraryComponentTriggerEvent: { type: Function, default: null },
         libraryComponentTriggerLibraryComponentEvent: { type: Function, default: null },
+        libraryComponentRuntimeStyleSourceUid: { type: String, default: null },
+        libraryComponentRuntimeStyleContext: { type: Object, default: null },
         extraStyle: { type: Object, default: null },
      },
     // update:child-selected and update:is-selected are used by useElementSelection
@@ -155,13 +157,6 @@ export default {
             libraryComponentDataRef: computed(() => props.libraryComponentData),
          });
  
-        useStyleCompilerDynamicVariables({
-            sourceUid: toRef(props, 'uid'),
-            context,
-            targets: {
-                element: component,
-            },
-        });
         const styleClasses = computed(() => [
             createElementClassName(props.uid, styleSourceId.value),
             ...getStyleAtomicClassesForSource(props.uid, 'element'),
@@ -267,6 +262,24 @@ export default {
             componentName: vueComponentName,
             forceClientOnly: () => config?.staticRendering === false,
         });
+        const renderedRuntimeComponentId = computed(() =>
+            isRendering.value && unref(shouldRenderClientIslandContent) ? id : undefined
+        );
+
+        useStyleCompilerDynamicVariables({
+            sourceUid: toRef(props, 'uid'),
+            context,
+            targets: { element: component },
+            targetIds: { element: renderedRuntimeComponentId },
+        });
+        if (props.libraryComponentRuntimeStyleSourceUid) {
+            useStyleCompilerDynamicVariables({
+                sourceUid: toRef(props, 'libraryComponentRuntimeStyleSourceUid'),
+                context: props.libraryComponentRuntimeStyleContext || {},
+                targets: { element: component },
+                targetIds: { element: renderedRuntimeComponentId },
+            });
+        }
 
         return {
             component,

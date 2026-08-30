@@ -35,6 +35,7 @@ try {
             appHtml: string;
             clientIslands: ClientIslandRenderResult;
             initialEnvironment?: unknown;
+            runtimeCss?: string;
         }>;
     };
     const result: RouteRenderResult = {

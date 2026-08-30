@@ -279,7 +279,7 @@
       }
     }
     @layer ordered {
-      .ww-e-dx {
+      .ww-e-d10 {
         padding: var(--6ceaa39e-4e94-4cca-88bc-da34ed61dde9, 1rem) var(--653b8f00-b080-4ab5-b0a6-961a5fa0c53f, 2rem);
         font: var(--8b634e09-fb5a-4294-a871-0d3ddd45b9cf, 500 1rem/1.5 var(--ww-default-font-family, sans-serif));
         color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7, #FFFFFF);
@@ -294,12 +294,12 @@
         --ww-element-transition: all 0.3s ease;
       }
       @media (max-width: 767px) {
-        .ww-e-dx {
+        .ww-e-d10 {
           width: 100%;
           text-align: center;
         }
       }
-      .ww-e-dx:where(:hover) {
+      .ww-e-d10:where(:hover) {
         background-color: var(--8B5CF6, #8B5CF6);
         box-shadow: 0 10px 15px -3px #6b46c166;
         transform: translateY(-2px);

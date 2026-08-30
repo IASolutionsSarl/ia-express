@@ -62,6 +62,16 @@ type SetStyleCompilerRuntimeKeyframesOptions = Omit<SetStyleCompilerRuntimeVaria
 
 const runtimeStyleSheetsByDocument = new WeakMap<Document, RuntimeStyleSheetState>();
 
+/** Serializes the render-scoped runtime sheet without retaining formulas or their contexts. */
+export function serializeStyleCompilerRuntimeStyleSheet(
+    doc: Document = wwLib.getFrontDocument?.() || document
+): string {
+    const state = runtimeStyleSheetsByDocument.get(doc);
+    if (!state) return '';
+
+    return Array.from(state.sheet.cssRules, rule => rule.cssText).join('\n');
+}
+
 /**
  * Writes one resolved formula value into the runtime stylesheet.
  */
@@ -703,10 +713,7 @@ function getRuntimeLibraryLayer(variable: StyleDynamicVariable) {
     return variable.surface.libraryLayer || 'definition';
 }
 
-export function createStyleCompilerRuntimeVariableRegistrationKey(
-    componentId: string,
-    variable: StyleDynamicVariable
-) {
+export function createStyleCompilerRuntimeVariableRegistrationKey(componentId: string, variable: StyleDynamicVariable) {
     return [
         componentId,
         variable.group,

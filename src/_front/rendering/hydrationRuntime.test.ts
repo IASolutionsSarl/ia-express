@@ -66,6 +66,28 @@ describe('hydrated runtime activation', () => {
         expect(failures).toEqual([]);
     });
 
+    it('waits for asynchronous runtime CSS takeover before activating lifecycle callbacks', async () => {
+        const { dependencies, events } = createDependencies();
+        dependencies.releaseStaticProjection = async () => {
+            events.push('deactivate-start');
+            await Promise.resolve();
+            events.push('deactivate-complete');
+        };
+
+        await expect(activateHydratedRuntime(dependencies)).resolves.toEqual({ status: 'ready' });
+        expect(events).toEqual([
+            'block',
+            'hydrate',
+            'initialize',
+            'activate',
+            'deactivate-start',
+            'deactivate-complete',
+            'lifecycle',
+            'data',
+            'unblock',
+        ]);
+    });
+
     it('preserves the static projection and discards runtime lifecycle during a redirect', async () => {
         const { dependencies, events } = createDependencies({ redirected: true });
 

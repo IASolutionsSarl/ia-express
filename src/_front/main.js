@@ -1,4 +1,4 @@
-import { createApp, createSSRApp } from 'vue';
+import { createApp, createSSRApp, nextTick } from 'vue';
 import axios from 'axios';
 import { VueCookieNext } from 'vue-cookie-next';
 import { isEqual, isEmpty, cloneDeep, get, set, merge } from 'lodash-es';
@@ -32,6 +32,7 @@ import { deactivateStaticRendering } from '@/_front/rendering/staticRenderingCon
 import { isServerRenderMode, isStaticRenderMode, renderMode } from '@/_front/rendering/renderMode';
 import { activateRuntimeLifecycle, discardRuntimeLifecycle } from '@/_front/rendering/runtimeLifecycleScheduler';
 import { restoreInitialEnvironment } from '@/_front/rendering/prerenderBootstrap';
+import { removeStyleCompilerPrerenderRuntime } from '@/_front/rendering/styleCompilerPrerenderRuntime';
 
 currentRenderMode = renderMode;
 isServerRendering = isServerRenderMode(renderMode);
@@ -209,8 +210,10 @@ function reportHydrationRuntimeFailure(phase, error) {
     });
 }
 
-function releaseStaticProjection() {
+async function releaseStaticProjection() {
     deactivateStaticRendering();
+    await nextTick();
+    removeStyleCompilerPrerenderRuntime();
     releaseClientIslandHydrationState();
 }
 

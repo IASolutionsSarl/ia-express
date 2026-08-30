@@ -2,6 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, nextTick, ref } from 'vue';
 
 import type { StyleDynamicVariable } from '@/_common/helpers/styleCompiler';
+import {
+    cancelStyleCompilerPrerenderRuntime,
+    prepareStyleCompilerPrerenderRuntime,
+} from '@/_front/rendering/styleCompilerPrerenderRuntime';
+import { activateStaticRendering, deactivateStaticRendering } from '@/_front/rendering/staticRenderingContext';
 import { registerStyleDynamicVariable } from './styleCompilerRuntimeVariables';
 import {
     setStyleCompilerRuntimeClear,
@@ -11,16 +16,152 @@ import {
 import { useStyleCompilerDynamicVariables } from '@/_front/use/useStyleCompilerDynamicVariables';
 
 const executeStyleFormula = vi.hoisted(() => vi.fn());
+const executePrerenderStyleFormula = vi.hoisted(() => vi.fn());
 vi.mock('./styleFormulaExecutor', () => ({
     styleFormulaExecutor: { execute: executeStyleFormula },
+    prerenderStyleFormulaExecutor: { execute: executePrerenderStyleFormula },
 }));
 
 afterEach(() => {
     vi.restoreAllMocks();
     executeStyleFormula.mockReset();
+    executePrerenderStyleFormula.mockReset();
+    cancelStyleCompilerPrerenderRuntime();
+    deactivateStaticRendering();
 });
 
 describe('styleCompilerRuntimeStyleSheet', () => {
+    it('keeps distinct default runtime CSS for reused component instances after SSR scopes are disposed', () => {
+        const doc = new FakeDocument();
+        Object.assign(wwLib, {
+            getFrontDocument: () => doc,
+            wwLog: { warn: vi.fn() },
+        });
+        executePrerenderStyleFormula.mockImplementation((_formula, context) => ({
+            status: 'resolved',
+            value: context.component.props.visible,
+        }));
+        const defaultVariable = {
+            ...createLibraryVariable('definition'),
+            valueNormalizer: {
+                type: 'display' as const,
+                allowedValues: ['flex', 'block', 'grid', 'inline-flex'],
+                restrictToAllowedValues: true,
+            },
+        };
+        const tabletVariable = { ...defaultVariable, breakpoint: 'tablet' as const };
+        const stopDefault = registerStyleDynamicVariable(defaultVariable);
+        const stopTablet = registerStyleDynamicVariable(tabletVariable);
+        const firstScope = effectScope();
+        const secondScope = effectScope();
+        prepareStyleCompilerPrerenderRuntime();
+
+        firstScope.run(() => {
+            useStyleCompilerDynamicVariables({
+                sourceUid: defaultVariable.sourceUid,
+                context: { component: { props: { visible: true } } },
+                targets: {},
+                targetIds: { element: 101 },
+            });
+        });
+        secondScope.run(() => {
+            useStyleCompilerDynamicVariables({
+                sourceUid: defaultVariable.sourceUid,
+                context: { component: { props: { visible: false } } },
+                targets: {},
+                targetIds: { element: 202 },
+            });
+        });
+        firstScope.stop();
+        secondScope.stop();
+
+        expect(getRuntimeDeclarationForComponent(doc, '101', '--ww-style-display')).toBe('flex');
+        expect(getRuntimeDeclarationForComponent(doc, '202', '--ww-style-display')).toBe('none');
+        expect(getGroupingRules(doc).some(rule => rule.ruleText.includes('max-width: 991px'))).toBe(false);
+
+        stopTablet();
+        stopDefault();
+    });
+
+    it('keeps static CSS untouched when a prerendered runtime variable is unresolved', () => {
+        const doc = new FakeDocument();
+        const warn = vi.fn();
+        Object.assign(wwLib, {
+            getFrontDocument: () => doc,
+            wwLog: { warn },
+        });
+        executePrerenderStyleFormula.mockReturnValue({ status: 'error', error: new Error('DOM unavailable') });
+        const variable = createBorderVariable();
+        const stopRegistration = registerStyleDynamicVariable(variable);
+        const scope = effectScope();
+        prepareStyleCompilerPrerenderRuntime();
+
+        scope.run(() => {
+            useStyleCompilerDynamicVariables({
+                sourceUid: variable.sourceUid,
+                targets: {},
+                targetIds: { element: 303 },
+            });
+        });
+        scope.stop();
+
+        expect(getRuntimeDeclaration(doc, '--ww-style-border')).toBe('');
+        expect(getGeneratedLayerDeclaration(doc, 'element', 'border')).toBe('');
+        expect(collectRules(doc.styleElement.sheet).filter(rule => rule instanceof FakeStyleRule)).toHaveLength(0);
+        expect(warn).toHaveBeenCalledWith(
+            '[style-compiler] unable to resolve prerendered runtime CSS variable',
+            expect.objectContaining({ sourceUid: variable.sourceUid, property: variable.property })
+        );
+
+        stopRegistration();
+    });
+
+    it('waits for static projection release before creating the hydrated runtime stylesheet', async () => {
+        const doc = new FakeDocument();
+        Object.assign(wwLib, {
+            getFrontDocument: () => doc,
+            wwLog: { warn: vi.fn() },
+        });
+        executeStyleFormula.mockReturnValue({ status: 'resolved', value: 'flex' });
+        const variable = createLibraryVariable('definition');
+        const stopRegistration = registerStyleDynamicVariable(variable);
+        const scope = effectScope();
+        const element = {
+            nodeType: 1,
+            style: {},
+            getAttribute: () => 'hydrated-library-instance',
+        } as unknown as HTMLElement;
+        activateStaticRendering();
+
+        scope.run(() => {
+            useStyleCompilerDynamicVariables({
+                sourceUid: variable.sourceUid,
+                targets: { element: ref(element) },
+            });
+        });
+
+        const callsBeforeRelease = executeStyleFormula.mock.calls.length;
+        const sheetsBeforeRelease = doc.head.appendChild.mock.calls.length;
+
+        deactivateStaticRendering();
+        await nextTick();
+
+        const callsAfterRelease = executeStyleFormula.mock.calls.length;
+        const runtimeDisplay = getRuntimeDeclarationForComponent(
+            doc,
+            'hydrated-library-instance',
+            '--ww-style-display'
+        );
+
+        scope.stop();
+        stopRegistration();
+
+        expect(callsBeforeRelease).toBe(0);
+        expect(sheetsBeforeRelease).toBe(0);
+        expect(callsAfterRelease).toBe(1);
+        expect(runtimeDisplay).toBe('flex');
+    });
+
     it('writes empty resolved values as revert-layer in the original generated layer', () => {
         const doc = new FakeDocument();
         Object.assign(wwLib, {
@@ -870,6 +1011,21 @@ function getRuntimeDeclarationPriority(
             ? getGroupingRule(elementLayer, '@media (max-width: 991px) {}')
             : elementLayer;
     return getFirstStyleRule(parent)?.style.getPropertyPriority(property) || '';
+}
+
+function getRuntimeDeclarationForComponent(doc: FakeDocument, componentId: string, property: string) {
+    const rule = collectRules(doc.styleElement.sheet).find(
+        (candidate): candidate is FakeStyleRule =>
+            candidate instanceof FakeStyleRule &&
+            candidate.selectorText.includes(`data-ww-component-id="${componentId}"`)
+    );
+    return rule?.style.getPropertyValue(property) || '';
+}
+
+function getGroupingRules(doc: FakeDocument) {
+    return collectRules(doc.styleElement.sheet).filter(
+        (rule): rule is FakeRuleContainer => rule instanceof FakeRuleContainer
+    );
 }
 
 function getGeneratedLayerDeclaration(

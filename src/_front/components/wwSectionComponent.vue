@@ -48,7 +48,7 @@
 </template>
 
 <script>
- import { provide, ref, computed, toRef, reactive, inject, shallowRef, watch } from 'vue';
+ import { provide, ref, computed, toRef, reactive, inject, shallowRef, unref, watch } from 'vue';
 
 import {
     getComponentIcon,
@@ -124,6 +124,12 @@ export default {
             targets: {
                 sectionContainer: rootElement,
                 sectionElement: component,
+            },
+            targetIds: {
+                sectionContainer: computed(() => (isRendering.value ? sectionContainerComponentId : undefined)),
+                sectionElement: computed(() =>
+                    isRendering.value && unref(shouldRenderClientIslandContent) ? sectionElementComponentId : undefined
+                ),
             },
         });
         const sectionContainerAtomicStyleClasses = computed(() =>

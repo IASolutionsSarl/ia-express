@@ -9,6 +9,11 @@ import {
     installInitialEnvironment,
     type InitialEnvironment,
 } from './rendering/initialEnvironment';
+import {
+    cancelStyleCompilerPrerenderRuntime,
+    completeStyleCompilerPrerenderRuntime,
+    prepareStyleCompilerPrerenderRuntime,
+} from './rendering/styleCompilerPrerenderRuntime';
 
 export async function render(
     url: string,
@@ -17,6 +22,7 @@ export async function render(
     appHtml: string;
     clientIslands: ClientIslandRenderResult;
     initialEnvironment: InitialEnvironment;
+    runtimeCss: string;
 }> {
     const initialEnvironment = createInitialEnvironment();
     const restoreEnvironment = installInitialEnvironment(initialEnvironment);
@@ -24,13 +30,17 @@ export async function render(
     try {
         const { app, setupApp } = await import('./main.js');
         await setupApp({ url });
+        prepareStyleCompilerPrerenderRuntime();
         const appHtml = await renderToString(app);
+        const runtimeCss = completeStyleCompilerPrerenderRuntime();
         return {
             appHtml,
             clientIslands: completeClientIslandServerRender(),
             initialEnvironment,
+            runtimeCss,
         };
     } finally {
+        cancelStyleCompilerPrerenderRuntime();
         restoreEnvironment();
     }
 }

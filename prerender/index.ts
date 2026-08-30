@@ -202,6 +202,7 @@ async function renderRoute(route: PrerenderRoute, index: number): Promise<void> 
             cssFiles: getRouteCssFiles(clientBuildManifest, route.pageId),
             clientIslandIds: renderResult.clientIslands?.clientIslandIds,
             initialEnvironment: renderResult.initialEnvironment,
+            runtimeCss: renderResult.runtimeCss,
         });
         if (!candidate.ok) {
             fallbackRoute(route, candidate.diagnostic);

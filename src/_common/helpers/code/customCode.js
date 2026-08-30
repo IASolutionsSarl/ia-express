@@ -214,6 +214,7 @@ export function evaluateGlobalFormula(__wwformula, __wwcontext, parameters) {
                     );`
         )(__wwformula, __wwcontext, evaluateFormula, evaluateCode, args);
     } catch (error) {
+        throwStaticRenderPermissionError(error);
         if (error instanceof FormulaError) {
             if (throwError) throw error;
             return { error };
@@ -258,6 +259,7 @@ export function getFormulaValue({ code, filter, sort, __wwmap, throwError = fals
 }
 
 function throwStaticRenderPermissionError(error) {
+    if (error instanceof StaticRenderFatalError) throw error;
     if (!isStaticRenderPermissionError(error)) return;
     throw new StaticRenderFatalError(`Static renderer permission denied: ${error.message}`, { cause: error });
 }

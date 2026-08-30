@@ -73,6 +73,7 @@ function isRouteRenderResult(value: unknown): value is RouteRenderResult {
     if (result.ok === true) {
         return (
             typeof result.appHtml === 'string' &&
+            (result.runtimeCss === undefined || typeof result.runtimeCss === 'string') &&
             (result.clientIslands === undefined || isClientIslandRenderResult(result.clientIslands)) &&
             (result.initialEnvironment === undefined || !!normalizeInitialEnvironment(result.initialEnvironment))
         );

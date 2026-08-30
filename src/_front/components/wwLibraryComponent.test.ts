@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const libraryFixture = vi.hoisted(() => ({
     capturedLayoutData: [] as Array<Record<string, unknown>>,
     capturedRootClasses: [] as unknown[],
+    capturedRuntimeStyleSources: [] as unknown[],
 }));
 
 vi.mock('@/_common/helpers/component/component.js', () => ({
@@ -103,10 +104,13 @@ vi.mock('./wwElementComponent.vue', () => ({
     default: defineComponent({
         props: {
             libraryComponentData: { type: Object, default: undefined },
+            libraryComponentRuntimeStyleSourceUid: { type: String, default: undefined },
+            libraryComponentRuntimeStyleContext: { type: Object, default: undefined },
         },
         setup(props, { attrs }) {
             return () => {
                 libraryFixture.capturedRootClasses.push(attrs.class);
+                libraryFixture.capturedRuntimeStyleSources.push(props.libraryComponentRuntimeStyleSourceUid);
                 const layout = props.libraryComponentData?.layout;
                 if (layout) {
                     libraryFixture.capturedLayoutData.push({
@@ -148,6 +152,7 @@ describe('wwLibraryComponent Vue adapter', () => {
     beforeEach(() => {
         libraryFixture.capturedLayoutData.length = 0;
         libraryFixture.capturedRootClasses.length = 0;
+        libraryFixture.capturedRuntimeStyleSources.length = 0;
         installWwLib();
     });
 
@@ -162,6 +167,7 @@ describe('wwLibraryComponent Vue adapter', () => {
         const html = await renderToString(app);
 
         expect(html).toContain('ww-a-instance-default');
+        expect(libraryFixture.capturedRuntimeStyleSources).toEqual(['library-instance']);
     });
 
     it.each([

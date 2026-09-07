@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { isFile, isFileList } from '@/_common/helpers/code/filePayload.js';
 import { _wwFormulas } from '@/_common/helpers/code/wwFormulas';
 import { workflowFunctions } from '@/_common/helpers/code/workflows';
+import { useIntegrationsStore } from '@/pinia/integrations';
 import {
     isStaticRenderPermissionError,
     resolveStaticBinding,
@@ -64,6 +65,8 @@ export const _pluginFormulas = computed(() => {
     }, {});
 });
 
+export const _integrations = () => useIntegrationsStore(wwLib.$pinia).getCodeBindings();
+
 // eslint-disable-next-line no-unused-vars
 export function evaluateCode({ code, filter, sort, __wwmap, throwError = false }, context, event, args) {
  
@@ -77,6 +80,7 @@ export function evaluateCode({ code, filter, sort, __wwmap, throwError = false }
             'variables',
             'pluginVariables',
             'globalContext',
+            'integrations',
             'context',
             'event',
             ...(args?.names || '').split(', '),
@@ -90,6 +94,7 @@ export function evaluateCode({ code, filter, sort, __wwmap, throwError = false }
             wwLib.globalVariables.customCodeVariables,
             wwLib.wwPlugins,
             wwLib.globalContext,
+            _integrations(),
             context,
             event,
             ...(args?.value || [])
@@ -120,6 +125,7 @@ export async function executeCode(code, context, event, wwUtils) {
             'variables',
             'pluginVariables',
             'globalContext',
+            'integrations',
             'utilsFunctions',
             'context',
             'event',
@@ -134,6 +140,7 @@ export async function executeCode(code, context, event, wwUtils) {
             wwLib.globalVariables.customCodeVariables,
             wwLib.wwPlugins,
             wwLib.globalContext,
+            _integrations(),
             workflowFunctions,
             context,
             event,
@@ -162,6 +169,7 @@ export function evaluateFormula({ code, filter, sort, __wwmap, throwError = fals
             'variables',
             'pluginVariables',
             'globalContext',
+            'integrations',
             'context',
             'event',
             ...(args?.names || '').split(', '),
@@ -175,6 +183,7 @@ export function evaluateFormula({ code, filter, sort, __wwmap, throwError = fals
             wwLib.globalVariables.customCodeVariables,
             wwLib.wwPlugins,
             wwLib.globalContext,
+            _integrations(),
             context,
             event,
             ...(args?.value || [])

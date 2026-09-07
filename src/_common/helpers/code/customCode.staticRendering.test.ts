@@ -2,6 +2,7 @@
 
 import { createSSRApp, defineComponent, h, inject, provide } from 'vue';
 import { renderToString } from 'vue/server-renderer';
+import { createPinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     activateStaticRendering,
@@ -11,7 +12,10 @@ import {
 import { denyStaticRenderNetwork } from '../../../../wwFront/prerender/networkCapabilityError';
 import { evaluateGlobalFormula, getValue } from './customCode.js';
 
-const runtime = globalThis as typeof globalThis & { wwLib?: unknown };
+const runtime = globalThis as typeof globalThis & {
+    __WW_STORE_FRONT_CONNECTIONS__?: Record<string, unknown>;
+    wwLib?: unknown;
+};
 const deniedGlobalFormula = {
     id: 'denied',
     name: 'denied',
@@ -25,7 +29,10 @@ const deniedGlobalFormula = {
 
 describe('getValue during static rendering', () => {
     beforeEach(() => {
+        const pinia = createPinia();
+        runtime.__WW_STORE_FRONT_CONNECTIONS__ = {};
         runtime.wwLib = {
+            $pinia: pinia,
             $store: {
                 getters: {
                     'data/getCollections': {},
@@ -43,6 +50,7 @@ describe('getValue during static rendering', () => {
 
     afterEach(() => {
         deactivateStaticRendering();
+        delete runtime.__WW_STORE_FRONT_CONNECTIONS__;
         delete runtime.wwLib;
         document.body.innerHTML = '';
         vi.restoreAllMocks();

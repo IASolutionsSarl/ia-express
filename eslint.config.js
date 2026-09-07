@@ -55,6 +55,7 @@ export default [
                 CustomEvent: 'readonly',
                 Event: 'readonly',
                 FileReader: 'readonly',
+                TextEncoder: 'readonly',
                 Blob: 'readonly',
                 FormData: 'readonly',
                 AbortController: 'readonly',
@@ -78,8 +79,8 @@ export default [
             sourceType: 'module',
         },
         rules: {
-            'semi': ['warn', 'always'],
-            'quotes': ['warn', 'single', { avoidEscape: true }],
+            semi: ['warn', 'always'],
+            quotes: ['warn', 'single', { avoidEscape: true }],
             'no-console': 'warn',
             'no-unused-vars': 'warn',
             'no-empty': 'warn',

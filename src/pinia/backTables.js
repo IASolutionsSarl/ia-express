@@ -72,7 +72,9 @@ export const useBackTablesStore = defineStore('backTables', () => {
         if (!tableInfo) return [];
 
         if (tableInfo.integration) {
-             return [];
+            // eslint-disable-next-line no-useless-assignment -- Used when the wwEditor block is stripped from the front build.
+            let renderedColumns = [];
+             return renderedColumns;
         }
 
         const physicalColumns = (tableInfo.rawTable.columns || [])

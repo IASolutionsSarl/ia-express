@@ -1,3 +1,4 @@
+import { createPinia } from 'pinia';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -127,7 +128,10 @@ describe('styleFormulaExecutor', () => {
 });
 
 function installWwLib() {
+    const pinia = createPinia();
+    vi.stubGlobal('__WW_STORE_FRONT_CONNECTIONS__', {});
     vi.stubGlobal('wwLib', {
+        $pinia: pinia,
         $store: {
             getters: {
                 'data/getCollections': {},

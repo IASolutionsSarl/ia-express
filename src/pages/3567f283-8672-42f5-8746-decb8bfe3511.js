@@ -4,6 +4,7 @@ import './styleCompiler/ww-style-page-3567f283-8672-42f5-8746-decb8bfe3511.css';
 // eslint-disable-next-line no-undef
 import element_1b1e2173_9b78_42cc_a8ee_a6167caea340 from "@/components/elements/element-1b1e2173-9b78-42cc-a8ee-a6167caea340/src/wwElement.vue";
 import element_3a7d6379_12d3_4387_98ff_b332bb492a63 from "@/components/elements/element-3a7d6379-12d3-4387-98ff-b332bb492a63/src/wwElement.vue";
+import element_59dca300_db78_42e4_a7a6_0cbf22d3cc82 from "@/components/elements/element-59dca300-db78-42e4-a7a6-0cbf22d3cc82/src/wwElement.vue";
 import element_a823467c_bdc7_4cec_a38c_71875c4c214a from "@/components/elements/element-a823467c-bdc7-4cec-a38c-71875c4c214a/src/wwElement.vue";
 import element_aa27b26f_0686_4c29_98c5_8217044045b7 from "@/components/elements/element-aa27b26f-0686-4c29-98c5-8217044045b7/src/wwElement.vue";
 import element_b783dc65_d528_4f74_8c14_e27c934c39b1 from "@/components/elements/element-b783dc65-d528-4f74-8c14-e27c934c39b1/src/wwElement.vue";
@@ -39,6 +40,12 @@ export default async function registerPageComponents(app) {
         "baseId": "3a7d6379-12d3-4387-98ff-b332bb492a63",
         "importPath": "@/components/elements/element-3a7d6379-12d3-4387-98ff-b332bb492a63/src/wwElement.vue",
         "name": "wwobject-3a7d6379-12d3-4387-98ff-b332bb492a63",
+        "type": "element"
+    },
+    {
+        "baseId": "59dca300-db78-42e4-a7a6-0cbf22d3cc82",
+        "importPath": "@/components/elements/element-59dca300-db78-42e4-a7a6-0cbf22d3cc82/src/wwElement.vue",
+        "name": "wwobject-59dca300-db78-42e4-a7a6-0cbf22d3cc82",
         "type": "element"
     },
     {
@@ -90,6 +97,7 @@ export default async function registerPageComponents(app) {
         // eslint-disable-next-line no-undef
         app.component("wwobject-1b1e2173-9b78-42cc-a8ee-a6167caea340", element_1b1e2173_9b78_42cc_a8ee_a6167caea340);
 app.component("wwobject-3a7d6379-12d3-4387-98ff-b332bb492a63", element_3a7d6379_12d3_4387_98ff_b332bb492a63);
+app.component("wwobject-59dca300-db78-42e4-a7a6-0cbf22d3cc82", element_59dca300_db78_42e4_a7a6_0cbf22d3cc82);
 app.component("wwobject-a823467c-bdc7-4cec-a38c-71875c4c214a", element_a823467c_bdc7_4cec_a38c_71875c4c214a);
 app.component("wwobject-aa27b26f-0686-4c29-98c5-8217044045b7", element_aa27b26f_0686_4c29_98c5_8217044045b7);
 app.component("wwobject-b783dc65-d528-4f74-8c14-e27c934c39b1", element_b783dc65_d528_4f74_8c14_e27c934c39b1);

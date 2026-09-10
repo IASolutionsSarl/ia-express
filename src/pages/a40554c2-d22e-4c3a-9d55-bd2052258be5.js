@@ -10,7 +10,6 @@ import element_a823467c_bdc7_4cec_a38c_71875c4c214a from "@weweb-internal/ext-el
 import element_b783dc65_d528_4f74_8c14_e27c934c39b1 from "@weweb-internal/ext-element-b783dc65-d528-4f74-8c14-e27c934c39b1";
 import element_c6c0c00e_49fd_4cb9_bd78_5bc09945721e from "@weweb-internal/ext-element-c6c0c00e-49fd-4cb9-bd78-5bc09945721e";
 import element_d7904e9d_fc9a_4d80_9e32_728e097879ad from "@weweb-internal/ext-element-d7904e9d-fc9a-4d80-9e32-728e097879ad";
-import element_deb10a01_5eef_4aa1_9017_1b51c2ad6fd0 from "@weweb-internal/ext-element-deb10a01-5eef-4aa1-9017-1b51c2ad6fd0";
 
 // eslint-disable-next-line no-undef
 import section_99586bd3_2b15_4d6b_a025_6a50d07ca845 from "@weweb-internal/ext-section-99586bd3-2b15-4d6b-a025-6a50d07ca845";
@@ -79,12 +78,6 @@ export default async function registerPageComponents(app) {
         "type": "element"
     },
     {
-        "baseId": "deb10a01-5eef-4aa1-9017-1b51c2ad6fd0",
-        "importPath": "@weweb-internal/ext-element-deb10a01-5eef-4aa1-9017-1b51c2ad6fd0",
-        "name": "wwobject-deb10a01-5eef-4aa1-9017-1b51c2ad6fd0",
-        "type": "element"
-    },
-    {
         "baseId": "99586bd3-2b15-4d6b-a025-6a50d07ca845",
         "importPath": "@weweb-internal/ext-section-99586bd3-2b15-4d6b-a025-6a50d07ca845",
         "name": "section-99586bd3-2b15-4d6b-a025-6a50d07ca845",
@@ -103,7 +96,6 @@ app.component("wwobject-a823467c-bdc7-4cec-a38c-71875c4c214a", element_a823467c_
 app.component("wwobject-b783dc65-d528-4f74-8c14-e27c934c39b1", element_b783dc65_d528_4f74_8c14_e27c934c39b1);
 app.component("wwobject-c6c0c00e-49fd-4cb9-bd78-5bc09945721e", element_c6c0c00e_49fd_4cb9_bd78_5bc09945721e);
 app.component("wwobject-d7904e9d-fc9a-4d80-9e32-728e097879ad", element_d7904e9d_fc9a_4d80_9e32_728e097879ad);
-app.component("wwobject-deb10a01-5eef-4aa1-9017-1b51c2ad6fd0", element_deb10a01_5eef_4aa1_9017_1b51c2ad6fd0);
 
         // eslint-disable-next-line no-undef
         app.component("section-99586bd3-2b15-4d6b-a025-6a50d07ca845", section_99586bd3_2b15_4d6b_a025_6a50d07ca845);

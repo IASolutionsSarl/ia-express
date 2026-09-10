@@ -10,7 +10,7 @@ import { executeBackendWorkflow, parseSSEStreamAsync } from '@/_common/helpers/c
 import { usePopupStore } from '@/pinia/popup';
 import { useBackTableViewsStore } from '@/pinia/backTableViews.js';
 import { betterFetch } from '@better-fetch/fetch';
-import integrationsCore from '@/_front/integrations/index.js';
+import integrationsCore from '@/extensions/integrations/index.js';
 import { useIntegrationsStore } from '@/pinia/integrations';
 import { useBackAuthStore } from '@/pinia/backAuth';
  

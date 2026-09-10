@@ -1,3 +1,5 @@
+import { workdayFormulaCases } from './dateFormulas.cases';
+import { FormulaLimitError } from './dateFormulaCore';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { dateFormulas } from './dateFormulas';
 
@@ -396,14 +398,26 @@ describe('dateFormulas', () => {
         });
 
         it('should format 12-hour time without duplicating the day period', () => {
-            const result = dateFormulas.formatDateTimezone(
-                '2026-05-18T15:15:49.383Z',
-                'h:mm A',
-                'Europe/Paris',
-                'en'
-            );
+            const result = dateFormulas.formatDateTimezone('2026-05-18T15:15:49.383Z', 'h:mm A', 'Europe/Paris', 'en');
 
             expect(result).toBe('5:15 PM');
         });
+    });
+});
+
+describe('workday date helpers', () => {
+    const evaluate = (code: string) => new Function('wwFormulas', 'return ' + code)(dateFormulas);
+    it.each(workdayFormulaCases)('$name', ({ code, expected }) => {
+        expect(evaluate(code)).toEqual(expected);
+    });
+    it('validates workday inputs', () => {
+        expect(() => dateFormulas.addWorkdays('2024-02-31', 1)).toThrow('Invalid date');
+        expect(() => dateFormulas.addWorkdays('2024-01-01', 1.5)).toThrow('Expected integer workdays');
+        expect(() => dateFormulas.addWorkdays('2024-01-01', 1, ['invalid'])).toThrow('Expected ISO holiday date');
+        expect(dateFormulas.addWorkdays(null, 1)).toBeNull();
+        expect(dateFormulas.workdayDiff('2024-01-01', null)).toBeNull();
+    });
+    it('does not hide resource limits', () => {
+        expect(() => dateFormulas.addWorkdays('2024-01-01', 10001)).toThrow(FormulaLimitError);
     });
 });

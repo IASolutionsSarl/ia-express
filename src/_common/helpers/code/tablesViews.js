@@ -1,7 +1,8 @@
 import { useBackTableViewsStore } from '@/pinia/backTableViews.js';
 import { useBackTablesStore } from '@/pinia/backTables.js';
 import { useIntegrationsStore } from '@/pinia/integrations';
-import integrationsCore from '@/_front/integrations/index.js';
+import integrationsCore from '@/extensions/integrations/index.js';
+import { serializeTableViewQueryParameters } from './tableViewQueryParameters';
  
 let latestRequestId = {};
 
@@ -24,7 +25,7 @@ function getTableViewExecutionContext(id, env = null) {
 function getTableViewRequestOptions(parameters, options = {}) {
     const requestOptions = {
         method: 'GET',
-        query: parameters,
+        query: serializeTableViewQueryParameters(parameters),
     };
 
  

@@ -1,0 +1,13 @@
+{
+  "name": "@weweb-internal/ext-element-d2eeb897-ad95-49e4-8394-fe3f5c9a81fb",
+  "version": "1.3.6",
+  "dependencies": {
+    "@ag-grid-community/locale": "33.2.4",
+    "ag-grid-vue3": "33.2.4"
+  },
+  "private": true,
+  "exports": {
+    ".": "./src/wwElement.vue",
+    "./config": "./ww-config.js"
+  }
+}

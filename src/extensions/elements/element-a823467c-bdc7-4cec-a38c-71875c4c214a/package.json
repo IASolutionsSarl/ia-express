@@ -1,0 +1,17 @@
+{
+  "name": "@weweb-internal/ext-element-a823467c-bdc7-4cec-a38c-71875c4c214a",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/weweb-assets/ww-input-file"
+  },
+  "version": "3.3.0",
+  "license": "MIT",
+  "dependencies": {
+    "animejs": "^3.2.2"
+  },
+  "private": true,
+  "exports": {
+    ".": "./src/wwElement.vue",
+    "./config": "./ww-config.js"
+  }
+}

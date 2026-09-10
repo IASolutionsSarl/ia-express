@@ -105,10 +105,8 @@ function validateDescriptor(value: unknown): PageComponentDescriptor {
         throw new Error(`Generated page component descriptor ${baseId} has an invalid name.`);
     }
 
-    const sourceFolder = type === 'element' ? 'elements' : 'sections';
-    const sourcePrefix = type === 'element' ? 'element' : 'section';
-    const expectedImportPrefix = `@/components/${sourceFolder}/${sourcePrefix}-${baseId}/`;
-    if (typeof importPath !== 'string' || !importPath.startsWith(expectedImportPrefix)) {
+    const expectedPackageImport = `@weweb-internal/ext-${type}-${baseId.toLowerCase()}`;
+    if (importPath !== expectedPackageImport) {
         throw new Error(`Generated page component descriptor ${baseId} has an invalid importPath.`);
     }
 

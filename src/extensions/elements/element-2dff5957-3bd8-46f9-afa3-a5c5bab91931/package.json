@@ -1,0 +1,14 @@
+{
+  "name": "@weweb-internal/ext-element-2dff5957-3bd8-46f9-afa3-a5c5bab91931",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/weweb-assets/ww-form-input-range"
+  },
+  "version": "3.3.0",
+  "license": "MIT",
+  "private": true,
+  "exports": {
+    ".": "./src/wwElement.vue",
+    "./config": "./ww-config.js"
+  }
+}

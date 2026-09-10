@@ -1,3 +1,4 @@
+import { FORMULA_HELPER_DEFINITIONS } from './helperDefinitions';
 import { createDateFormulas, DATE_FORMULAS_CATEGORY } from './dateFormulaCore';
 
 // RFC 5322 compliant email regex
@@ -454,7 +455,7 @@ export function createWwFormulas(adapters) {
     };
 }
 
-export const WW_FORMULAS_CATEGORIES = [
+const BASE_FORMULAS_CATEGORIES = [
     {
         label: 'Conditional',
         values: [
@@ -557,3 +558,17 @@ export const WW_FORMULAS_CATEGORIES = [
         ],
     },
 ];
+
+export const WW_FORMULAS_CATEGORIES = BASE_FORMULAS_CATEGORIES.map(category => ({
+    ...category,
+    values: [
+        ...category.values,
+        ...Object.entries(FORMULA_HELPER_DEFINITIONS)
+            .filter(([, helper]) => helper.category === category.label)
+            .map(([name, helper]) => ({
+                name,
+                arrity: helper.min,
+                description: '**' + name + '(' + helper.args.join(', ') + ')**\n\n' + helper.description,
+            })),
+    ],
+}));

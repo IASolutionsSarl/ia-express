@@ -44,7 +44,7 @@ vi.mock('@better-fetch/fetch', () => ({
     betterFetch: vi.fn(),
 }));
 
-vi.mock('@/_front/integrations/index.js', () => ({
+vi.mock('@/extensions/integrations/index.js', () => ({
     default: {},
 }));
 

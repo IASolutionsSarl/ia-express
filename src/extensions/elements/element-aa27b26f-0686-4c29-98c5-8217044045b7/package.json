@@ -1,0 +1,16 @@
+{
+  "name": "@weweb-internal/ext-element-aa27b26f-0686-4c29-98c5-8217044045b7",
+  "repository": {
+    "url": "https://github.com/weweb-assets/ww-loader"
+  },
+  "version": "1.0.0",
+  "license": "MIT",
+  "dependencies": {
+    "spinkit": "^2.0.1"
+  },
+  "private": true,
+  "exports": {
+    ".": "./src/wwElement.vue",
+    "./config": "./ww-config.js"
+  }
+}

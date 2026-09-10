@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
     initializeConnection: vi.fn(),
 }));
 
-vi.mock('@/_front/integrations/index.js', () => ({
+vi.mock('@/extensions/integrations/index.js', () => ({
     default: {
         supabase: {
             connection: {

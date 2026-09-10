@@ -1,0 +1,14 @@
+{
+  "name": "@weweb-internal/ext-element-70a53858-53ca-40a5-ad88-c1cd33b5cc9f",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/weweb-assets/ww-input-radio"
+  },
+  "version": "3.3.0",
+  "license": "MIT",
+  "private": true,
+  "exports": {
+    ".": "./src/wwElement.vue",
+    "./config": "./ww-config.js"
+  }
+}

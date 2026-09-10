@@ -1,0 +1,22 @@
+{
+  "name": "@weweb-internal/ext-element-6145eb60-0af8-4e52-bcc6-dc0f6743654e",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/weweb-assets/ww-select"
+  },
+  "weweb": {
+    "componentPath": "./src/wwElement_Select.vue"
+  },
+  "version": "1.0.0",
+  "license": "MIT",
+  "dependencies": {
+    "@floating-ui/vue": "^1.1.5",
+    "@vueuse/core": "^11.1.0",
+    "vue-virtual-scroller": "^2.0.0-beta.8"
+  },
+  "private": true,
+  "exports": {
+    ".": "./src/wwElement_Select.vue",
+    "./config": "./ww-config.js"
+  }
+}

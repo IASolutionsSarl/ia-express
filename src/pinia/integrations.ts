@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, shallowReactive } from 'vue';
- import integrationCore from '@/_front/integrations/index.js';
+ import integrationCore from '@/extensions/integrations/index.js';
 import { resolveConnection } from '@/_common/helpers/code/connnections.js';
 import { buildIntegrationBindings } from '@/_common/helpers/code/integrationBindings';
  

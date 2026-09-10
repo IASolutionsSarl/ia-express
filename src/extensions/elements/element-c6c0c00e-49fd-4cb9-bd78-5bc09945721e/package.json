@@ -1,0 +1,14 @@
+{
+  "name": "@weweb-internal/ext-element-c6c0c00e-49fd-4cb9-bd78-5bc09945721e",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/weweb-assets/ww-dialog-root"
+  },
+  "version": "3.2.0",
+  "license": "MIT",
+  "private": true,
+  "exports": {
+    ".": "./src/wwElement.vue",
+    "./config": "./ww-config.js"
+  }
+}

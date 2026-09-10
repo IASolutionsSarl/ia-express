@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
-import integrationCore from '@/_front/integrations/index.js';
+import integrationCore from '@/extensions/integrations/index.js';
 import { useIntegrationsStore } from '@/pinia/integrations';
 
 const HOOKS = ['init', 'auth-refresh'];

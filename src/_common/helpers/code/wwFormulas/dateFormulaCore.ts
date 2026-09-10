@@ -175,8 +175,97 @@ function parseDate(date: unknown): Date {
 
 type DatePrecision = 'millisecond' | 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year';
 
+/** Shared workday helpers mirrored in the Editor and Back Publisher. */
+export class FormulaLimitError extends Error {}
+const WORKDAY_MS = 86400000;
+function requireWorkdayNumber(value: unknown): number {
+    if (typeof value !== 'number') throw new Error('Expected a number');
+    return value;
+}
+function requireWorkdayText(value: unknown): string {
+    if (typeof value !== 'string') throw new Error('Expected text');
+    return value;
+}
+function utcWorkdayDate(year: number, month: number, day: number): Date {
+    const date = new Date(0);
+    date.setUTCFullYear(year, month - 1, day);
+    date.setUTCHours(0, 0, 0, 0);
+    return date;
+}
+function parseWorkdayDate(value: unknown): Date {
+    if (value instanceof Date) {
+        if (!Number.isFinite(value.getTime())) throw new Error('Invalid date');
+        return new Date(value);
+    }
+    const source = requireWorkdayText(value);
+    const parts = /^(\d{4})-(\d{2})-(\d{2})(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:\d{2}))?$/.exec(
+        source
+    );
+    if (!parts) throw new Error('Expected an ISO date');
+    const calendar = utcWorkdayDate(+parts[1], +parts[2], +parts[3]);
+    if (calendar.getUTCMonth() !== +parts[2] - 1 || calendar.getUTCDate() !== +parts[3])
+        throw new Error('Invalid date');
+    const result = new Date(source);
+    if (!Number.isFinite(result.getTime())) throw new Error('Invalid date');
+    return result;
+}
+function parseWorkdayHolidays(value: unknown): Set<string> {
+    if (value == null) return new Set();
+    const items = typeof value === 'string' ? (value === '' ? [] : value.split(',')) : value;
+    if (!Array.isArray(items)) throw new Error('Expected holiday dates');
+    if (items.length > 10000) throw new FormulaLimitError('Holiday collection limit exceeded');
+    return new Set(
+        items.map(item => {
+            const source = requireWorkdayText(item).trim();
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(source)) throw new Error('Expected ISO holiday date');
+            return parseWorkdayDate(source).toISOString().slice(0, 10);
+        })
+    );
+}
+function isWorkday(day: Date, excluded: Set<string>): boolean {
+    return day.getUTCDay() !== 0 && day.getUTCDay() !== 6 && !excluded.has(day.toISOString().slice(0, 10));
+}
+
 export function createDateFormulas(adapters: DateFormulaAdapters) {
     return {
+        addWorkdays(value: unknown, days: unknown, excluded?: unknown) {
+            if (value == null) return null;
+            const result = parseWorkdayDate(value),
+                count = requireWorkdayNumber(days),
+                closed = parseWorkdayHolidays(excluded);
+            if (!Number.isInteger(count)) throw new Error('Expected integer workdays');
+            if (Math.abs(count) > 10000) throw new FormulaLimitError('Iteration limit exceeded');
+            let remaining = Math.abs(count),
+                visited = 0;
+            while (remaining) {
+                if (++visited > 30000) throw new FormulaLimitError('Iteration limit exceeded');
+                result.setUTCDate(result.getUTCDate() + Math.sign(count));
+                if (isWorkday(result, closed)) remaining--;
+            }
+            return result.toISOString();
+        },
+        workdayDiff(a: unknown, b: unknown, excluded?: unknown) {
+            if (a == null || b == null) return null;
+            const first = parseWorkdayDate(a).getTime(),
+                last = parseWorkdayDate(b).getTime(),
+                closed = parseWorkdayHolidays(excluded);
+            const start = Math.floor(Math.min(first, last) / WORKDAY_MS),
+                end = Math.floor(Math.max(first, last) / WORKDAY_MS),
+                span = end - start + 1;
+            let count = Math.floor(span / 7) * 5;
+            for (let i = 0; i < span % 7; i++) if (isWorkday(new Date((start + i) * WORKDAY_MS), new Set())) count++;
+            for (const holiday of closed) {
+                const day = parseWorkdayDate(holiday);
+                if (
+                    day.getTime() / WORKDAY_MS >= start &&
+                    day.getTime() / WORKDAY_MS <= end &&
+                    isWorkday(day, new Set())
+                )
+                    count--;
+            }
+            return count * (first > last ? -1 : 1);
+        },
+
         date(...args: (string | number | Date)[]): string {
             return new Date(...(args as [string | number | Date])).toISOString();
         },

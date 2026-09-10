@@ -1,0 +1,17 @@
+{
+  "name": "@weweb-internal/ext-plugin-f9ef41c3-1c53-4857-855b-f2f6a40b7186",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/weweb-assets/plugin-supabase"
+  },
+  "version": "3.1.0",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "2.50.3"
+  },
+  "private": true,
+  "exports": {
+    ".": "./src/wwPlugin.js",
+    "./config": "./ww-config.js"
+  }
+}

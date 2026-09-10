@@ -212,6 +212,16 @@
         max-width: unset;
         height: auto;
       }
+      .ww-a-musbR7AL09vB7JZp {
+        margin: 0;
+        padding: 0;
+        z-index: unset;
+        max-width: unset;
+        min-width: unset;
+        height: auto;
+        max-height: unset;
+        min-height: unset;
+      }
     }
     @layer ordered {
       .ww-e-dAg {
@@ -394,6 +404,7 @@
         flex-wrap: revert-layer;
       }
       .ww-e-dB0 {
+        align-self: center;
         display: flex;
         width: 80%;
         background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
@@ -421,6 +432,7 @@
         flex-flow: column;
       }
       .ww-e-dB3 {
+        align-self: center;
         display: flex;
         width: 80%;
       }

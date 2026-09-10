@@ -205,21 +205,12 @@
         max-height: unset;
         min-height: unset;
       }
-      .ww-a-VfFdJxnaHjuWxbXJ {
+      .ww-a--ohg53bQUAtv5-EJ {
         margin: 0;
         padding: 0;
         z-index: unset;
+        max-width: unset;
         height: auto;
-      }
-      .ww-a-nZjgbPdLeWAAAagC {
-        margin: 0;
-        padding: 0;
-        z-index: unset;
-        align-self: unset;
-        min-width: unset;
-        height: auto;
-        max-height: unset;
-        min-height: unset;
       }
     }
     @layer ordered {
@@ -372,7 +363,7 @@
         padding: 0 100px;
         overflow: unset;
         display: flex;
-        width: 70%;
+        width: 90%;
         height: auto;
         aspect-ratio: unset;
       }
@@ -385,7 +376,6 @@
         align-self: unset;
         display: flex;
         flex: 0 1 auto;
-        max-width: 95%;
         min-width: 400px;
         max-height: 600px;
         min-height: 900px;
@@ -412,8 +402,6 @@
       }
       .ww-e-dB1 {
         display: flex;
-        width: 100%;
-        max-width: 940px;
         background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
       }
       .ww-e-dB1.ww-layout, .ww-e-dB1 [data-ww-ls~="dB1"] {
@@ -424,7 +412,6 @@
       .ww-e-dB2 {
         display: flex;
         width: 10%;
-        max-width: 940px;
       }
       .ww-e-dB2.ww-layout, .ww-e-dB2 [data-ww-ls~="dB2"] {
         display: flex;
@@ -434,7 +421,6 @@
       .ww-e-dB3 {
         display: flex;
         width: 90%;
-        max-width: 940px;
       }
       .ww-e-dB3.ww-layout, .ww-e-dB3 [data-ww-ls~="dB3"] {
         display: flex;

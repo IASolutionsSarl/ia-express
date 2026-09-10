@@ -1,0 +1,19 @@
+{
+  "name": "@weweb-internal/ext-element-3082cb3f-3033-4e6e-8222-1fba3af145fe",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/weweb-assets/ww-chat-ai"
+  },
+  "version": "1.0.0",
+  "license": "MIT",
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "highlight.js": "^11.11.1",
+    "markdown-it": "^14.1.0"
+  },
+  "private": true,
+  "exports": {
+    ".": "./src/wwElement.vue",
+    "./config": "./ww-config.js"
+  }
+}

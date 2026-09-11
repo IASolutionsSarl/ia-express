@@ -3,7 +3,6 @@ import './styleCompiler/ww-style-page-a40554c2-d22e-4c3a-9d55-bd2052258be5.css';
 
 // eslint-disable-next-line no-undef
 import element_1b1e2173_9b78_42cc_a8ee_a6167caea340 from "@weweb-internal/ext-element-1b1e2173-9b78-42cc-a8ee-a6167caea340";
-import element_2c8e3e54_3ea3_48ea_b8c8_e7580e3362a2 from "@weweb-internal/ext-element-2c8e3e54-3ea3-48ea-b8c8-e7580e3362a2";
 import element_3082cb3f_3033_4e6e_8222_1fba3af145fe from "@weweb-internal/ext-element-3082cb3f-3033-4e6e-8222-1fba3af145fe";
 import element_3a7d6379_12d3_4387_98ff_b332bb492a63 from "@weweb-internal/ext-element-3a7d6379-12d3-4387-98ff-b332bb492a63";
 import element_59dca300_db78_42e4_a7a6_0cbf22d3cc82 from "@weweb-internal/ext-element-59dca300-db78-42e4-a7a6-0cbf22d3cc82";
@@ -34,12 +33,6 @@ export default async function registerPageComponents(app) {
         "baseId": "1b1e2173-9b78-42cc-a8ee-a6167caea340",
         "importPath": "@weweb-internal/ext-element-1b1e2173-9b78-42cc-a8ee-a6167caea340",
         "name": "wwobject-1b1e2173-9b78-42cc-a8ee-a6167caea340",
-        "type": "element"
-    },
-    {
-        "baseId": "2c8e3e54-3ea3-48ea-b8c8-e7580e3362a2",
-        "importPath": "@weweb-internal/ext-element-2c8e3e54-3ea3-48ea-b8c8-e7580e3362a2",
-        "name": "wwobject-2c8e3e54-3ea3-48ea-b8c8-e7580e3362a2",
         "type": "element"
     },
     {
@@ -96,7 +89,6 @@ export default async function registerPageComponents(app) {
     } else {
         // eslint-disable-next-line no-undef
         app.component("wwobject-1b1e2173-9b78-42cc-a8ee-a6167caea340", element_1b1e2173_9b78_42cc_a8ee_a6167caea340);
-app.component("wwobject-2c8e3e54-3ea3-48ea-b8c8-e7580e3362a2", element_2c8e3e54_3ea3_48ea_b8c8_e7580e3362a2);
 app.component("wwobject-3082cb3f-3033-4e6e-8222-1fba3af145fe", element_3082cb3f_3033_4e6e_8222_1fba3af145fe);
 app.component("wwobject-3a7d6379-12d3-4387-98ff-b332bb492a63", element_3a7d6379_12d3_4387_98ff_b332bb492a63);
 app.component("wwobject-59dca300-db78-42e4-a7a6-0cbf22d3cc82", element_59dca300_db78_42e4_a7a6_0cbf22d3cc82);

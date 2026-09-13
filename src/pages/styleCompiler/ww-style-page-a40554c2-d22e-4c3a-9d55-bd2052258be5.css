@@ -80,6 +80,17 @@
   @layer normal {
     @layer atomic, ordered;
     @layer atomic {
+      .ww-a-jv_Vqe1raKX4ZAEH {
+        margin: 0;
+        padding: 0;
+        z-index: unset;
+        align-self: unset;
+        display: flex;
+        max-width: unset;
+        min-width: unset;
+        max-height: unset;
+        min-height: unset;
+      }
       .ww-a-wepO1Mjw7DgHz3WK {
         margin: 0;
         padding: 0;
@@ -110,17 +121,6 @@
         max-width: unset;
         min-width: unset;
         height: auto;
-        max-height: unset;
-        min-height: unset;
-      }
-      .ww-a-jv_Vqe1raKX4ZAEH {
-        margin: 0;
-        padding: 0;
-        z-index: unset;
-        align-self: unset;
-        display: flex;
-        max-width: unset;
-        min-width: unset;
         max-height: unset;
         min-height: unset;
       }
@@ -197,17 +197,24 @@
       }
     }
     @layer ordered {
-      .ww-e-dA5 {
+      .ww-e-d10 {
+        overflow: unset;
+        width: 35%;
+        height: auto;
+        aspect-ratio: unset;
+        background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
+      }
+      .ww-e-dA6 {
         display: flex;
         width: 8%;
       }
-      .ww-e-dA5.ww-layout, .ww-e-dA5 [data-ww-ls~="dA5"] {
+      .ww-e-dA6.ww-layout, .ww-e-dA6 [data-ww-ls~="dA6"] {
         display: flex;
         flex-flow: column;
         justify-content: flex-end;
         align-items: center;
       }
-      .ww-e-dA6 {
+      .ww-e-dA7 {
         margin: 0 0 22px;
         align-self: center;
         width: 35px;
@@ -215,7 +222,7 @@
         border: 0 solid #e0e0e0;
         border-radius: 5px;
       }
-      .ww-e-dA7 {
+      .ww-e-dA8 {
         margin: 0 0 22px;
         align-self: center;
         width: 35px;
@@ -223,26 +230,19 @@
         border: 0 solid #e0e0e0;
         border-radius: 5px;
       }
-      .ww-e-dAi {
+      .ww-e-dAj {
         display: flex;
         width: 100%;
       }
-      .ww-e-dAi.ww-layout, .ww-e-dAi [data-ww-ls~="dAi"] {
+      .ww-e-dAj.ww-layout, .ww-e-dAj [data-ww-ls~="dAj"] {
         display: flex;
         flex-direction: row;
         justify-content: space-between;
         flex-wrap: revert-layer;
       }
-      .ww-e-dAj.ww-layout, .ww-e-dAj [data-ww-ls~="dAj"] {
+      .ww-e-dAk.ww-layout, .ww-e-dAk [data-ww-ls~="dAk"] {
         display: flex;
         flex-flow: column;
-      }
-      .ww-e-dAk {
-        overflow: unset;
-        width: 35%;
-        height: auto;
-        aspect-ratio: unset;
-        background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
       }
       .ww-e-dAl {
         padding: 10px 0 0;

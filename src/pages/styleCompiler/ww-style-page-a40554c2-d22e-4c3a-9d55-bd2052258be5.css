@@ -372,6 +372,17 @@
         display: flex;
         flex-flow: column;
       }
+      .ww-e-dBS {
+        align-self: center;
+        display: flex;
+        width: 80%;
+      }
+      .ww-e-dBS.ww-layout, .ww-e-dBS [data-ww-ls~="dBS"] {
+        display: flex;
+        flex-flow: column;
+        justify-content: flex-start;
+        align-items: stretch;
+      }
     }
   }
   @layer custom {

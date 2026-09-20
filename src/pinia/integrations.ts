@@ -17,9 +17,6 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     connections.value = {};
     /* wwFront:end */
     const instances = shallowReactive({});
-    // Stable across config edits, scoped to this store; temporary environment instances do not
-    // receive this identity because they must not replace the registered connection instance.
-    const connectionInstanceScopes = new Map<string, { generation: number }>();
  
     async function initializeConnectionInstance(connectionId: string) {
         const rawConnection = connections.value[connectionId];
@@ -32,15 +29,7 @@ export const useIntegrationsStore = defineStore('integrations', () => {
         if (!integration?.connection?.init) return;
 
         try {
-            if (!connectionInstanceScopes.has(connectionId))
-                connectionInstanceScopes.set(connectionId, { generation: 0 });
-            const instanceScope = connectionInstanceScopes.get(connectionId);
-            const generation = ++instanceScope.generation;
-            const instance = await integration.connection.init({
-                connection,
-                instanceScope,
-            });
-            if (instanceScope.generation !== generation) return;
+            const instance = await integration.connection.init({ connection });
             instances[connectionId] = instance;
         } catch (error) {
             wwLib.wwLog?.error('Failed to initialize connection instance', error);

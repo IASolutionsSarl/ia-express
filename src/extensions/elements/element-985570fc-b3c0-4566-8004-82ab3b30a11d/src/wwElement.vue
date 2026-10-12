@@ -8,7 +8,7 @@
         content.enableCalendarOnly && content.calendarOnlyFit,
       ]"
       :day-names="customDayNames"
-      :model-value="formatedValue"
+      :model-value="pickerValue"
       @update:model-value="handleSelection"
       :format-locale="formatLocale"
       :format="previewFormat"
@@ -103,10 +103,26 @@
 </template>
 
 <script>
-import DatePicker from "./vue-datepicker.js";
+import DatePicker, { zonedTimeToUtc } from "./vue-datepicker.js";
+import { format } from "date-fns";
 import * as DateFnsLocal from "date-fns/locale";
 import "./main.css";
 import { computed, ref, inject } from "vue";
+
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}/;
+// ISO date mode stores the picked calendar day as midnight UTC, so the value does not depend on the click time or the user's timezone.
+const toIsoDay = (value) =>
+  typeof value === "string" && ISO_DAY.test(value)
+    ? `${value.slice(0, 10)}T00:00:00.000Z`
+    : value;
+const fromIsoDay = (value) =>
+  typeof value === "string" && ISO_DAY.test(value) ? value.slice(0, 10) : value;
+const mapDateValue = (value, fn) => {
+  if (Array.isArray(value)) return value.map(fn);
+  if (value && typeof value === "object")
+    return { start: fn(value.start), end: fn(value.end) };
+  return fn(value);
+};
 
 export default {
   components: {
@@ -119,18 +135,23 @@ export default {
     wwElementState: { type: Object, required: true },
   },
   setup(props, { emit }) {
-    const initValue = computed(() =>
-      props.content.selectionMode === "single"
-        ? props.content.initValueSingle || null
-        : props.content.selectionMode === "range"
-          ? {
-              start: props.content.initValueRangeStart || null,
-              end: props.content.initValueRangeEnd || null,
-            }
-          : Array.isArray(props.content.initValueMulti)
-            ? props.content.initValueMulti
-            : [],
+    const isIsoDate = computed(
+      () => props.content.dateMode === "date" && props.content.format === "iso",
     );
+    const initValue = computed(() => {
+      const value =
+        props.content.selectionMode === "single"
+          ? props.content.initValueSingle || null
+          : props.content.selectionMode === "range"
+            ? {
+                start: props.content.initValueRangeStart || null,
+                end: props.content.initValueRangeEnd || null,
+              }
+            : Array.isArray(props.content.initValueMulti)
+              ? props.content.initValueMulti
+              : [];
+      return isIsoDate.value ? mapDateValue(value, toIsoDay) : value;
+    });
     const { value: variableValue, setValue } =
       wwLib.wwVariable.useComponentVariable({
         uid: props.uid,
@@ -173,6 +194,7 @@ export default {
       variableValue,
       setValue,
       body,
+      isIsoDate,
       initValue,
       wwDatePicker,
       selectDate,
@@ -205,6 +227,10 @@ export default {
     },
     /* https://github.com/date-fns/date-fns/blob/main/docs/unicodeTokens.md */
     previewFormat() {
+      if (this.content.format === "iso")
+        return ["date", "datetime"].includes(this.content.dateMode)
+          ? this.formatIsoPreview
+          : null;
       const format =
         this.content.format === "custom"
           ? this.content.customFormat
@@ -214,6 +240,11 @@ export default {
     },
     formatedValue() {
       return this.formatInputValue(this.variableValue);
+    },
+    pickerValue() {
+      return this.isIsoDate
+        ? mapDateValue(this.formatedValue, fromIsoDay)
+        : this.formatedValue;
     },
     locale() {
       if (this.content.lang === "pageLang") {
@@ -248,7 +279,7 @@ export default {
     },
     modelType() {
       if (this.content.dateMode === "date") return "yyyy-MM-dd";
-      if (this.content.dateMode === "time") return "HH:mm:SS";
+      if (this.content.dateMode === "time") return "HH:mm:ss";
       if (this.content.dateMode === "month") return "yyyy-MM";
       return null;
     },
@@ -319,6 +350,7 @@ export default {
           ? value.map((date) => (date ? date.toISOString() : null))
           : value.toISOString();
       }
+      if (this.isIsoDate) value = mapDateValue(value, toIsoDay);
       const newValue = this.formatOutputValue(value);
       if (JSON.stringify(this.variableValue) === JSON.stringify(newValue))
         return;
@@ -344,6 +376,27 @@ export default {
       else if (this.content.selectionMode === "range")
         return { start: value[0], end: value[1] };
       else if (this.content.selectionMode === "multi") return value;
+    },
+    formatIsoPreview(value) {
+      const toIso = (part) => {
+        if (part === null || part === undefined || part === "") return null;
+        if (this.isIsoDate && ISO_DAY.test(part)) return toIsoDay(part);
+        const date = part instanceof Date ? part : new Date(part);
+        if (isNaN(date.getTime())) return null;
+        if (this.isIsoDate) return toIsoDay(format(date, "yyyy-MM-dd"));
+        // The picker hands the formatter a date shifted into `timezone`; shift it back so the preview matches the emitted value.
+        return (
+          this.timezone && part instanceof Date
+            ? zonedTimeToUtc(date, this.timezone)
+            : date
+        ).toISOString();
+      };
+      if (Array.isArray(value)) {
+        const separator =
+          this.content.selectionMode === "multi" ? "; " : " - ";
+        return value.map(toIso).filter(Boolean).join(separator);
+      }
+      return toIso(value) || "";
     },
     clearValue() {
       const clearValue =

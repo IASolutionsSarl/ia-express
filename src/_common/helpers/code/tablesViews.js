@@ -28,6 +28,9 @@ function getTableViewRequestOptions(parameters, options = {}) {
         query: serializeTableViewQueryParameters(parameters),
     };
 
+    requestOptions.query.cursor = options.cursor;
+    requestOptions.query.fetchGroupedRows = options.fetchGroupedRows;
+
  
     return requestOptions;
 }
@@ -73,8 +76,9 @@ function buildTableViewParameterValues(definitions = [], currentValues = {}) {
 
 export async function loadTableView(id, parameters = {}, options = { isTest: false }) {
     let response = null;
-    latestRequestId[id] = wwLib.wwUtils.getUid();
-    const currentRequestId = latestRequestId[id];
+    const requestKey = options.requestKey ? `${id}:${options.requestKey}` : id;
+    latestRequestId[requestKey] = wwLib.wwUtils.getUid();
+    const currentRequestId = latestRequestId[requestKey];
     try {
         const { tableView, integrationTable, integrationsStore, connection, instance } = getTableViewExecutionContext(
             id,
@@ -93,10 +97,10 @@ export async function loadTableView(id, parameters = {}, options = { isTest: fal
         } else {
             response = await wwServerClient(`/ww/table-views/${id}`, getTableViewRequestOptions(parameters, options));
         }
-        if (currentRequestId !== latestRequestId[id]) return null;
+        if (currentRequestId !== latestRequestId[requestKey]) return null;
         return response;
     } catch (error) {
-        if (currentRequestId !== latestRequestId[id]) return null;
+        if (currentRequestId !== latestRequestId[requestKey]) return null;
         throw error;
     }
 }

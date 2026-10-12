@@ -131,6 +131,88 @@ describe('styleCompiler', () => {
         run.stop();
     });
 
+    it('reads each source property once per target pass and refreshes it on the next pass', () => {
+        const data = createWidthElement('elementA', '100px');
+        data.capabilities = { inherits: ['ww-layout', 'ww-text'] };
+        const baseReader = createReader({ elements: { elementA: data } });
+        const source = baseReader.element('elementA')!;
+        const tree = source.style();
+        const reads = new Map<string, number>();
+        source.style = () => ({
+            ...tree,
+            state(state) {
+                const stateReader = tree.state(state);
+                return {
+                    ...stateReader,
+                    breakpoint(breakpoint) {
+                        const slot = stateReader.breakpoint(breakpoint);
+                        return {
+                            ...slot,
+                            property(property) {
+                                const key = `${state}/${breakpoint}/${property}`;
+                                reads.set(key, (reads.get(key) || 0) + 1);
+                                return slot.property(property);
+                            },
+                        };
+                    },
+                };
+            },
+        });
+        const stylesheet = createStringStyleSheetAdapter();
+        const manualRuntime = createManualStyleReactivityRuntime();
+        const run = createStyleCompiler().compileStylesheet({
+            scope: { elementUids: ['elementA'], sectionUids: [], libraryComponentIds: [] },
+            reader: { ...baseReader, element: () => source },
+            stylesheet,
+            runtime: manualRuntime.runtime,
+        });
+
+        expect(stylesheet.result()).toContain('100px');
+        expect(Math.max(...reads.values())).toBe(1);
+        reads.clear();
+        data.styles!.base.default.width = '200px';
+        manualRuntime.scopes[1].rerun();
+        expect(stylesheet.result()).toContain('200px');
+        expect(stylesheet.result()).not.toContain('100px');
+        expect(Math.max(...reads.values())).toBe(1);
+        run.stop();
+    });
+
+    it('refreshes cached and previously absent style properties after reactive edits and undo', async () => {
+        const data = reactive(createWidthElement('elementA', '100px'));
+        data.capabilities = { inherits: ['ww-layout', 'ww-text'] };
+        const stylesheet = createStringStyleSheetAdapter();
+        const run = createStyleCompiler().compileStylesheet({
+            scope: { elementUids: ['elementA'], sectionUids: [], libraryComponentIds: [] },
+            reader: createReader({ elements: { elementA: data } }),
+            stylesheet,
+            runtime: createVueStyleCompilerTestRuntime(),
+        });
+        try {
+            await nextTick();
+            const initial = stylesheet.result();
+            data.styles!.base.default.width = '200px';
+            data.styles!.base.default.opacity = 0.42;
+            await nextTick();
+            expect(stylesheet.result()).toContain('width: 200px;');
+            expect(stylesheet.result()).toContain('opacity: 0.42;');
+            expect(stylesheet.result()).not.toContain('width: 100px;');
+
+            data.styles!.base.default.width = '100px';
+            delete data.styles!.base.default.opacity;
+            await nextTick();
+            expect(stylesheet.result()).toBe(initial);
+
+            data.styles = { base: { default: { width: '300px', opacity: 0.71 } } };
+            await nextTick();
+            expect(stylesheet.result()).toContain('width: 300px;');
+            expect(stylesheet.result()).toContain('opacity: 0.71;');
+            expect(stylesheet.result()).not.toContain('opacity: 0.42;');
+        } finally {
+            run.stop();
+        }
+    });
+
     it('uses legacy grid spans when explicit grid placement is empty', () => {
         const stylesheet = createStringStyleSheetAdapter();
         const reader = createReader({
@@ -3034,7 +3116,7 @@ describe('styleCompiler', () => {
         expect(activeRule).not.toContain('font:');
     });
 
-    it('ignores redundant class typography longhands owned by the selected font token', () => {
+    it('applies class typography longhands owned by the selected font token', () => {
         const run = createStyleCompiler().compileStylesheet({
             scope: {
                 elementUids: ['textElement'],
@@ -3071,11 +3153,11 @@ describe('styleCompiler', () => {
         const textRule = run.result.match(/\.ww-e-sdGV4dEVsZW1lbnQ\s*\{[^}]*\}/)?.[0] || '';
 
         expect(textRule).toContain("font: var(--title-typography, 700 30px/36px 'Antonio', sans-serif);");
-        expect(textRule).not.toContain('font-size: 48px;');
-        expect(textRule).not.toContain("font-family: 'League Gothic', sans-serif;");
+        expect(textRule).toContain('font-size: 48px;');
+        expect(textRule).toContain("font-family: 'League Gothic', sans-serif;");
     });
 
-    it('ignores redundant source longhands stored beside a typography token', () => {
+    it('applies source longhands stored beside a typography token', () => {
         const run = createStyleCompiler().compileStylesheet({
             scope: {
                 elementUids: ['textElement'],
@@ -3107,9 +3189,9 @@ describe('styleCompiler', () => {
         const textRule = run.result.match(/\.ww-e-sdGV4dEVsZW1lbnQ\s*\{[^}]*\}/)?.[0] || '';
 
         expect(textRule).toContain("font: var(--title-typography, 500 64px/60px 'Inter', sans-serif);");
-        expect(textRule).not.toContain('font-size: 64px;');
-        expect(textRule).not.toContain('line-height: 60px;');
-        expect(textRule).not.toContain('font-weight: 500;');
+        expect(textRule).toContain('font-size: 64px;');
+        expect(textRule).toContain('line-height: 60px;');
+        expect(textRule).toContain('font-weight: 500;');
     });
 
     it('restores effective font longhands when a responsive breakpoint clears the typography token', () => {
@@ -3149,7 +3231,7 @@ describe('styleCompiler', () => {
         const mobileRules = run.result.match(/@media \(max-width: 767px\)\s*\{([\s\S]*?)\n\}/)?.[1] || '';
 
         expect(baseRule).toContain("font: var(--button-typography, 900 14px/1.4 'Roboto', sans-serif);");
-        expect(baseRule).not.toContain('line-height: 18px;');
+        expect(baseRule).toContain('line-height: 18px;');
         expect(mobileRules).toContain('font-size: 12px;');
         expect(mobileRules).toContain('line-height: 18px;');
         expect(mobileRules).toContain('font-weight: 900;');

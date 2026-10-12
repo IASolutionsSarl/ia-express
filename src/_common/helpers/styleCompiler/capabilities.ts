@@ -133,14 +133,14 @@ export function isStylePropertyDeclarationDisabled(
     source: StyleElementReader | StyleSectionReader,
     property: string
 ) {
-    const ignoredProperties = getStyleComponentCapabilities(source).ignoredStyleProperties || [];
-    const ignoredPropertySet = new Set(ignoredProperties.filter((value): value is string => typeof value === 'string'));
-    if (ignoredPropertySet.has(property)) return true;
+    const ignoredProperties = getStyleComponentCapabilities(source).ignoredStyleProperties;
+    if (!ignoredProperties?.length) return false;
+    if (ignoredProperties.includes(property)) return true;
 
-    if (ignoredPropertySet.has('background') && property.startsWith('background')) return true;
-    if (ignoredPropertySet.has('border') && isBorderProperty(property)) return true;
-    if (ignoredPropertySet.has('outline') && property.startsWith('outline')) return true;
-    if (ignoredPropertySet.has('position') && isPositionProperty(property)) return true;
+    if (property.startsWith('background') && ignoredProperties.includes('background')) return true;
+    if (isBorderProperty(property) && ignoredProperties.includes('border')) return true;
+    if (property.startsWith('outline') && ignoredProperties.includes('outline')) return true;
+    if (isPositionProperty(property) && ignoredProperties.includes('position')) return true;
 
     return false;
 }

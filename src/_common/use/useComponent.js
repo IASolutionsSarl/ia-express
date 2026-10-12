@@ -243,14 +243,22 @@ export function useComponentTriggerEvent(
         isRenderingRef,
         rootElementRef,
         extraListeners = {},
+        isRuntimePreview = false,
     },
     context = {}
 ) {
     const data = inject('componentData', ref({}));
 
  
+    if (isRuntimePreview) {
+        return { triggerEvent: () => {}, listeners: computed(() => ({})) };
+    }
+
+    // Malformed (an element written by an AI): no workflows, rather than a broken element
+    const getInteractions = () => (Array.isArray(state.interactions) ? state.interactions : []);
+
     function triggerEvent(name, event = {}) {
-         const workflows = (state.interactions || []).filter(({ trigger }) => trigger === name);
+         const workflows = getInteractions().filter(({ trigger }) => trigger === name);
 
         // Launch all workflows in parallel
         workflows.forEach(workflow => {
@@ -270,9 +278,7 @@ export function useComponentTriggerEvent(
     }
     const listeners = computed(() => {
         const allActionEvents = [
-            ...new Set(
-                [...(state.interactions || []), ...(parentInteractionsRef?.value || [])].map(({ trigger }) => trigger)
-            ),
+            ...new Set([...getInteractions(), ...(parentInteractionsRef?.value || [])].map(({ trigger }) => trigger)),
         ];
         const allEvents = allActionEvents
             .filter((item, pos) => item && allActionEvents.indexOf(item) === pos)
@@ -383,7 +389,14 @@ export function useComponentTriggerEvent(
     return { triggerEvent, listeners };
 }
 
-export function useLibraryComponentWorkflow({ baseUid, componentIdentifier }, context = {}) {
+export function useLibraryComponentWorkflow({ baseUid, componentIdentifier, isRuntimePreview = false }, context = {}) {
+    if (isRuntimePreview) {
+        return {
+            triggerLibraryComponentEvent: () => {},
+            executeLibraryComponentWorkflow: () => undefined,
+        };
+    }
+
     function triggerEvent(name, event = {}, property) {
         const workflows = Object.values(
             wwLib.$store.getters['libraries/getComponents'][baseUid]?.inner?.workflows || {}

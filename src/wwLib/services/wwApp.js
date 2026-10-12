@@ -1,3 +1,5 @@
+import { appendStyleSheet } from '@/_common/helpers/styleSheetLoader';
+
 export default {
     /**
      * @PUBLIC_API
@@ -62,41 +64,25 @@ export default {
      * @PUBLIC_API
      */
     addStyleSheetToHead(styleUrl, attributes = {}, options = {}) {
-        options = { editor: false, ...options };
-        if (!styleUrl) {
-            return;
-        }
-        return new Promise(function (resolve, reject) {
-            try {
-                const styleAlreadyInDom = wwLib.getFrontDocument().querySelector(`link[href="${styleUrl}"]`);
-                // Get or create unique script id
-                let uniqueId;
-                if (styleAlreadyInDom) {
-                    uniqueId = styleAlreadyInDom.getAttribute('id');
-                    return resolve();
-                } else {
-                    uniqueId = wwLib.wwUtils.getUid();
-                    let styleToAdd = wwLib.getFrontDocument().createElement('link');
-                    styleToAdd.onload = function () {
-                        wwLib.$emit('wwUtils:newStyle-' + uniqueId);
-                        return resolve();
-                    };
-                    styleToAdd.onerror = function () {
-                        return reject();
-                    };
-                    styleToAdd.setAttribute('href', styleUrl);
-                    styleToAdd.setAttribute('id', uniqueId);
-                    styleToAdd.setAttribute('rel', 'stylesheet');
-                    for (const attribute in attributes) {
-                        styleToAdd.setAttribute(attribute, attributes[attribute]);
-                    }
-                    wwLib.getFrontDocument().head.appendChild(styleToAdd);
+        if (!styleUrl) return;
+        try {
+            const document = wwLib.getFrontDocument();
+            const existing = [...document.querySelectorAll('link[href]')].some(
+                link => link.getAttribute('href') === styleUrl
+            );
+            if (existing) return Promise.resolve();
 
-                 }
-            } catch (e) {
-                return reject();
-            }
-        });
+            const id = wwLib.wwUtils.getUid();
+            const loadOptions = { id, attributes, preferCors: false };
+             const loaded = appendStyleSheet(document, styleUrl, loadOptions);
+
+ 
+            return loaded.then(() => {
+                wwLib.$emit('wwUtils:newStyle-' + id);
+            });
+        } catch (error) {
+            return Promise.reject(error);
+        }
     },
 
     /**

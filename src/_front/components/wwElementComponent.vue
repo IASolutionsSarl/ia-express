@@ -97,6 +97,7 @@ export default {
         const wwLayoutItemStyle = consumeLayoutItemStyle();
         const bindingContext = inject('bindingContext', null);
         const sectionId = inject('sectionId', null);
+        const isDragPreview = inject('_wwIsDragPreview', false);
         const wwLibraryComponentUid_ = inject('wwLibraryComponentUid_', null);
         const componentDataRef = computed(() => wwLib.$store.getters['websiteData/getWwObjects']?.[props.uid]);
         const styleSourceId = computed(() => componentDataRef.value?._si);
@@ -205,14 +206,18 @@ export default {
         provide('triggerElementEvent', triggerElementEvent);
 
  
-        useComponentAdvancedInteractions(state, wwLib.$store.getters['websiteData/getPageId']);
+        if (!isDragPreview) {
+            useComponentAdvancedInteractions(state, wwLib.$store.getters['websiteData/getPageId']);
+        }
 
  
  
-        useComponentActions(
-            { uid: props.uid, componentId: id, type: 'element', repeatIndex: bindingContext?.index },
-            { context, configuration, componentRef: component }
-        );
+        if (!isDragPreview) {
+            useComponentActions(
+                { uid: props.uid, componentId: id, type: 'element', repeatIndex: bindingContext?.index },
+                { context, configuration, componentRef: component }
+            );
+        }
 
         const { listeners, triggerEvent } = useComponentTriggerEvent(
             {
@@ -233,6 +238,7 @@ export default {
                         vueContext.emit('remove-state', ['_wwHover', true]);
                     },
                 },
+                isRuntimePreview: isDragPreview,
             },
             context
         );

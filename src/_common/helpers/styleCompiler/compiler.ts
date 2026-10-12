@@ -57,6 +57,9 @@ import type {
     StyleSurface,
     StyleRuntime,
     StyleStateDescriptor,
+    StylePropertyTreeReader,
+    StyleStateReader,
+    StyleBreakpointPropertyReader,
 } from './types';
 import {
     STATIC_STYLE_RUNTIME,
@@ -217,7 +220,7 @@ class StyleCompilerImpl implements StyleCompiler {
     ) {
         const sourceData = readStyleTargetSource(input.reader, target);
         if (!sourceData) return;
-        const source = cacheSourceCapabilities(sourceData);
+        const source = cacheSourceReads(sourceData);
         if (source.capabilities?.().inherits?.includes('ww-layout')) layoutOverrideContainer.reserve();
 
         const targetInput = createTargetScopedInput(input, onDispose);
@@ -749,24 +752,65 @@ function isRenderlessLibraryInstanceSource(source: StyleSourceReader): source is
 }
 
 /**
- * Capabilities are immutable during one compiler effect, but declaration resolvers may ask for
- * them repeatedly. Cache the adapter read for this pass; reactive runtimes create a fresh source
- * reader when a dependency changes and the effect reruns.
+ * Declaration families and surfaces repeatedly read the same source slots. Share those reads
+ * only within this target effect. The first read still subscribes to reactive dependencies;
+ * rerunning the effect creates fresh caches, including for previously absent properties.
  */
-function cacheSourceCapabilities(source: StyleSourceReader) {
+function cacheSourceReads(source: StyleSourceReader): StyleSourceReader {
     const readCapabilities = source.capabilities;
-    if (!readCapabilities) return source;
-
+    let style: StylePropertyTreeReader | undefined;
+    let content: StylePropertyTreeReader | undefined;
     let hasCachedCapabilities = false;
     let cachedCapabilities: ReturnType<NonNullable<StyleSourceReader['capabilities']>> | undefined;
     return {
         ...source,
+        style() {
+            return (style ||= cachePropertyTreeReads(source.style()));
+        },
+        ...(source.content && {
+            content() {
+                return (content ||= cachePropertyTreeReads(source.content!()));
+            },
+        }),
         capabilities() {
             if (!hasCachedCapabilities) {
-                cachedCapabilities = readCapabilities.call(source);
+                cachedCapabilities = readCapabilities?.call(source);
                 hasCachedCapabilities = true;
             }
             return cachedCapabilities || {};
+        },
+    };
+}
+
+function cachePropertyTreeReads(tree: StylePropertyTreeReader): StylePropertyTreeReader {
+    const states = new Map<string, StyleStateReader>();
+    return {
+        ...tree,
+        state(name) {
+            const cached = states.get(name);
+            if (cached) return cached;
+            const state = tree.state(name);
+            const breakpoints = new Map<StyleBreakpointName, StyleBreakpointPropertyReader>();
+            const reader: StyleStateReader = {
+                ...state,
+                breakpoint(name) {
+                    const cached = breakpoints.get(name);
+                    if (cached) return cached;
+                    const slot = state.breakpoint(name);
+                    const properties = new Map<string, unknown>();
+                    const reader: StyleBreakpointPropertyReader = {
+                        ...slot,
+                        property(name) {
+                            if (!properties.has(name)) properties.set(name, slot.property(name));
+                            return properties.get(name);
+                        },
+                    };
+                    breakpoints.set(name, reader);
+                    return reader;
+                },
+            };
+            states.set(name, reader);
+            return reader;
         },
     };
 }

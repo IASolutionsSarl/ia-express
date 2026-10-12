@@ -74,6 +74,7 @@ export default {
     getWwObjects(state) {
         return state.wwObjects;
     },
+    getWwObjectPreviewUids: state => state.wwObjectPreviewUids,
     /*=============================================m_ÔÔ_m=============================================\
       SECTIONS
     \================================================================================================*/

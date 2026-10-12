@@ -655,19 +655,24 @@ export default {
         fr: "Format",
       },
       type: "TextSelect",
-      options: {
-        options: [
-          { value: "DD/MM/YYYY", label: { en: "DD/MM/YYYY" } },
-          { value: "MMMM D, YYYY", label: { en: "MMMM D, YYYY" } },
-          { value: "MMM D, YYYY", label: { en: "MMM D, YYYY" } },
-          { value: "h:mm A", label: { en: "h:mm A" } },
-          { value: "h:mm:ss A", label: { en: "h:mm:ss A" } },
-          {
-            value: "MMM D, YYYY h:mm A",
-            label: { en: "MMM D, YYYY h:mm A" },
-          },
-          { value: "custom", label: { en: "Custom" } },
-        ],
+      options: (content) => {
+        return {
+          options: [
+            { value: "DD/MM/YYYY", label: { en: "DD/MM/YYYY" } },
+            { value: "MMMM D, YYYY", label: { en: "MMMM D, YYYY" } },
+            { value: "MMM D, YYYY", label: { en: "MMM D, YYYY" } },
+            { value: "h:mm A", label: { en: "h:mm A" } },
+            { value: "h:mm:ss A", label: { en: "h:mm:ss A" } },
+            {
+              value: "MMM D, YYYY h:mm A",
+              label: { en: "MMM D, YYYY h:mm A" },
+            },
+            ...(["date", "datetime"].includes(content.dateMode)
+              ? [{ value: "iso", label: { en: "ISO 8601" } }]
+              : []),
+            { value: "custom", label: { en: "Custom" } },
+          ],
+        };
       },
       defaultValue: "DD/MM/YYYY",
     },

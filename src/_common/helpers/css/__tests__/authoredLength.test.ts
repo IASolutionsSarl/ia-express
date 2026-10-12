@@ -69,4 +69,24 @@ describe('authored length semantics', () => {
         expect(splitAuthoredLength('', { defaultLength: 8, defaultUnit: 'px' })).toEqual([8, 'px']);
         expect(splitAuthoredLength(null, { defaultLength: 8, defaultUnit: 'px' })).toEqual([0, 'auto']);
     });
+
+    it('keeps quantized resize values inside their shared bounds', () => {
+        expect(quantizeAuthoredLength(13.4375, 'em', { minimum: 0, maximum: 13.4375 })).toBe(13.375);
+        expect(quantizeAuthoredLength(33.1, '%', { minimum: 33.1, maximum: 100 })).toBe(34);
+        expect(quantizeAuthoredLength(10.6, 'px', { minimum: 0, maximum: 10.6 })).toBe(10);
+        expect(quantizeAuthoredLength(8.3, 'vw', { minimum: 0, maximum: 8.3 })).toBeCloseTo(8.3);
+    });
+
+    it('keeps the exact value when a narrow interval contains no unit step', () => {
+        expect(quantizeAuthoredLength(10.2, 'px', { minimum: 10.1, maximum: 10.4 })).toBe(10.2);
+    });
+
+    it('accounts for browser measurement precision without rounding past meaningful limits', () => {
+        expect(quantizeAuthoredLength(299.999994, 'px', { minimum: 0, maximum: 299.999994, tolerance: 0.01 })).toBe(
+            300
+        );
+        expect(quantizeAuthoredLength(13.4375, 'em', { minimum: 0, maximum: 13.4375, tolerance: 1 / 3072 })).toBe(
+            13.375
+        );
+    });
 });

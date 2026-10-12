@@ -65,6 +65,7 @@ type StyleSourceData = {
 let elements: Record<string, StyleSourceData>;
 let sections: Record<string, StyleSourceData>;
 let libraryComponents: Record<string, StyleSourceData>;
+let previewElementUids: string[];
 
 beforeEach(() => {
     componentConfigurations.clear();
@@ -83,6 +84,7 @@ beforeEach(() => {
     sections = reactive<Record<string, StyleSourceData>>({});
     libraryComponents = reactive<Record<string, StyleSourceData>>({});
     popupStore.instances = reactive<Record<string, StyleSourceData>>({});
+    previewElementUids = reactive<string[]>([]);
 
     vi.stubGlobal('wwLib', {
         $store: {
@@ -95,6 +97,9 @@ beforeEach(() => {
                 },
                 get 'websiteData/getPage'() {
                     return { sections: [{ uid: 'sectionA' }] };
+                },
+                get 'websiteData/getWwObjectPreviewUids'() {
+                    return previewElementUids;
                 },
                 get 'libraries/getComponents'() {
                     return libraryComponents;
@@ -207,6 +212,20 @@ describe('styleCompilerReader source indexing', () => {
         elements.newElement = { uid: 'newElement', parentSectionId: 'sectionA' };
 
         expect(sources.scope.value.elementUids).toContain('newElement');
+    });
+
+    it('compiles transient drag-preview objects even though they are not attached to a page section', () => {
+        const sources = createEditorStyleCompilerSources();
+        elements.previewHeading = {
+            uid: 'previewHeading',
+            _state: { style: { default: { fontSize: '38px' } } },
+        };
+
+        expect(sources.scope.value.elementUids).not.toContain('previewHeading');
+
+        previewElementUids.push('previewHeading');
+
+        expect(sources.scope.value.elementUids).toContain('previewHeading');
     });
 
     it('does not recompile existing targets when an unrelated element is added', async () => {

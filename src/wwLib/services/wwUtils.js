@@ -53,13 +53,12 @@ export default {
             styleId = styleId.split(',')[0];
  
             /* wwFront:start */
-            // TODO: Might be better to get the value from wwLib.globalContext
             // eslint-disable-next-line no-unreachable
-            return (
-                getComputedStyle(
-                    wwLib.getFrontDocument().getElementsByClassName('website-wrapper')[0]
-                ).getPropertyValue(`--${styleId}`) || null
-            );
+            const themeColor = wwLib.globalContext?.colors?.[styleId];
+            if (themeColor) return themeColor;
+            const websiteWrapper = wwLib.getFrontDocument().getElementsByClassName('website-wrapper')[0];
+            if (!websiteWrapper) return null;
+            return getComputedStyle(websiteWrapper).getPropertyValue(`--${styleId}`) || null;
             /* wwFront:end */
         } else {
             return null;

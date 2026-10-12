@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import _ from 'lodash';
+import _ from 'lodash-es';
 
 vi.mock('@/_common/helpers/component/component.js', () => ({
     getComponentConfiguration: vi.fn(() => ({})),

@@ -54,6 +54,7 @@ type EditorStyleSourceOwnership = {
 type EditorStyleSourceIndex = {
     ownershipByUid: Map<string, EditorStyleSourceOwnership>;
     popupOwnershipByUid: Map<string, EditorStyleSourceOwnership>;
+    previewElementUids: string[];
     elementUidsBySectionId: Map<string, string[]>;
     popupInstanceUids: string[];
     libraryComponentsById: Map<string, EditorLibraryComponentSourceIndex>;
@@ -80,6 +81,7 @@ export function createEditorStyleCompilerSources() {
 function createEditorStyleSourceIndex(previous?: EditorStyleSourceIndex): EditorStyleSourceIndex {
     const wwObjectsByUid = getWwObjects();
     const popupInstancesByUid = usePopupStore().instances || {};
+    const previewElementUids = wwLib.$store.getters['websiteData/getWwObjectPreviewUids'] || [];
     const sections = getSections();
     const wwObjectUids = Object.keys(wwObjectsByUid);
     const popupInstanceUids = Object.keys(popupInstancesByUid);
@@ -92,6 +94,7 @@ function createEditorStyleSourceIndex(previous?: EditorStyleSourceIndex): Editor
         previous &&
         sourceOwnershipIsUnchanged(previous.ownershipByUid, wwObjectsByUid, wwObjectUids) &&
         sourceOwnershipIsUnchanged(previous.popupOwnershipByUid, popupInstancesByUid, popupInstanceUids) &&
+        stringArraysAreEqual(previous.previewElementUids, previewElementUids) &&
         stringArraysAreEqual(previous.sectionUids, sectionUids)
     ) {
         return previous;
@@ -128,6 +131,7 @@ function createEditorStyleSourceIndex(previous?: EditorStyleSourceIndex): Editor
     return {
         ownershipByUid,
         popupOwnershipByUid,
+        previewElementUids: [...previewElementUids],
         elementUidsBySectionId,
         popupInstanceUids: [...popupOwnershipByUid.keys()],
         libraryComponentsById,
@@ -218,9 +222,15 @@ function createEditorStyleCompileScope(sourceIndex: EditorStyleSourceIndex): Sty
     const pageSectionUids = (page?.sections || []).map((section: { uid: string }) => section.uid).filter(Boolean);
     const componentBasesStore = useComponentBasesStore(wwLib.$pinia);
     const sections = getSections();
-    const { elementUidsBySectionId, popupInstanceUids, libraryComponentsById } = sourceIndex;
+    const { elementUidsBySectionId, popupInstanceUids, previewElementUids, libraryComponentsById } = sourceIndex;
     const pageElementUids = pageSectionUids.flatMap(uid => elementUidsBySectionId.get(uid) || []);
-    const rootElementUids = uniqueStrings([...pageElementUids, ...popupInstanceUids]);
+    const previewRootElementUids = previewElementUids.filter(
+        uid => !sourceIndex.ownershipByUid.get(uid)?.parentLibraryComponentId
+    );
+    const previewLibraryElementUids = previewElementUids.filter(
+        uid => !!sourceIndex.ownershipByUid.get(uid)?.parentLibraryComponentId
+    );
+    const rootElementUids = uniqueStrings([...pageElementUids, ...popupInstanceUids, ...previewRootElementUids]);
     const { elementUids: libraryElementUids, libraryComponentIds } = collectDeepLibraryComponentElements(
         libraryComponentsById,
         rootElementUids
@@ -228,7 +238,7 @@ function createEditorStyleCompileScope(sourceIndex: EditorStyleSourceIndex): Sty
     const readyRootElementUids = rootElementUids.filter(uid =>
         isElementStyleSourceReady(getElementData(uid), componentBasesStore)
     );
-    const readyLibraryElementUids = libraryElementUids.filter(uid =>
+    const readyLibraryElementUids = uniqueStrings([...libraryElementUids, ...previewLibraryElementUids]).filter(uid =>
         isElementStyleSourceReady(getElementData(uid), componentBasesStore)
     );
 
@@ -710,12 +720,7 @@ function collectStateNamesFromClassKeys(
     resolveParentStateReference: EditorParentStateReferenceResolver
 ) {
     for (const key of keys) {
-        const descriptor = createInferredStateDescriptor(
-            states,
-            key,
-            selectorsByLabel,
-            resolveParentStateReference
-        );
+        const descriptor = createInferredStateDescriptor(states, key, selectorsByLabel, resolveParentStateReference);
         if (!descriptor) continue;
 
         states.set(key, descriptor);

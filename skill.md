@@ -84,7 +84,7 @@ These apply to every new integration, no exceptions:
     }
     ```
 
-> **`aiMetadata` is for the AI — not for the human builder.** A person using the action in the editor sees the field's **UI** metadata (`label`, `description`, `placeholder`), never `aiMetadata`. So don't stop at `aiMetadata`: give fields a builder-facing `description`, and add an `{ type: 'infobox', variant?, content, cta? }` pseudo-field to explain a non-obvious action inside its form (real examples: `auth0/actions/logout.action.js`, `segment/actions/reset.action.js`). Manual usability must not be sacrificed to the AI.
+> **`aiMetadata` is for the AI — not for the human builder.** A person using the action in the editor sees the field's **UI** metadata (`label`, `description`, `placeholder`), never `aiMetadata`. So don't stop at `aiMetadata`: give fields a builder-facing `description` that carries any non-obvious behavior (formatted with backticks / `<br><br>` / `**bold**`), and put cross-action recipes in the integration's skill file. Do **not** add `{ type: 'infobox' }` pseudo-fields to action forms (team rule; legacy ones like `auth0/logout` and `segment/reset` stay, and ConnectionEdit's InfoBox component is fine). Manual usability must not be sacrificed to the AI.
 
 ## Step 0 — Locate the repos
 

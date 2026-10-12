@@ -7,6 +7,13 @@ const mockVariablesStore = vi.hoisted(() => ({
     setValue: vi.fn(),
 }));
 
+const mockBackTableViewsStore = vi.hoisted(() => ({
+    fetchData: vi.fn(),
+    fetchMore: vi.fn(),
+    latestFetchParameters: {},
+    data: {},
+}));
+
 vi.mock('@/_common/use/useActions.js', () => ({
     executeComponentAction: vi.fn(),
 }));
@@ -33,11 +40,7 @@ vi.mock('@/pinia/popup', () => ({
 }));
 
 vi.mock('@/pinia/backTableViews.js', () => ({
-    useBackTableViewsStore: vi.fn(() => ({
-        fetchData: vi.fn(),
-        latestFetchParameters: {},
-        data: {},
-    })),
+    useBackTableViewsStore: vi.fn(() => mockBackTableViewsStore),
 }));
 
 vi.mock('@better-fetch/fetch', () => ({
@@ -73,10 +76,13 @@ describe('executeWorkflow versioned formula handling', () => {
     const updateValue = vi.fn((_, value) => value);
 
     beforeEach(() => {
+        globalThis.FileList = class FileList {};
         dispatch.mockReset();
         updateValue.mockClear();
         mockVariablesStore.getConfiguration.mockReset();
         mockVariablesStore.setValue.mockReset();
+        mockBackTableViewsStore.fetchData.mockReset();
+        mockBackTableViewsStore.fetchMore.mockReset();
         mockVariablesStore.components = {};
         mockVariablesStore.values = {};
         globalThis.wwLib = {
@@ -100,6 +106,30 @@ describe('executeWorkflow versioned formula handling', () => {
                 updateValue,
             },
         };
+    });
+
+    it('delegates Table View load-more pagination to the store', async () => {
+        const execution = await executeWorkflow({
+            id: 'workflow-load-more-table-view',
+            firstAction: 'load-more-action',
+            actions: {
+                'load-more-action': {
+                    id: 'load-more-action',
+                    type: 'fetch-table-view-load-more',
+                    tableViewId: 'table-view-id',
+                    limit: 10,
+                    group: { __wwtype: 'js', code: "return { id: 'parent-group' }" },
+                },
+            },
+        });
+
+        expect(execution.error).toBeUndefined();
+        expect(mockBackTableViewsStore.fetchMore).toHaveBeenCalledWith('table-view-id', {
+            parameters: { limit: 10 },
+            group: { id: 'parent-group' },
+            noLog: true,
+        });
+        expect(mockBackTableViewsStore.fetchData).not.toHaveBeenCalled();
     });
 
     it('keeps legacy workflows non-fatal when a config formula fails', async () => {

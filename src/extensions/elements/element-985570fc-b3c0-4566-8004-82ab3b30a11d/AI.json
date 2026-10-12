@@ -335,7 +335,7 @@
         },
         {
             "name": "format",
-            "description": "Display format for the selected date in the trigger's `preview`. Pick `custom` to use `customFormat`.",
+            "description": "Display format for the selected date in the trigger's `preview`. Pick `custom` to use `customFormat`. Pick `iso` (only available with `dateMode=date` or `datetime`) for strict ISO 8601 output: the preview and the exposed `value` variable are full ISO strings. With `dateMode=date` the value is the picked day at midnight UTC (`2026-09-15T00:00:00.000Z`).",
             "type": "string",
             "options": [
                 "DD/MM/YYYY",
@@ -344,6 +344,7 @@
                 "h:mm A",
                 "h:mm:ss A",
                 "MMM D, YYYY h:mm A",
+                "iso",
                 "custom"
             ],
             "defaultValue": "DD/MM/YYYY"
@@ -822,6 +823,7 @@
         "Inside the `triggerZone` slot the layout-item context exposes `context.item.data.preview` (formatted display string per `format` / `customFormat`) and `context.item.data.value` (the raw selected value). Use these to render the selected date(s) and a fallback placeholder.",
         "`timezone` is only applied when `dateMode=datetime`. `\"locale\"` means 'use the browser/local timezone'.",
         "`customFormat` only takes effect when `format=\"custom\"`. Unicode tokens (Y/y, D/d, A/a) are normalized internally.",
+        "When `format=\"iso\"`, the trigger `preview` is a strict ISO 8601 string (`toISOString()`, ranges joined with ` - `, multi dates with `; `), and with `dateMode=date` the exposed `value` variable becomes the picked day at midnight UTC (`yyyy-MM-ddT00:00:00.000Z`) instead of `yyyy-MM-dd`, initial values included. Only available with `dateMode=date` or `datetime`. Use this when downstream logic parses the value with `new Date()` (iOS/Safari rejects non-ISO strings).",
         "Advanced date constraints (`preventMinMaxNavigation`, `ignoreTimeValidation`, `allowedDates`, `disabledDates`, `disabledWeekDays`) are only surfaced in the editor behind an 'Advanced' toggle, but can be bound at any time.",
         "Form-container caveat: this element does NOT currently register with `ww-form-container` via the `_wwForm:useForm` injection — when placed inside a form container, the form's submit payload will NOT include this field's value until the underlying component is updated. Read the exposed `value` variable directly for now."
     ],

@@ -1,3 +1,4 @@
+ 
 export async function fetchStaticCollectionsData() {
     const collectionsToFetch = Object.values(wwLib.$store.getters['data/getCollections']).filter(
         collection => collection.mode === 'static'

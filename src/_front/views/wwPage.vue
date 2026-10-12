@@ -1,6 +1,6 @@
 <template>
     <wwPageLoadProgress />
-    <div :ww-page-id="page.id" class="website-wrapper">
+     <div :ww-page-id="page.id" class="website-wrapper">
         <!-- __WW_PAGE_MADE_WITH_WEWEB__ -->
         <div v-if="page && page.pageLoaded" class="sections-wrapper">
             <template v-for="(section, index) in sections" :key="section.uid">

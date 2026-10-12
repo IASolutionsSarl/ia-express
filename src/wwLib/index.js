@@ -229,10 +229,10 @@ wwLib.wwPluginHelper.registerPlugin('plugin-1fa0dd68-5069-436c-9a7d-3b54c340f1fa
      * @PUBLIC_API
      */
     getFrontWindow() {
-        if (document.querySelector('.ww-manager-iframe')) {
-            return document.querySelector('.ww-manager-iframe').contentWindow;
-        }
-        return window;
+        // This is called for every compiled CSS declaration and Vue timing measurement.
+        // In the canvas document there is no nested editor iframe: a class selector would
+        // scan the entire rendered page on every call. The editor iframe has a fixed ID.
+        return document.getElementById('ww-manager-iframe')?.contentWindow || window;
     },
 
     /**

@@ -574,18 +574,17 @@ function createTextDeclarations(scope: DeclarationScope) {
     const fontSlotOrigin = fontPropertyEnabled ? getTextPropertyOrigin(scope, '_ww-text_font') : undefined;
     const shouldEmitFont = hasResolvedValue(font);
     const fontOrigin = shouldEmitFont ? fontSlotOrigin : undefined;
-    const fontUsesTypographyToken = isTypographyTokenReference(font);
     const restoresEffectiveLonghands = !!fontSlotOrigin && !shouldEmitFont;
 
     if (shouldEmitFont) {
         declarations.push(createDeclaration(scope, 'font', font));
     }
 
-    // The legacy engine ignored redundant longhands stored beside a typography token. Keep values
-    // from a later cascade origin, and keep direct longhands beside a literal shorthand.
+    // V17 cleaned ignored legacy longhands on sources, classes and subclasses.
+    // New overrides beside a typography token can now apply at any of these origins.
     for (const [sourceProperty, cssProperty] of TEXT_FONT_LONGHAND_PROPERTIES) {
         if (!shouldEmitTextProperty(scope, sourceProperty)) continue;
-        if (!shouldEmitTextLonghand(scope, sourceProperty, fontOrigin, fontUsesTypographyToken)) continue;
+        if (!shouldEmitTextLonghand(scope, sourceProperty, fontOrigin, font)) continue;
 
         const usesDefaultFontFamily = sourceProperty === '_ww-text_fontFamily' && !hasResolvedValue(font);
         const valueNormalizer = usesDefaultFontFamily ? LEGACY_DEFAULT_FONT_FAMILY_NORMALIZER : undefined;
@@ -1407,19 +1406,19 @@ function shouldEmitTextLonghand(
     scope: DeclarationScope,
     property: string,
     fontOrigin: StylePropertyOrigin | undefined,
-    fontUsesTypographyToken: boolean
+    font: unknown
 ) {
     if (!fontOrigin) return true;
 
     const longhandOrigin = getTextPropertyOrigin(scope, property);
     if (!longhandOrigin) return true;
-    if (!fontUsesTypographyToken && longhandOrigin.kind === 'source') return true;
+    if (longhandOrigin.kind === 'source') return true;
 
-    return longhandOrigin.precedence > fontOrigin.precedence;
-}
-
-function isTypographyTokenReference(value: unknown) {
-    return typeof value === 'string' && value.trimStart().startsWith('var(');
+    const isTypographyToken = typeof font === 'string' && font.trimStart().startsWith('var(');
+    return (
+        longhandOrigin.precedence > fontOrigin.precedence ||
+        (isTypographyToken && longhandOrigin.precedence === fontOrigin.precedence)
+    );
 }
 
 function hasResolvedValue(value: unknown) {

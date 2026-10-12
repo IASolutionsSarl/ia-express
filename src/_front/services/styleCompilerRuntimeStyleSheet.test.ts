@@ -31,6 +31,48 @@ afterEach(() => {
 });
 
 describe('styleCompilerRuntimeStyleSheet', () => {
+    it.each(['element', 'section-element', 'section-layout'] as const)(
+        'writes %s fragment bindings using the explicit rendered component id and cleans up hidden instances',
+        async kind => {
+            const doc = new FakeDocument();
+            Object.assign(wwLib, { getFrontDocument: () => doc, wwLog: { warn: vi.fn() } });
+            const width = ref('240px');
+            const componentId = ref<number | undefined>(42);
+            executeStyleFormula.mockImplementation(() => ({ status: 'resolved', value: width.value }));
+            const variable = createWidthVariable();
+            variable.surface.kind = kind;
+            const stopRegistration = registerStyleDynamicVariable(variable);
+            const scope = effectScope();
+            // Vue's exposed $el for a fragment is a text marker, not its styled child.
+            const component = ref({ $el: { nodeType: 3 } });
+            try {
+                scope.run(() => {
+                    useStyleCompilerDynamicVariables({
+                        sourceUid: 'sized',
+                        targets: { element: component, sectionElement: component },
+                        targetIds: { element: componentId, sectionElement: componentId },
+                    });
+                });
+                await nextTick();
+                expect(getRuntimeDeclarationForComponent(doc, '42', '--ww-style-width')).toBe('240px');
+                width.value = '180px';
+                await nextTick();
+                expect(getRuntimeDeclarationForComponent(doc, '42', '--ww-style-width')).toBe('180px');
+                componentId.value = undefined;
+                await nextTick();
+                expect(getRuntimeDeclarationForComponent(doc, '42', '--ww-style-width')).toBe('');
+                componentId.value = 43;
+                await nextTick();
+                expect(getRuntimeDeclarationForComponent(doc, '43', '--ww-style-width')).toBe('180px');
+                scope.stop();
+                expect(getRuntimeDeclarationForComponent(doc, '43', '--ww-style-width')).toBe('');
+            } finally {
+                scope.stop();
+                stopRegistration();
+            }
+        }
+    );
+
     it('keeps distinct default runtime CSS for reused component instances after SSR scopes are disposed', () => {
         const doc = new FakeDocument();
         Object.assign(wwLib, {

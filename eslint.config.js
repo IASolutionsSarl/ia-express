@@ -79,6 +79,19 @@ export default [
             sourceType: 'module',
         },
         rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [{ group: ['lodash', 'lodash/*'], message: 'Use lodash-es instead.' }],
+                },
+            ],
+            'no-restricted-modules': [
+                'error',
+                {
+                    paths: [{ name: 'lodash', message: 'Use lodash-es instead.' }],
+                    patterns: ['lodash/*'],
+                },
+            ],
             semi: ['warn', 'always'],
             quotes: ['warn', 'single', { avoidEscape: true }],
             'no-console': 'warn',

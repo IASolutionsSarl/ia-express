@@ -106,7 +106,7 @@ export function setupApp({ url } = {}) {
         /* wwFront:start */
         if (currentRenderMode === 'runtime') activateBrowserRuntime();
         /* wwFront:end */
-
+ 
         app.use(router);
 
         if (isServerRendering && url) {

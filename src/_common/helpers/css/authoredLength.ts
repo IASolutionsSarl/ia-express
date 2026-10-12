@@ -111,9 +111,17 @@ const DIRECT_MANIPULATION_STEPS: Readonly<Record<AuthoredLengthUnit, number>> = 
     vh: 0.1,
 });
 
-export function quantizeAuthoredLength(value: number, unit: AuthoredLengthUnit): number {
+export function quantizeAuthoredLength(
+    value: number,
+    unit: AuthoredLengthUnit,
+    bounds: { minimum: number; maximum: number; tolerance?: number } = { minimum: -Infinity, maximum: Infinity }
+): number {
     const step = DIRECT_MANIPULATION_STEPS[unit];
-    return Math.round(value / step) * step;
+    const tolerance = Math.max(0, bounds.tolerance ?? 1e-9);
+    const minimum = Math.ceil((bounds.minimum - tolerance) / step) * step;
+    const maximum = Math.floor((bounds.maximum + tolerance) / step) * step;
+    if (minimum > maximum) return Math.min(bounds.maximum, Math.max(bounds.minimum, value));
+    return Math.min(maximum, Math.max(minimum, Math.round(value / step) * step));
 }
 
 /**

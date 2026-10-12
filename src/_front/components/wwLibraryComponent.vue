@@ -56,6 +56,7 @@ export default {
 
         const wwLayoutContext = inject('wwLayoutContext', {});
         const bindingContext = inject('bindingContext', null);
+        const isDragPreview = inject('_wwIsDragPreview', false);
         const isACopy = computed(() => bindingContext && bindingContext.isACopy);
         const modalsStore = usePopupStore();
         const componentDataRef = computed(
@@ -150,6 +151,7 @@ export default {
             {
                 baseUid,
                 componentIdentifier: { type: 'libraryComponent', componentId: id, uid: props.uid },
+                isRuntimePreview: isDragPreview,
             },
             libraryComponentContext
         );
@@ -160,6 +162,7 @@ export default {
             {
                 state,
                 componentIdentifier: { type: 'libraryComponent', componentId: id, uid: props.uid },
+                isRuntimePreview: isDragPreview,
             },
             context
         );
@@ -190,17 +193,19 @@ export default {
         provide('_wwLibraryComponentLayers', layers);
 
  
-        useLibraryComponentActions(
-            { uid: props.uid, componentId: id, repeatIndex: bindingContext?.index },
-            { context, executionContext: libraryComponentContext }
-        );
+        if (!isDragPreview) {
+            useLibraryComponentActions(
+                { uid: props.uid, componentId: id, repeatIndex: bindingContext?.index },
+                { context, executionContext: libraryComponentContext }
+            );
+        }
 
         // Resetting data context
         provide('bindingContext', null);
         provide('_wwLibraryComponentContext', libraryComponentContext);
 
  
-        if (props.isPopup) {
+        if (props.isPopup && !isDragPreview) {
             onBeforeUnmount(() => {
                 triggerLibraryComponentEvent('_wwClosePopup');
             });

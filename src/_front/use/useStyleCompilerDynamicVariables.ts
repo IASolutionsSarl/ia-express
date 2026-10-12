@@ -81,7 +81,7 @@ export function useStyleCompilerDynamicVariables({
             context,
             registrations,
             executor: styleFormulaExecutor,
-            resolveComponentId: kind => resolveMountedVariableTargetId(kind, targets),
+            resolveComponentId: kind => resolveRuntimeVariableTargetId(kind, targets, targetIds),
             prerender: false,
         });
     });
@@ -192,25 +192,29 @@ function removeRuntimeStyleRegistration(registrations: Map<string, RuntimeStyleR
     registrations.delete(registrationKey);
 }
 
-function resolveMountedVariableTargetId(kind: StyleSurfaceKind, targets: RuntimeVariableTargetRefs) {
-    const element = resolveVariableTarget(kind, targets);
+function resolveRuntimeVariableTargetId(
+    kind: StyleSurfaceKind,
+    targets: RuntimeVariableTargetRefs,
+    targetIds: RuntimeVariableTargetIds
+) {
+    const targetKey = getVariableTargetKey(kind);
+
+    // A component's $el can be a fragment anchor when development comments are retained.
+    // Supplied IDs also track whether the surface is rendered; undefined must clear its styles.
+    if (Object.hasOwn(targetIds, targetKey)) return toRuntimeComponentId(targetIds[targetKey]);
+
+    const element = toHtmlElement(targets[targetKey]);
     return element ? getRuntimeComponentId(element) : null;
 }
 
-function resolveVariableTarget(kind: StyleSurfaceKind, targets: RuntimeVariableTargetRefs) {
-    if (kind === 'section-container') return toHtmlElement(targets.sectionContainer);
-    if (kind === 'section-element' || kind === 'section-layout') return toHtmlElement(targets.sectionElement);
-
-    return toHtmlElement(targets.element);
+function getVariableTargetKey(kind: StyleSurfaceKind): keyof RuntimeVariableTargetIds {
+    if (kind === 'section-container') return 'sectionContainer';
+    if (kind === 'section-element' || kind === 'section-layout') return 'sectionElement';
+    return 'element';
 }
 
 function resolveVariableTargetId(kind: StyleSurfaceKind, targetIds: RuntimeVariableTargetIds) {
-    if (kind === 'section-container') return toRuntimeComponentId(targetIds.sectionContainer);
-    if (kind === 'section-element' || kind === 'section-layout') {
-        return toRuntimeComponentId(targetIds.sectionElement);
-    }
-
-    return toRuntimeComponentId(targetIds.element);
+    return toRuntimeComponentId(targetIds[getVariableTargetKey(kind)]);
 }
 
 function toRuntimeComponentId(value: RuntimeVariableTargetId | undefined): string | null {

@@ -552,18 +552,11 @@ export async function executeWorkflowAction(
                 if (!action.tableViewId) throw new Error('No table view selected.');
 
                 const backTableViewsStore = useBackTableViewsStore(wwLib.$pinia);
-
-                const nextOffset = backTableViewsStore.data[action.tableViewId]?.metadata?.nextOffset;
-                if (!nextOffset) throw new Error('No more data to load.');
-                const parameters = {
-                    ...backTableViewsStore.latestFetchParameters[action.tableViewId],
-                    limit: resolveConfig('limit', action.limit, context, { event }),
-                    offset: nextOffset,
-                };
-
-                await backTableViewsStore.fetchData(action.tableViewId, {
-                    parameters,
-                    mode: 'load-more',
+                await backTableViewsStore.fetchMore(action.tableViewId, {
+                    group: resolveConfig('group', action.group, context, { event }),
+                    parameters: {
+                        limit: resolveConfig('limit', action.limit, context, { event }),
+                    },
                     noLog: true,
                 });
                 break;

@@ -2,12 +2,12 @@ import { computed, unref } from 'vue';
 import { get } from 'lodash-es';
 
 const allScreenMedia = computed(() => getAllScreenMedia());
-const currentActiveScreens = computed(() => {
-    const screenSize = wwLib.$store.getters['front/getScreenSize'];
+function getActiveScreens(screenSize) {
     const screenOrder = wwLib.$store.getters['front/getScreenSizes'][screenSize].order;
     const screenSizes = wwLib.$store.getters['front/getScreenSizes'];
     return allScreenMedia.value.filter(screen => screenSizes[screen].order <= screenOrder);
-});
+}
+const currentActiveScreens = computed(() => getActiveScreens(wwLib.$store.getters['front/getScreenSize']));
 
 export function getComponentRawProperty({
     dataRef,
@@ -20,6 +20,7 @@ export function getComponentRawProperty({
     libraryComponentData,
     libraryComponentDataRef, // use either dataRef or data, not both. We choose to have two different because unref is expensive on deeply nested objects
     breakpoint, // use to ignore responsive inheritance. Usefull for classes data extraction on the sidepanel
+    inheritanceScreen = undefined, // Pin the responsive cascade without changing the active editor screen.
     noClasses,
     layers,
  }) {
@@ -80,7 +81,11 @@ export function getComponentRawProperty({
         return result;
     }
 
-    const screens = breakpoint ? [breakpoint] : currentActiveScreens.value;
+    const screens = breakpoint
+        ? [breakpoint]
+        : inheritanceScreen
+          ? getActiveScreens(inheritanceScreen)
+          : currentActiveScreens.value;
     if (propertyConfiguration.responsive && !propertyConfiguration.states) {
         for (const screen of screens) {
             const path = concatenatePath([prefix, screen, suffix]);

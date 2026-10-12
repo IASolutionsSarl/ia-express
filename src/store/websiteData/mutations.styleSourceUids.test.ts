@@ -44,4 +44,20 @@ describe('websiteData page style source order', () => {
         expect(state.wwObjects.original._si).toBe(12);
         expect(state.wwObjects.duplicate._si).toBe(13);
     });
+
+    it('removes transient preview objects and their style identities', () => {
+        const state = createState();
+        const preview: { uid: string; _si?: number } = { uid: 'drag-preview' };
+
+        mutations.createWwObjectPreview(state, [preview]);
+        const styleSourceId = preview._si;
+        expect(state.wwObjectPreviewUids).toEqual(['drag-preview']);
+        mutations.removeWwObjectPreview(state, ['drag-preview']);
+
+        expect(state.wwObjects['drag-preview']).toBeUndefined();
+        expect(state.styleSourceIdRegistry.idByUid.has('drag-preview')).toBe(false);
+        expect(state.styleSourceIdRegistry.uidById.has(styleSourceId)).toBe(false);
+        expect(state.wwObjectPreviewUids).toEqual([]);
+        expect(state.history.undo).toEqual([]);
+    });
 });

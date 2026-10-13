@@ -80,6 +80,13 @@
   @layer normal {
     @layer atomic, ordered;
     @layer atomic {
+      .ww-a-S3TyYb2H-936VgDP {
+        padding: 0;
+        z-index: unset;
+        min-width: unset;
+        max-height: unset;
+        min-height: unset;
+      }
       .ww-a-jv_Vqe1raKX4ZAEH {
         margin: 0;
         padding: 0;
@@ -166,19 +173,19 @@
         max-height: unset;
         min-height: unset;
       }
-      .ww-a--ohg53bQUAtv5-EJ {
+      .ww-a-8XxxgcbZ7F0rcqiv {
         margin: 0;
         padding: 0;
         z-index: unset;
-        max-width: unset;
-        height: auto;
-      }
-      .ww-a-2XmtwZSC2Y1t00Nv {
-        margin: 0;
-        padding: 0;
-        z-index: unset;
-        max-width: unset;
         min-width: unset;
+        max-height: unset;
+        min-height: unset;
+      }
+      .ww-a-6N55Z-BsXmtn0S5J {
+        padding: 0;
+        z-index: unset;
+        min-width: unset;
+        height: auto;
         max-height: unset;
         min-height: unset;
       }
@@ -206,24 +213,44 @@
       }
     }
     @layer ordered {
-      .ww-e-d1t {
+      .ww-e-d1G {
+        margin: 0 auto;
+        align-self: center;
+        display: flex;
+        width: 95%;
+        max-width: 1200px;
+        height: auto;
+        aspect-ratio: unset;
+        background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
+      }
+      @media (max-width: 767px) {
+        .ww-e-d1G {
+          width: 100%;
+        }
+      }
+      .ww-e-d1G.ww-layout, .ww-e-d1G [data-ww-ls~="d1G"] {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: revert-layer;
+      }
+      .ww-e-d1u {
         overflow: unset;
         width: 35%;
         height: auto;
         aspect-ratio: unset;
         background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
       }
-      .ww-e-dAg {
+      .ww-e-dAh {
         display: flex;
         width: 8%;
       }
-      .ww-e-dAg.ww-layout, .ww-e-dAg [data-ww-ls~="dAg"] {
+      .ww-e-dAh.ww-layout, .ww-e-dAh [data-ww-ls~="dAh"] {
         display: flex;
         flex-flow: column;
         justify-content: flex-end;
         align-items: center;
       }
-      .ww-e-dAh {
+      .ww-e-dAi {
         margin: 0 0 22px;
         align-self: center;
         width: 35px;
@@ -231,7 +258,7 @@
         border: 0 solid #e0e0e0;
         border-radius: 5px;
       }
-      .ww-e-dAi {
+      .ww-e-dAj {
         margin: 0 0 22px;
         align-self: center;
         width: 35px;
@@ -239,21 +266,21 @@
         border: 0 solid #e0e0e0;
         border-radius: 5px;
       }
-      .ww-e-dBJ {
+      .ww-e-dBK {
         display: flex;
         width: 100%;
       }
-      .ww-e-dBJ.ww-layout, .ww-e-dBJ [data-ww-ls~="dBJ"] {
+      .ww-e-dBK.ww-layout, .ww-e-dBK [data-ww-ls~="dBK"] {
         display: flex;
         flex-direction: row;
         justify-content: space-between;
         flex-wrap: revert-layer;
       }
-      .ww-e-dBK.ww-layout, .ww-e-dBK [data-ww-ls~="dBK"] {
+      .ww-e-dBL.ww-layout, .ww-e-dBL [data-ww-ls~="dBL"] {
         display: flex;
         flex-flow: column;
       }
-      .ww-e-dBL {
+      .ww-e-dBM {
         padding: 10px 0 0;
         font-size: 16px;
         text-align: center;
@@ -261,19 +288,19 @@
         white-space-collapse: preserve;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-dBM {
+      .ww-e-dBN {
         margin: 0 0 0 6px;
         width: 20px;
       }
-      .ww-e-dBN.ww-layout, .ww-e-dBN [data-ww-ls~="dBN"] {
+      .ww-e-dBO.ww-layout, .ww-e-dBO [data-ww-ls~="dBO"] {
         display: flex;
         flex-flow: column;
       }
-      .ww-e-dBO {
+      .ww-e-dBP {
         margin: 0 6px 0 0;
         width: 20px;
       }
-      .ww-e-dBP {
+      .ww-e-dBQ {
         padding: 20px 0 30px;
         font-size: 16px;
         font-weight: 400;
@@ -284,7 +311,7 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-dBQ {
+      .ww-e-dBR {
         padding: 30px 0 0;
         width: revert-layer;
         font: var(--5cd34ef8-3e66-48d9-a40c-173b6be0752a, 700 36px/40px var(--ww-default-font-family, sans-serif));
@@ -295,7 +322,7 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-dBR {
+      .ww-e-dBS {
         margin: 0;
         padding: 0 10px;
         overflow: unset;
@@ -304,36 +331,23 @@
         height: auto;
         aspect-ratio: unset;
       }
-      .ww-e-dBR.ww-layout, .ww-e-dBR [data-ww-ls~="dBR"] {
+      .ww-e-dBS.ww-layout, .ww-e-dBS [data-ww-ls~="dBS"] {
         display: flex;
         flex-flow: column;
       }
-      .ww-e-dBS {
+      .ww-e-dBT {
         overflow: hidden;
         align-self: unset;
         display: flex;
         width: 100%;
         flex: 0 1 auto;
-        min-width: 400px;
-        max-height: 600px;
-        min-height: 900px;
+        max-width: 1200px;
+        height: 75vh;
+        aspect-ratio: unset;
       }
-      .ww-e-dBS.ww-layout, .ww-e-dBS [data-ww-ls~="dBS"] {
+      .ww-e-dBT.ww-layout, .ww-e-dBT [data-ww-ls~="dBT"] {
         display: flex;
         flex-flow: column;
-      }
-      .ww-e-dBU {
-        align-self: center;
-        display: flex;
-        width: 90%;
-        height: auto;
-        aspect-ratio: unset;
-        background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
-      }
-      .ww-e-dBU.ww-layout, .ww-e-dBU [data-ww-ls~="dBU"] {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: revert-layer;
       }
       .ww-e-dBV {
         display: flex;
@@ -346,16 +360,23 @@
       }
       .ww-e-dBW {
         display: flex;
-        width: 92%;
+        width: 100%;
+      }
+      @media (max-width: 767px) {
+        .ww-e-dBW {
+          width: 100%;
+        }
       }
       .ww-e-dBW.ww-layout, .ww-e-dBW [data-ww-ls~="dBW"] {
         display: flex;
         flex-flow: column;
       }
       .ww-e-dBX {
+        margin: 0 auto;
         align-self: center;
         display: flex;
-        width: 90%;
+        width: 95%;
+        max-width: 1200px;
       }
       .ww-e-dBX.ww-layout, .ww-e-dBX [data-ww-ls~="dBX"] {
         display: flex;

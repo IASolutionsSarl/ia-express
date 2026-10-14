@@ -1539,11 +1539,9 @@
         text-align: center;
         color: var(--fa0df1f0-674e-4725-b07b-fba23b45c9d6, #111827);
         white-space-collapse: preserve;
-        animation-duration: .8s;
-        animation-timing-function: cubic-bezier(.4, 0, .2, 1);
-        animation-delay: .4s;
-        animation-fill-mode: both;
-        animation-iteration-count: 1;
+        animation-timing-function: ease;
+        animation-fill-mode: none;
+        animation-iteration-count: infinite;
         animation-name: ww-keyframes-element-eb974616-26e2-4d49-966e-0fa149b846d7-base-default;
       }
       @keyframes ww-keyframes-element-eb974616-26e2-4d49-966e-0fa149b846d7-base-default {
@@ -1566,18 +1564,16 @@
           font: 700 1.75rem/1.2 var(--ww-default-font-family, sans-serif);
         }
       }
-      .ww-e-d26 {
+      .ww-e-d29 {
         margin: 0;
         max-width: 850px;
         font: var(--b47fda5e-c8a2-479d-a3d2-000ef4b6ee4e, 400 24px/30px var(--ww-default-font-family, sans-serif));
         text-align: center;
         color: var(--ba734203-55f3-440e-bb47-127cc018e9a7, #6B7280);
         white-space-collapse: preserve;
-        animation-duration: .8s;
-        animation-timing-function: cubic-bezier(.4, 0, .2, 1);
-        animation-delay: .6s;
-        animation-fill-mode: both;
-        animation-iteration-count: 1;
+        animation-timing-function: ease;
+        animation-fill-mode: none;
+        animation-iteration-count: infinite;
         animation-name: ww-keyframes-element-597ce1ba-c6b3-446d-864f-920a73f86a43-base-default;
       }
       @keyframes ww-keyframes-element-597ce1ba-c6b3-446d-864f-920a73f86a43-base-default {
@@ -1591,12 +1587,12 @@
         }
       }
       @media (max-width: 991px) {
-        .ww-e-d26 {
+        .ww-e-d29 {
           font: 500 1.25rem/1.4 var(--ww-default-font-family, sans-serif);
         }
       }
       @media (max-width: 767px) {
-        .ww-e-d26 {
+        .ww-e-d29 {
           font: 400 1.125rem/1.4 var(--ww-default-font-family, sans-serif);
         }
       }
@@ -1646,11 +1642,9 @@
       }
       .ww-e-d3o {
         display: flex;
-        animation-duration: .8s;
-        animation-timing-function: cubic-bezier(.4, 0, .2, 1);
-        animation-delay: .8s;
-        animation-fill-mode: both;
-        animation-iteration-count: 1;
+        animation-timing-function: ease;
+        animation-fill-mode: none;
+        animation-iteration-count: infinite;
         animation-name: ww-keyframes-element-f5f08082-43a7-44f6-af90-5a70918f50fb-base-default;
       }
       @keyframes ww-keyframes-element-f5f08082-43a7-44f6-af90-5a70918f50fb-base-default {

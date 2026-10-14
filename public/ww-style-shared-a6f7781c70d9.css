@@ -6641,9 +6641,19 @@
         column-gap: var(--c0a00fed-9d07-46c7-bea2-a043fcacb20f, 0.5rem);
         flex-wrap: revert-layer;
       }
-      .ww-e-d1Z {
+      .ww-e-d1Y {
         width: 1.25rem;
         height: 1.25rem;
+      }
+      .ww-e-d1Z {
+        margin: 0;
+        font: var(--9dcd74f9-6355-4ce9-89ae-157f45550d30, 400 1rem/1.5 var(--ww-default-font-family, sans-serif));
+        color: var(--ba734203-55f3-440e-bb47-127cc018e9a7, #6B7280);
+        white-space-collapse: preserve;
+      }
+      :where(.ww-e-d1d[data-ww-states~="active"]) .ww-e-d1Z {
+        font: var(--8b634e09-fb5a-4294-a871-0d3ddd45b9cf, 500 1rem/1.5 var(--ww-default-font-family, sans-serif));
+        color: var(--bd6a542c-8470-4a5d-b59f-0c45d3e4a36c, #6B46C1);
       }
       .ww-e-d1a {
         margin: 0;
@@ -6651,17 +6661,7 @@
         color: var(--ba734203-55f3-440e-bb47-127cc018e9a7, #6B7280);
         white-space-collapse: preserve;
       }
-      :where(.ww-e-d1d[data-ww-states~="active"]) .ww-e-d1a {
-        font: var(--8b634e09-fb5a-4294-a871-0d3ddd45b9cf, 500 1rem/1.5 var(--ww-default-font-family, sans-serif));
-        color: var(--bd6a542c-8470-4a5d-b59f-0c45d3e4a36c, #6B46C1);
-      }
-      .ww-e-d1b {
-        margin: 0;
-        font: var(--9dcd74f9-6355-4ce9-89ae-157f45550d30, 400 1rem/1.5 var(--ww-default-font-family, sans-serif));
-        color: var(--ba734203-55f3-440e-bb47-127cc018e9a7, #6B7280);
-        white-space-collapse: preserve;
-      }
-      :where(.ww-e-d1c[data-ww-states~="active"]) .ww-e-d1b {
+      :where(.ww-e-d1c[data-ww-states~="active"]) .ww-e-d1a {
         font: var(--8b634e09-fb5a-4294-a871-0d3ddd45b9cf, 500 1rem/1.5 var(--ww-default-font-family, sans-serif));
         color: var(--bd6a542c-8470-4a5d-b59f-0c45d3e4a36c, #6B46C1);
       }

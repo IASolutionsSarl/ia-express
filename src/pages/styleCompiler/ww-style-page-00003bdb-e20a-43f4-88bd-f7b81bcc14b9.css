@@ -154,35 +154,35 @@
       }
     }
     @layer ordered {
-      .ww-e-d48 {
-        width: revert-layer;
-      }
       .ww-e-d49 {
         width: revert-layer;
       }
       .ww-e-d4A {
+        width: revert-layer;
+      }
+      .ww-e-d4B {
         margin: 50px 0 0;
         display: flex;
         width: 100%;
         max-width: 940px;
         background-color: var(--cc540069-0132-4820-803b-67fe555d743d,#F9FAFB);
       }
-      .ww-e-d4A.ww-layout, .ww-e-d4A [data-ww-ls~="d4A"] {
+      .ww-e-d4B.ww-layout, .ww-e-d4B [data-ww-ls~="d4B"] {
         display: flex;
         flex-flow: column;
       }
-      .ww-e-d4B {
+      .ww-e-d4C {
         margin: 0 0 20px;
         width: 100%;
       }
-      .ww-e-d4B.ww-layout, .ww-e-d4B [data-ww-ls~="d4B"] {
+      .ww-e-d4C.ww-layout, .ww-e-d4C [data-ww-ls~="d4C"] {
         display: flex;
         flex-flow: column;
         justify-content: center;
         align-items: flex-start;
         align-content: revert-layer;
       }
-      .ww-e-d9p {
+      .ww-e-d9q {
         padding: 32px 24px;
         overflow: hidden;
         align-self: center;
@@ -193,14 +193,14 @@
         border: 1px solid var(--5df2264d-813f-4e12-959b-e86f202e40b0, #E4E4E7);
         border-radius: 12px;
       }
-      .ww-e-d9p.ww-layout, .ww-e-d9p [data-ww-ls~="d9p"] {
+      .ww-e-d9q.ww-layout, .ww-e-d9q [data-ww-ls~="d9q"] {
         display: flex;
         flex-flow: column;
         justify-content: center;
         align-items: center;
         align-content: revert-layer;
       }
-      .ww-e-d9q {
+      .ww-e-d9r {
         margin: 48px 0 0;
         width: 100%;
         animation-duration: 1s;
@@ -213,10 +213,10 @@
         100% {
         }
       }
-      .ww-e-d9q.ww-layout, .ww-e-d9q [data-ww-ls~="d9q"] {
+      .ww-e-d9r.ww-layout, .ww-e-d9r [data-ww-ls~="d9r"] {
         display: flex;
       }
-      .ww-e-dBs {
+      .ww-e-dBt {
         margin: 0 0 4px;
         align-self: center;
         font: var(--f2a71115-b847-4f32-ade9-6ec28c04d178, 400 16px/24px var(--ww-default-font-family, sans-serif));
@@ -232,7 +232,7 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-dCE {
+      .ww-e-dCF {
         margin: 16px 0 0;
         display: var(--ww-style-display, none);
         font: var(--e627551f-2a56-4b99-b7ba-0c6b0940ab96, 500 14px/20px var(--ww-default-font-family, sans-serif));

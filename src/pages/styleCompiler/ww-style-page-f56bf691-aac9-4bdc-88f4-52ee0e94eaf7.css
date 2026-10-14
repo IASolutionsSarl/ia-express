@@ -223,6 +223,16 @@
         max-height: unset;
         min-height: unset;
       }
+      .ww-a-5WTH6QUJ4VV9H3xH {
+        padding: 0;
+        z-index: unset;
+        align-self: unset;
+        display: block;
+        min-width: unset;
+        height: auto;
+        max-height: unset;
+        min-height: unset;
+      }
       .ww-a-GfbQibRQPgXgCmyn {
         margin: 0;
         padding: 0;
@@ -230,16 +240,6 @@
         align-self: unset;
         display: block;
         max-width: unset;
-        min-width: unset;
-        height: auto;
-        max-height: unset;
-        min-height: unset;
-      }
-      .ww-a-5WTH6QUJ4VV9H3xH {
-        padding: 0;
-        z-index: unset;
-        align-self: unset;
-        display: block;
         min-width: unset;
         height: auto;
         max-height: unset;
@@ -1530,10 +1530,7 @@
           column-gap: var(--80f51334-fb49-495a-931e-81f0e889467d, 3rem);
         }
       }
-      .ww-e-d1x {
-        width: 420px;
-      }
-      .ww-e-d25 {
+      .ww-e-d24 {
         margin: 0;
         font: var(--a46682a1-6522-4402-851e-ac1aba0b897c, 500 36px/36px var(--ww-default-font-family, sans-serif));
         text-align: center;
@@ -1555,16 +1552,16 @@
         }
       }
       @media (max-width: 991px) {
-        .ww-e-d25 {
+        .ww-e-d24 {
           font: 700 2rem/1.2 var(--ww-default-font-family, sans-serif);
         }
       }
       @media (max-width: 767px) {
-        .ww-e-d25 {
+        .ww-e-d24 {
           font: 700 1.75rem/1.2 var(--ww-default-font-family, sans-serif);
         }
       }
-      .ww-e-d29 {
+      .ww-e-d28 {
         margin: 0;
         max-width: 850px;
         font: var(--b47fda5e-c8a2-479d-a3d2-000ef4b6ee4e, 400 24px/30px var(--ww-default-font-family, sans-serif));
@@ -1587,14 +1584,17 @@
         }
       }
       @media (max-width: 991px) {
-        .ww-e-d29 {
+        .ww-e-d28 {
           font: 500 1.25rem/1.4 var(--ww-default-font-family, sans-serif);
         }
       }
       @media (max-width: 767px) {
-        .ww-e-d29 {
+        .ww-e-d28 {
           font: 400 1.125rem/1.4 var(--ww-default-font-family, sans-serif);
         }
+      }
+      .ww-e-d29 {
+        width: 420px;
       }
       .ww-e-d3X {
         display: flex;

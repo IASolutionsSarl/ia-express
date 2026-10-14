@@ -370,7 +370,7 @@
         --ww-element-transition: all 0.2s ease;
       }
       .ww-e-d1b:where(:hover) {
-        background-color: #2563eb;
+        background-color: var(--1de88585-9772-4695-85ed-dfd267fbcafe,#F3F4F6);
         box-shadow: 0 4px 6px #0000001a;
         transform: translateY(-1px);
       }

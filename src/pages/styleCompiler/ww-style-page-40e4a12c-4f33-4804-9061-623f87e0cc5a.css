@@ -383,18 +383,18 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-d1w {
+      .ww-e-d1v {
         display: flex;
         width: 100%;
         max-width: 1200px;
       }
-      .ww-e-d1w.ww-layout, .ww-e-d1w [data-ww-ls~="d1w"] {
+      .ww-e-d1v.ww-layout, .ww-e-d1v [data-ww-ls~="d1v"] {
         display: flex;
         flex-flow: wrap;
         align-content: revert-layer;
         gap: 8px;
       }
-      .ww-e-d1x {
+      .ww-e-d1w {
         padding: 12px 24px;
         font-size: 13px;
         font-weight: 500;
@@ -408,27 +408,27 @@
         border-radius: 8px;
         --ww-element-transition: all 0.2s ease;
       }
-      .ww-e-d1x:where(:hover) {
+      .ww-e-d1w:where(:hover) {
         color: #000;
         background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
         box-shadow: 0 4px 6px #0000001a;
         transform: translateY(-1px);
       }
-      .ww-e-d1z {
+      .ww-e-d1y {
         padding: 0 0 8px;
         display: flex;
         width: 100%;
         max-width: 1200px;
         background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
       }
-      .ww-e-d1z.ww-layout, .ww-e-d1z [data-ww-ls~="d1z"] {
+      .ww-e-d1y.ww-layout, .ww-e-d1y [data-ww-ls~="d1y"] {
         display: flex;
         flex-flow: column;
         justify-content: space-between;
         align-items: flex-start;
         row-gap: 5px;
       }
-      .ww-e-d20 {
+      .ww-e-d1z {
         padding: 0;
         overflow: hidden;
         display: block;
@@ -438,22 +438,22 @@
         max-width: 1200px;
       }
       @media (max-width: 991px) {
-        .ww-e-d20 {
+        .ww-e-d1z {
           padding: var(--653b8f00-b080-4ab5-b0a6-961a5fa0c53f, 2rem) var(--6ceaa39e-4e94-4cca-88bc-da34ed61dde9, 1rem);
           display: flex;
         }
       }
       @media (max-width: 767px) {
-        .ww-e-d20 {
+        .ww-e-d1z {
           padding: var(--653b8f00-b080-4ab5-b0a6-961a5fa0c53f, 2rem) var(--6ceaa39e-4e94-4cca-88bc-da34ed61dde9, 1rem);
           display: flex;
         }
       }
-      .ww-e-d20.ww-layout, .ww-e-d20 [data-ww-ls~="d20"] {
+      .ww-e-d1z.ww-layout, .ww-e-d1z [data-ww-ls~="d1z"] {
         display: block;
       }
       @media (max-width: 991px) {
-        .ww-e-d20.ww-layout, .ww-e-d20 [data-ww-ls~="d20"] {
+        .ww-e-d1z.ww-layout, .ww-e-d1z [data-ww-ls~="d1z"] {
           display: flex;
           flex-flow: column;
           align-items: stretch;
@@ -462,7 +462,7 @@
         }
       }
       @media (max-width: 767px) {
-        .ww-e-d20.ww-layout, .ww-e-d20 [data-ww-ls~="d20"] {
+        .ww-e-d1z.ww-layout, .ww-e-d1z [data-ww-ls~="d1z"] {
           display: flex;
           flex-flow: column;
           align-items: stretch;
@@ -470,12 +470,12 @@
           column-gap: var(--80f51334-fb49-495a-931e-81f0e889467d,3rem);
         }
       }
-      .ww-e-d21 {
+      .ww-e-d20 {
         margin: 0;
         padding: 0;
         width: 25px;
       }
-      .ww-e-d22 {
+      .ww-e-d21 {
         padding: 0;
         font-size: 20px;
         font-weight: 400;
@@ -486,7 +486,7 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-d23 {
+      .ww-e-d22 {
         margin: 0 0 0 10px;
         padding: 0;
         align-self: unset;
@@ -495,7 +495,7 @@
         height: auto;
         aspect-ratio: unset;
       }
-      .ww-e-d24 {
+      .ww-e-d23 {
         padding: 0;
         overflow: hidden;
         display: flex;
@@ -505,18 +505,18 @@
         max-width: 1200px;
       }
       @media (max-width: 991px) {
-        .ww-e-d24 {
+        .ww-e-d23 {
           padding: var(--653b8f00-b080-4ab5-b0a6-961a5fa0c53f, 2rem) var(--6ceaa39e-4e94-4cca-88bc-da34ed61dde9, 1rem);
           display: flex;
         }
       }
       @media (max-width: 767px) {
-        .ww-e-d24 {
+        .ww-e-d23 {
           padding: var(--653b8f00-b080-4ab5-b0a6-961a5fa0c53f, 2rem) var(--6ceaa39e-4e94-4cca-88bc-da34ed61dde9, 1rem);
           display: flex;
         }
       }
-      .ww-e-d24.ww-layout, .ww-e-d24 [data-ww-ls~="d24"] {
+      .ww-e-d23.ww-layout, .ww-e-d23 [data-ww-ls~="d23"] {
         display: flex;
         flex-direction: row;
         justify-content: flex-start;
@@ -525,7 +525,7 @@
         flex-wrap: revert-layer;
       }
       @media (max-width: 991px) {
-        .ww-e-d24.ww-layout, .ww-e-d24 [data-ww-ls~="d24"] {
+        .ww-e-d23.ww-layout, .ww-e-d23 [data-ww-ls~="d23"] {
           display: flex;
           flex-direction: row;
           justify-content: flex-start;
@@ -535,7 +535,7 @@
         }
       }
       @media (max-width: 767px) {
-        .ww-e-d24.ww-layout, .ww-e-d24 [data-ww-ls~="d24"] {
+        .ww-e-d23.ww-layout, .ww-e-d23 [data-ww-ls~="d23"] {
           display: flex;
           flex-direction: row;
           justify-content: flex-start;
@@ -544,7 +544,7 @@
           flex-wrap: revert-layer;
         }
       }
-      .ww-e-d25 {
+      .ww-e-d24 {
         padding: 16px;
         overflow: hidden;
         width: var(--ww-style-width);
@@ -565,27 +565,27 @@
         }
       }
       @media (max-width: 991px) {
-        .ww-e-d25 {
+        .ww-e-d24 {
           width: 100%;
         }
       }
       @media (max-width: 767px) {
-        .ww-e-d25 {
+        .ww-e-d24 {
           width: 100%;
         }
       }
-      .ww-e-d25:where(:hover) {
+      .ww-e-d24:where(:hover) {
         overflow: hidden;
         box-shadow: 0px 5px 8px 0px var(--bd6a542c-8470-4a5d-b59f-0c45d3e4a36c,#6B46C1);
         transform: scale3d(1, 1, 1) translate3d(0, -3px, 0) rotateX(0) rotateY(0) rotateZ(0);
         border: 1px solid var(--bd6a542c-8470-4a5d-b59f-0c45d3e4a36c,#6B46C1);
       }
-      .ww-e-d25.ww-layout, .ww-e-d25 [data-ww-ls~="d25"] {
+      .ww-e-d24.ww-layout, .ww-e-d24 [data-ww-ls~="d24"] {
         display: flex;
         flex-flow: column;
         row-gap: 12px;
       }
-      .ww-e-d26 {
+      .ww-e-d27 {
         margin: 0;
         padding: 8px;
         align-self: center;
@@ -597,14 +597,14 @@
         border-radius: 8px;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-d27 {
+      .ww-e-d28 {
         margin: 50px 0 0;
         display: flex;
         width: 100%;
         max-width: 1200px;
         border: 0 solid;
       }
-      .ww-e-d27.ww-layout, .ww-e-d27 [data-ww-ls~="d27"] {
+      .ww-e-d28.ww-layout, .ww-e-d28 [data-ww-ls~="d28"] {
         display: flex;
         flex-flow: wrap;
         align-content: revert-layer;

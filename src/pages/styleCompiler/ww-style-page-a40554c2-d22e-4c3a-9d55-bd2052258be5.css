@@ -291,33 +291,14 @@
         width: 20px;
       }
       .ww-e-d1P {
-        padding: 3px 5px;
-        font-size: 0;
-        font-weight: 500;
-        color: #0000;
-        white-space-collapse: preserve;
-        background-color: #0000;
-        cursor: pointer;
-        box-shadow: 0 2px 4px #0000001a;
-        transition: all 0.2s ease;
-        border: none;
-        border-radius: 8px;
-        --ww-element-transition: all 0.2s ease;
-      }
-      .ww-e-d1P:where(:hover) {
-        background-color: #2563eb;
-        box-shadow: 0 4px 6px #0000001a;
-        transform: translateY(-1px);
-      }
-      .ww-e-d1Q {
         margin: 0 0 0 6px;
         width: 20px;
       }
-      .ww-e-d1R {
+      .ww-e-d1Q {
         margin: 0 6px 0 0;
         width: 32px;
       }
-      .ww-e-d1S {
+      .ww-e-d1V {
         padding: 3px 5px;
         font-size: 0;
         font-weight: 500;
@@ -331,12 +312,12 @@
         border-radius: 8px;
         --ww-element-transition: all 0.2s ease;
       }
-      .ww-e-d1S:where(:hover) {
+      .ww-e-d1V:where(:hover) {
         background-color: #2563eb;
         box-shadow: 0 4px 6px #0000001a;
         transform: translateY(-1px);
       }
-      .ww-e-d1T {
+      .ww-e-d1W {
         padding: 3px 5px;
         font-size: 0;
         font-weight: 500;
@@ -350,12 +331,12 @@
         border-radius: 8px;
         --ww-element-transition: all 0.2s ease;
       }
-      .ww-e-d1T:where(:hover) {
+      .ww-e-d1W:where(:hover) {
         background-color: #2563eb;
         box-shadow: 0 4px 6px #0000001a;
         transform: translateY(-1px);
       }
-      .ww-e-d1U {
+      .ww-e-d1X {
         padding: 3px 5px;
         font-size: 0;
         font-weight: 500;
@@ -369,7 +350,26 @@
         border-radius: 8px;
         --ww-element-transition: all 0.2s ease;
       }
-      .ww-e-d1U:where(:hover) {
+      .ww-e-d1X:where(:hover) {
+        background-color: #2563eb;
+        box-shadow: 0 4px 6px #0000001a;
+        transform: translateY(-1px);
+      }
+      .ww-e-d1Y {
+        padding: 3px 5px;
+        font-size: 0;
+        font-weight: 500;
+        color: #0000;
+        white-space-collapse: preserve;
+        background-color: #0000;
+        cursor: pointer;
+        box-shadow: 0 2px 4px #0000001a;
+        transition: all 0.2s ease;
+        border: none;
+        border-radius: 8px;
+        --ww-element-transition: all 0.2s ease;
+      }
+      .ww-e-d1Y:where(:hover) {
         background-color: #2563eb;
         box-shadow: 0 4px 6px #0000001a;
         transform: translateY(-1px);

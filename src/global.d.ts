@@ -21,6 +21,7 @@ declare global {
     >;
     function wwServerClient<T = unknown>(url: string, options?: WwServerRequestOptions<T>): Promise<T>;
     interface Window {
+        analytics: any;
         wwLib: typeof wwLib;
         userflow: typeof userflow;
         wwAxios: typeof wwAxios;

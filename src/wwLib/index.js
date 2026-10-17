@@ -7,6 +7,14 @@ import { useIconsStore } from '@/pinia/icons';
 import plugin_2bd1c688_31c5_443e_ae25_59aa5b6431fb from '@weweb-internal/ext-plugin-2bd1c688-31c5-443e-ae25-59aa5b6431fb';
 import plugin_f9ef41c3_1c53_4857_855b_f2f6a40b7186 from '@weweb-internal/ext-plugin-f9ef41c3-1c53-4857-855b-f2f6a40b7186';
 import plugin_1fa0dd68_5069_436c_9a7d_3b54c340f1fa from '@weweb-internal/ext-plugin-1fa0dd68-5069-436c-9a7d-3b54c340f1fa';
+// The token maps of the newer types: `typeof` keeps an empty map when a publisher older than this code leaves the
+// placeholder in place.
+// eslint-disable-next-line no-undef
+const LIBRARY_RADIUS = typeof {} === 'undefined' ? {} : {};
+// eslint-disable-next-line no-undef
+const LIBRARY_SHADOWS = typeof {} === 'undefined' ? {} : {};
+// eslint-disable-next-line no-undef
+const LIBRARY_BORDERS = typeof {} === 'undefined' ? {} : {};
 /* wwFront:end */
 
 import { computed, reactive } from 'vue';
@@ -166,6 +174,19 @@ wwLib.wwPluginHelper.registerPlugin('plugin-1fa0dd68-5069-436c-9a7d-3b54c340f1fa
          /* wwFront:start */
         // eslint-disable-next-line no-unreachable, no-undef
         {"3e186a16-30b5-4f7b-a2ea-e239a68bd833":"700 2.5rem/1.2 var(--ww-default-font-family, sans-serif)","8b634e09-fb5a-4294-a871-0d3ddd45b9cf":"500 1rem/1.5 var(--ww-default-font-family, sans-serif)","a52c954c-1829-45f5-ac47-4de459febd27":"600 1.5rem/1.3 var(--ww-default-font-family, sans-serif)","9dcd74f9-6355-4ce9-89ae-157f45550d30":"400 1rem/1.5 var(--ww-default-font-family, sans-serif)","95955ccb-6679-4db1-bfdf-7be85965de4d":"400 0.875rem/1.4 var(--ww-default-font-family, sans-serif)","5991f590-c881-4cf3-a200-5db7374207ed":"700 2.5rem/1.2 var(--ww-default-font-family, sans-serif)","c92c8158-0b81-4276-91fb-0c8d7e5b94d0":"500 1rem/1.5 var(--ww-default-font-family, sans-serif)","200d839a-3a1d-4637-bd55-56fa5bc38429":"600 1.5rem/1.3 var(--ww-default-font-family, sans-serif)","fb98596d-37f5-4ea9-b31f-e99d50749939":"400 1rem/1.5 var(--ww-default-font-family, sans-serif)","26f930e4-ca76-4003-8ef5-bc393deba6fc":"400 0.875rem/1.4 var(--ww-default-font-family, sans-serif)","7419c94a-472d-45eb-89ac-debf7ef21b35":"400 14px/22px var(--ww-default-font-family, sans-serif)","b49b91a8-996d-45e6-ae47-795f8322c041":"500 38px/46px var(--ww-default-font-family, sans-serif)","e9d2a21b-ea8d-459b-87bf-131e4d6af9ee":"500 30px/40px var(--ww-default-font-family, sans-serif)","8d14c83a-63a5-4f4f-a12a-97af4258074d":"500 24px/32px var(--ww-default-font-family, sans-serif)","1a3aa549-d178-4106-bc9e-5d1e7bb34c8c":"500 16px/24px var(--ww-default-font-family, sans-serif)","6b591379-573d-425b-bc53-12a4426e1513":"600 14px/22px var(--ww-default-font-family, sans-serif)","d9f75b67-53a7-4a7f-9a0e-f4ab7985cde6":"400 12px/20px var(--ww-default-font-family, sans-serif)","4ef5bd5d-6c26-4512-8a87-f23d0269918a":"600 16px/24px var(--ww-default-font-family, sans-serif)","af4a2331-71bc-44af-9661-b38551756eab":"600 12px/18px var(--ww-default-font-family, sans-serif)","dba66191-af24-45ac-ae67-dd3770eec837":"400 12px/18px var(--ww-default-font-family, sans-serif)","04a090b3-eb67-4f3d-8946-bb1896dd0c4b":"400 16px/22px var(--ww-default-font-family, sans-serif)","0fa89c8c-d0cf-4c33-81cc-1a4524267593":"400 12px/20px var(--ww-default-font-family, sans-serif)","38ffbeff-764d-4bfc-9245-65b7bc0554d3":"500 20px/28px var(--ww-default-font-family, sans-serif)","f0d118f6-8610-4be0-85a6-7732ededbcbd":"400 60px/60px var(--ww-default-font-family, sans-serif)","c3f20f8d-c404-4890-a149-528c554d3a45":"400 48px/52px var(--ww-default-font-family, sans-serif)","188c18b9-1d63-48aa-b183-a0e339c28999":"400 36px/36px var(--ww-default-font-family, sans-serif)","b47fda5e-c8a2-479d-a3d2-000ef4b6ee4e":"400 24px/30px var(--ww-default-font-family, sans-serif)","d92a1cb7-94b6-4feb-9413-e70e51979f97":"400 18px/26px var(--ww-default-font-family, sans-serif)","f2a71115-b847-4f32-ade9-6ec28c04d178":"400 16px/24px var(--ww-default-font-family, sans-serif)","6991fe26-2f58-467a-a1c7-e9a576888df6":"400 12px/16px var(--ww-default-font-family, sans-serif)","413f19fe-06f4-4af0-bc58-613b9c444489":"300 48px/52px var(--ww-default-font-family, sans-serif)","36c90402-a417-43a8-9707-91580919116e":"300 24px/30px var(--ww-default-font-family, sans-serif)","fd2aa2ea-6285-4979-9dd4-0afe769b1cf7":"300 16px/24px var(--ww-default-font-family, sans-serif)","0ed994cb-55a6-4345-a079-6317154abeb9":"300 12px/16px var(--ww-default-font-family, sans-serif)","47176e75-5460-40c9-add9-f675437da5c3":"500 60px/60px var(--ww-default-font-family, sans-serif)","a46682a1-6522-4402-851e-ac1aba0b897c":"500 36px/36px var(--ww-default-font-family, sans-serif)","f59d015e-c1a5-41b0-a0bd-d7685bfa9e04":"500 18px/26px var(--ww-default-font-family, sans-serif)","90e4433f-28ec-48c5-8432-3a4ad4f12c6a":"500 14px/20px var(--ww-default-font-family, sans-serif)","1a0dc46e-3d23-4ac0-ada4-bc80d295dd7f":"500 11px/16px var(--ww-default-font-family, sans-serif)","e6d49f9e-afe0-4248-8d07-d27a1c9b6230":"700 48px/52px var(--ww-default-font-family, sans-serif)","63427591-e191-4f49-bcd0-e63f63c1f0d0":"700 24px/30px var(--ww-default-font-family, sans-serif)","ad5de84f-abf6-4f14-81d9-ee7fdc1674f6":"700 16px/24px var(--ww-default-font-family, sans-serif)","4dba5634-32ac-49d9-9e3b-1c227801b3a8":"700 12px/16px var(--ww-default-font-family, sans-serif)","f4a28b33-58fd-41ca-b1fd-feda6a0a7e75":"400 14px/20px var(--ww-default-font-family, sans-serif)","c895a4f5-7855-4344-9a83-dff3321d79e6":"400 11px/16px var(--ww-default-font-family, sans-serif)","b593a132-fc74-46b5-beca-3b5698188264":"300 60px/60px var(--ww-default-font-family, sans-serif)","306b96db-c31c-4957-832b-199fd5382cb2":"300 36px/36px var(--ww-default-font-family, sans-serif)","a849b37a-ec69-4519-8689-7ca0ec99905e":"300 18px/26px var(--ww-default-font-family, sans-serif)","355d65f8-3e12-4e04-a4d3-3181e93175b8":"300 14px/20px var(--ww-default-font-family, sans-serif)","c455b4ea-99a3-49f6-a60c-659ec8afdf31":"300 11px/16px var(--ww-default-font-family, sans-serif)","c924f875-829c-4696-8dbc-a392f579d23f":"500 48px/52px var(--ww-default-font-family, sans-serif)","3d798d9f-1dff-4804-987f-f3a7192ef9c9":"500 24px/30px var(--ww-default-font-family, sans-serif)","a610bd35-596d-4cec-b59c-6aa7e996721b":"500 16px/24px var(--ww-default-font-family, sans-serif)","d7a3303e-30a9-4e87-a23c-cb6e262d91e7":"500 12px/16px var(--ww-default-font-family, sans-serif)","261e7097-5da3-4f2d-98ce-77accbcaabb3":"700 60px/60px var(--ww-default-font-family, sans-serif)","5cd34ef8-3e66-48d9-a40c-173b6be0752a":"700 36px/40px var(--ww-default-font-family, sans-serif)","4e3cfba6-0330-4c70-bf29-d8dd3d4d3b94":"700 18px/26px var(--ww-default-font-family, sans-serif)","665adc55-24af-4037-8838-a84d19562ea2":"700 14px/20px var(--ww-default-font-family, sans-serif)","94e99de8-68eb-4787-80af-c99d29e791d5":"700 11px/16px var(--ww-default-font-family, sans-serif)"},
+        /* wwFront:end */
+        // The newer token types (see LIBRARY_RADIUS). Shadows and borders keep their var(--color): the CSS resolves it.
+        radius:
+         /* wwFront:start */
+        LIBRARY_RADIUS,
+        /* wwFront:end */
+        shadows:
+         /* wwFront:start */
+        LIBRARY_SHADOWS,
+        /* wwFront:end */
+        borders:
+         /* wwFront:start */
+        LIBRARY_BORDERS,
         /* wwFront:end */
         browser: computed(() => {
             const router = wwLib.manager ? wwLib.getEditorRouter() : wwLib.getFrontRouter();
@@ -381,6 +402,7 @@ wwLib.wwPluginHelper.registerPlugin('plugin-1fa0dd68-5069-436c-9a7d-3b54c340f1fa
     },
 };
 
+ 
 function pageSanitizer(page) {
     const keysToInclude = [
         'id',

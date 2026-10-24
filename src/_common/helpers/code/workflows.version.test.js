@@ -70,6 +70,7 @@ vi.mock('@/pinia/editor/debugger.js', () => ({
 }));
 
 import { executeWorkflow } from './workflows.js';
+import { executeWorkflow as executePublishedWorkflow } from './workflows.js?ww-target=front';
 
 describe('executeWorkflow versioned formula handling', () => {
     const dispatch = vi.fn();
@@ -107,6 +108,55 @@ describe('executeWorkflow versioned formula handling', () => {
             },
         };
     });
+
+    it.each([
+        ['editor', executeWorkflow],
+        ['published', executePublishedWorkflow],
+    ])(
+        'uses the appropriate upload client in the %s build without sending editor credentials to S3',
+        async (target, run) => {
+            const originalAxios = globalThis.axios;
+            const originalWwAxios = globalThis.wwAxios;
+            const data = {
+                signedRequest: 'https://upload.example/fixture',
+                url: 'https://storage.example/fixture',
+                name: 'photo',
+                ext: 'png',
+                size: 3,
+            };
+            const publicPost = vi.fn().mockResolvedValue({ data });
+            const editorPost = vi.fn().mockResolvedValue({ data });
+            const put = vi.fn().mockResolvedValue({});
+            globalThis.axios = { post: publicPost, put };
+            globalThis.wwAxios = { post: editorPost };
+            globalThis.wwLib.wwApiRequests = { _getApiUrl: () => 'https://api.example/v1' };
+            globalThis.wwLib.$store.getters['websiteData/getDesignInfo'] = { id: 'project-id' };
+            const file = { name: 'photo.png', type: 'image/png', size: 3 };
+            try {
+                const execution = await run({
+                    id: 'upload-workflow',
+                    firstAction: 'upload',
+                    actions: { upload: { id: 'upload', type: 'upload-file', varId: file } },
+                });
+                expect(execution.error).toBeUndefined();
+                const expectedPost = target === 'editor' ? editorPost : publicPost;
+                const unusedPost = target === 'editor' ? publicPost : editorPost;
+                expect(expectedPost).toHaveBeenCalledWith(
+                    'https://api.example/v1/designs/project-id/user-files',
+                    expect.objectContaining({ name: 'photo.png', type: 'image/png', size: 3 })
+                );
+                expect(unusedPost).not.toHaveBeenCalled();
+                expect(put).toHaveBeenCalledWith(
+                    data.signedRequest,
+                    file,
+                    expect.objectContaining({ skipAuthorization: true })
+                );
+            } finally {
+                globalThis.axios = originalAxios;
+                globalThis.wwAxios = originalWwAxios;
+            }
+        }
+    );
 
     it('delegates Table View load-more pagination to the store', async () => {
         const execution = await executeWorkflow({

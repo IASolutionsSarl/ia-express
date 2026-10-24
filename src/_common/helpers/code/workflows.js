@@ -752,11 +752,12 @@ export async function executeWorkflowAction(
 
                 const designId = wwLib.$store.getters['websiteData/getDesignInfo'].id;
                 const files = isMultiple ? actionValue : [actionValue];
-
+                let uploadClient = axios;
+ 
                 for (const file of files) {
                     if (!file || !file.name) continue;
 
-                    const { data } = await axios.post(
+                    const { data } = await uploadClient.post(
                         `${wwLib.wwApiRequests._getApiUrl()}/designs/${designId}/user-files`,
                         {
                             name: file.name.replace(/[#!@$%^&*()+=\[\]{};':"\\|,<>\? \/]/g, '_'), // Replace problematic characters with underscores

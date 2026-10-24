@@ -1,0 +1,107 @@
+@layer ww-style-library {
+  @layer definition, instance;
+  @layer definition {
+    @layer normal, custom;
+    @layer normal {
+    }
+    @layer custom {
+    }
+  }
+  @layer instance {
+    @layer normal, custom;
+    @layer normal {
+    }
+    @layer custom {
+    }
+  }
+}
+@layer ww-style-section {
+  @layer normal, custom;
+  @layer normal {
+    @layer atomic, ordered;
+    @layer atomic {
+      .ww-a-Kx1Omt4gI5aMcV9U {
+        height: auto;
+        z-index: unset;
+        min-height: unset;
+        max-height: unset;
+        display: flex;
+      }
+      .ww-a-ToP1y73DpSf7xjcF {
+        width: 100%;
+        max-width: unset;
+        min-width: unset;
+        min-height: unset;
+        max-height: unset;
+      }
+    }
+    @layer ordered {
+      .ww-s-dH > .ww-section-element {
+        --ww-section-root-auto-align: center;
+        --ww-section-root-auto-width: 100%;
+        padding: 32px;
+      }
+      .ww-s-dH > .ww-section-element.ww-layout {
+        display: flex;
+        flex-flow: column;
+        align-items: stretch;
+        row-gap: 24px;
+      }
+    }
+  }
+  @layer custom {
+  }
+}
+@layer ww-style-element {
+  @layer normal, custom;
+  @layer normal {
+    @layer atomic, ordered;
+    @layer atomic {
+      .ww-a-UMuatBOai2i0Sewa {
+        margin: 0;
+        padding: 0;
+        z-index: unset;
+        align-self: var(--ww-section-root-auto-align, unset);
+        display: block;
+        max-width: unset;
+        min-width: unset;
+        height: auto;
+        max-height: unset;
+        min-height: unset;
+      }
+      .ww-a-U1gH9eNunGldXbSr {
+        margin: 0;
+        padding: 0;
+        z-index: unset;
+        align-self: var(--ww-section-root-auto-align, unset);
+        display: block;
+        max-width: unset;
+        min-width: unset;
+        height: auto;
+        max-height: unset;
+        min-height: unset;
+        font-family: var(--ww-default-font-family);
+      }
+    }
+    @layer ordered {
+      .ww-e-dD0 {
+        width: 100%;
+        aspect-ratio: unset;
+      }
+      .ww-e-dD1 {
+        width: 100%;
+        aspect-ratio: unset;
+      }
+      .ww-e-dD2 {
+        width: var(--ww-section-root-auto-width, revert-layer);
+        font-size: 24px;
+        white-space-collapse: preserve;
+        --ww-text-text-overflow: initial;
+      }
+    }
+  }
+  @layer custom {
+  }
+}
+@layer ww-style-layout-override {
+}

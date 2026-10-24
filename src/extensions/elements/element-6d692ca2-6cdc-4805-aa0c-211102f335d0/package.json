@@ -1,0 +1,13 @@
+{
+  "name": "@weweb-internal/ext-element-6d692ca2-6cdc-4805-aa0c-211102f335d0",
+  "repository": {
+    "url": "https://github.com/weweb-assets/ww-iframe"
+  },
+  "version": "3.1.0",
+  "license": "MIT",
+  "private": true,
+  "exports": {
+    ".": "./src/wwElement.vue",
+    "./config": "./ww-config.js"
+  }
+}

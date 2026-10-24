@@ -84,15 +84,15 @@
       }
     }
     @layer ordered {
+      .ww-e-dCz {
+        width: 100%;
+        aspect-ratio: unset;
+      }
       .ww-e-dD0 {
         width: 100%;
         aspect-ratio: unset;
       }
       .ww-e-dD1 {
-        width: 100%;
-        aspect-ratio: unset;
-      }
-      .ww-e-dD2 {
         width: var(--ww-section-root-auto-width, revert-layer);
         font-size: 24px;
         white-space-collapse: preserve;

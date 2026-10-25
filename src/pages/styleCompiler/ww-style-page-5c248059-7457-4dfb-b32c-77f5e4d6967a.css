@@ -239,7 +239,18 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
+      .ww-e-dDU {
+        width: 100%;
+      }
+      .ww-e-dDU.ww-layout, .ww-e-dDU [data-ww-ls~="dDU"] {
+        display: flex;
+        flex-flow: column;
+        justify-content: center;
+        align-items: flex-start;
+        align-content: revert-layer;
+      }
       .ww-e-dDV {
+        margin: 0 0 20px;
         width: 100%;
       }
       .ww-e-dDV.ww-layout, .ww-e-dDV [data-ww-ls~="dDV"] {
@@ -271,16 +282,26 @@
         align-items: flex-start;
         align-content: revert-layer;
       }
-      .ww-e-dDY {
-        margin: 0 0 20px;
+      .ww-e-dDZ {
+        margin: 0;
+        padding: 0 0 0 12px;
         width: 100%;
-      }
-      .ww-e-dDY.ww-layout, .ww-e-dDY [data-ww-ls~="dDY"] {
-        display: flex;
-        flex-flow: column;
-        justify-content: center;
-        align-items: flex-start;
-        align-content: revert-layer;
+        height: 38px;
+        font-size: 16px;
+        line-height: 24px;
+        font-weight: 400;
+        letter-spacing: 0;
+        word-spacing: 0;
+        text-decoration-line: none;
+        text-decoration-thickness: initial;
+        text-decoration-style: solid;
+        text-decoration-color: initial;
+        white-space-collapse: preserve;
+        border: 1px solid #d4d4d8;
+        border-radius: 8px;
+        --ww-text-white-space: initial;
+        --ww-text-overflow: initial;
+        --ww-text-text-overflow: initial;
       }
       .ww-e-dDa {
         margin: 0;
@@ -325,27 +346,6 @@
         --ww-text-text-overflow: initial;
       }
       .ww-e-dDc {
-        margin: 0;
-        padding: 0 0 0 12px;
-        width: 100%;
-        height: 38px;
-        font-size: 16px;
-        line-height: 24px;
-        font-weight: 400;
-        letter-spacing: 0;
-        word-spacing: 0;
-        text-decoration-line: none;
-        text-decoration-thickness: initial;
-        text-decoration-style: solid;
-        text-decoration-color: initial;
-        white-space-collapse: preserve;
-        border: 1px solid #d4d4d8;
-        border-radius: 8px;
-        --ww-text-white-space: initial;
-        --ww-text-overflow: initial;
-        --ww-text-text-overflow: initial;
-      }
-      .ww-e-dDd {
         margin: 0 0 4px;
         font: var(--7b06b75d-b773-4d93-b3b3-3c01cb419d85, 500 12px/18px var(--ww-default-font-family, sans-serif));
         color: var(--49282aa0-7a02-4cbc-8086-a1fe1361c178,#71717A);
@@ -359,7 +359,7 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-dDe {
+      .ww-e-dDd {
         margin: 0 0 4px;
         font: var(--943a9f81-d1b2-401e-be83-0f9eeae5824c, 500 32px/40px var(--ww-default-font-family, sans-serif));
         letter-spacing: 0;
@@ -372,7 +372,7 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-dDf {
+      .ww-e-dDe {
         margin: 0 0 4px;
         font: var(--7b06b75d-b773-4d93-b3b3-3c01cb419d85, 500 12px/18px var(--ww-default-font-family, sans-serif));
         color: var(--49282aa0-7a02-4cbc-8086-a1fe1361c178,#71717A);
@@ -386,7 +386,7 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-dDn {
+      .ww-e-dDm {
         margin: 16px 0 0;
         display: var(--ww-style-display);
         font: var(--e627551f-2a56-4b99-b7ba-0c6b0940ab96, 500 14px/20px var(--ww-default-font-family, sans-serif));
@@ -402,10 +402,10 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-dE3 {
+      .ww-e-dE2 {
         width: 100%;
       }
-      .ww-e-dE4 {
+      .ww-e-dE3 {
         margin: 0;
         padding: 0 0 0 12px;
         width: 100%;
@@ -426,7 +426,7 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-dE5 {
+      .ww-e-dE4 {
         margin: 24px 0 32px;
         padding: 11px 16px;
         align-self: flex-start;
@@ -447,10 +447,10 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-dEx {
+      .ww-e-dEw {
         width: 100%;
       }
-      .ww-e-dEx.ww-layout, .ww-e-dEx [data-ww-ls~="dEx"] {
+      .ww-e-dEw.ww-layout, .ww-e-dEw [data-ww-ls~="dEw"] {
         display: flex;
       }
     }

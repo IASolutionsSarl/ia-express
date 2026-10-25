@@ -10,7 +10,6 @@ import element_59dca300_db78_42e4_a7a6_0cbf22d3cc82 from "@weweb-internal/ext-el
 import element_6047b8df_81b7_45a7_a6b3_7355fb2fa3cd from "@weweb-internal/ext-element-6047b8df-81b7-45a7-a6b3-7355fb2fa3cd";
 import element_69d0b3ef_b265_494c_8cd1_874da4aa1834 from "@weweb-internal/ext-element-69d0b3ef-b265-494c-8cd1-874da4aa1834";
 import element_6d692ca2_6cdc_4805_aa0c_211102f335d0 from "@weweb-internal/ext-element-6d692ca2-6cdc-4805-aa0c-211102f335d0";
-import element_6f8796b1_8273_498d_95fc_7013b7c63214 from "@weweb-internal/ext-element-6f8796b1-8273-498d-95fc-7013b7c63214";
 import element_70a53858_53ca_40a5_ad88_c1cd33b5cc9f from "@weweb-internal/ext-element-70a53858-53ca-40a5-ad88-c1cd33b5cc9f";
 import element_9ecb2cfc_cef7_4be8_b736_3e17a3b7e9ff from "@weweb-internal/ext-element-9ecb2cfc-cef7-4be8-b736-3e17a3b7e9ff";
 import element_b783dc65_d528_4f74_8c14_e27c934c39b1 from "@weweb-internal/ext-element-b783dc65-d528-4f74-8c14-e27c934c39b1";
@@ -85,12 +84,6 @@ export default async function registerPageComponents(app) {
         "type": "element"
     },
     {
-        "baseId": "6f8796b1-8273-498d-95fc-7013b7c63214",
-        "importPath": "@weweb-internal/ext-element-6f8796b1-8273-498d-95fc-7013b7c63214",
-        "name": "wwobject-6f8796b1-8273-498d-95fc-7013b7c63214",
-        "type": "element"
-    },
-    {
         "baseId": "70a53858-53ca-40a5-ad88-c1cd33b5cc9f",
         "importPath": "@weweb-internal/ext-element-70a53858-53ca-40a5-ad88-c1cd33b5cc9f",
         "name": "wwobject-70a53858-53ca-40a5-ad88-c1cd33b5cc9f",
@@ -145,7 +138,6 @@ app.component("wwobject-59dca300-db78-42e4-a7a6-0cbf22d3cc82", element_59dca300_
 app.component("wwobject-6047b8df-81b7-45a7-a6b3-7355fb2fa3cd", element_6047b8df_81b7_45a7_a6b3_7355fb2fa3cd);
 app.component("wwobject-69d0b3ef-b265-494c-8cd1-874da4aa1834", element_69d0b3ef_b265_494c_8cd1_874da4aa1834);
 app.component("wwobject-6d692ca2-6cdc-4805-aa0c-211102f335d0", element_6d692ca2_6cdc_4805_aa0c_211102f335d0);
-app.component("wwobject-6f8796b1-8273-498d-95fc-7013b7c63214", element_6f8796b1_8273_498d_95fc_7013b7c63214);
 app.component("wwobject-70a53858-53ca-40a5-ad88-c1cd33b5cc9f", element_70a53858_53ca_40a5_ad88_c1cd33b5cc9f);
 app.component("wwobject-9ecb2cfc-cef7-4be8-b736-3e17a3b7e9ff", element_9ecb2cfc_cef7_4be8_b736_3e17a3b7e9ff);
 app.component("wwobject-b783dc65-d528-4f74-8c14-e27c934c39b1", element_b783dc65_d528_4f74_8c14_e27c934c39b1);

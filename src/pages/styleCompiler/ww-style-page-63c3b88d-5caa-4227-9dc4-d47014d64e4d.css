@@ -590,24 +590,24 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-d8Y {
+      .ww-e-d8X {
         margin: 0 0 10px;
         width: 100%;
       }
-      .ww-e-dA3 {
+      .ww-e-dA2 {
         margin: 0 0 10px;
         align-self: unset;
         display: flex;
         width: 100%;
         max-width: 940px;
       }
-      .ww-e-dA3.ww-layout, .ww-e-dA3 [data-ww-ls~="dA3"] {
+      .ww-e-dA2.ww-layout, .ww-e-dA2 [data-ww-ls~="dA2"] {
         display: flex;
         flex-direction: row;
         justify-content: flex-end;
         flex-wrap: revert-layer;
       }
-      .ww-e-dAY {
+      .ww-e-dAX {
         margin: 20px 0 0;
         width: 100%;
         animation-duration: 1s;
@@ -620,23 +620,23 @@
         100% {
         }
       }
-      .ww-e-dAY.ww-layout, .ww-e-dAY [data-ww-ls~="dAY"] {
+      .ww-e-dAX.ww-layout, .ww-e-dAX [data-ww-ls~="dAX"] {
         display: flex;
       }
-      .ww-e-dBM {
+      .ww-e-dBL {
         font-size: 16px;
         color: var(--ba734203-55f3-440e-bb47-127cc018e9a7,#6B7280);
         white-space-collapse: preserve;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-dCe {
+      .ww-e-dCd {
         margin: 0;
         font: var(--f59d015e-c1a5-41b0-a0bd-d7685bfa9e04, 500 18px/26px var(--ww-default-font-family, sans-serif));
         text-align: left;
         color: var(--fa0df1f0-674e-4725-b07b-fba23b45c9d6, #111827);
         white-space-collapse: preserve;
       }
-      .ww-e-dCl {
+      .ww-e-dCk {
         margin: 0 auto;
         padding: var(--80f51334-fb49-495a-931e-81f0e889467d, 3rem) var(--3ac213ac-8c9e-4d40-993f-964f39a7a1f9, 1.5rem);
         align-self: flex-start;
@@ -645,25 +645,25 @@
         max-width: 1200px;
       }
       @media (max-width: 991px) {
-        .ww-e-dCl {
+        .ww-e-dCk {
           padding: var(--653b8f00-b080-4ab5-b0a6-961a5fa0c53f, 2rem) var(--6ceaa39e-4e94-4cca-88bc-da34ed61dde9, 1rem);
           display: flex;
         }
       }
       @media (max-width: 767px) {
-        .ww-e-dCl {
+        .ww-e-dCk {
           padding: var(--653b8f00-b080-4ab5-b0a6-961a5fa0c53f, 2rem) var(--6ceaa39e-4e94-4cca-88bc-da34ed61dde9, 1rem);
           display: flex;
         }
       }
-      .ww-e-dCl.ww-layout, .ww-e-dCl [data-ww-ls~="dCl"] {
+      .ww-e-dCk.ww-layout, .ww-e-dCk [data-ww-ls~="dCk"] {
         display: flex;
         flex-flow: column;
         row-gap: var(--80f51334-fb49-495a-931e-81f0e889467d, 3rem);
         column-gap: var(--80f51334-fb49-495a-931e-81f0e889467d, 3rem);
       }
       @media (max-width: 991px) {
-        .ww-e-dCl.ww-layout, .ww-e-dCl [data-ww-ls~="dCl"] {
+        .ww-e-dCk.ww-layout, .ww-e-dCk [data-ww-ls~="dCk"] {
           display: flex;
           flex-flow: column;
           row-gap: var(--80f51334-fb49-495a-931e-81f0e889467d, 3rem);
@@ -671,29 +671,29 @@
         }
       }
       @media (max-width: 767px) {
-        .ww-e-dCl.ww-layout, .ww-e-dCl [data-ww-ls~="dCl"] {
+        .ww-e-dCk.ww-layout, .ww-e-dCk [data-ww-ls~="dCk"] {
           display: flex;
           flex-flow: column;
           row-gap: var(--80f51334-fb49-495a-931e-81f0e889467d, 3rem);
           column-gap: var(--80f51334-fb49-495a-931e-81f0e889467d, 3rem);
         }
       }
-      .ww-e-dCm {
+      .ww-e-dCl {
         align-self: unset;
         display: flex;
         flex: 0 1 auto;
       }
       @media (max-width: 991px) {
-        .ww-e-dCm {
+        .ww-e-dCl {
           display: flex;
         }
       }
       @media (max-width: 767px) {
-        .ww-e-dCm {
+        .ww-e-dCl {
           display: flex;
         }
       }
-      .ww-e-dCm.ww-layout, .ww-e-dCm [data-ww-ls~="dCm"] {
+      .ww-e-dCl.ww-layout, .ww-e-dCl [data-ww-ls~="dCl"] {
         display: flex;
         flex-flow: column;
         align-items: flex-start;
@@ -701,7 +701,7 @@
         column-gap: var(--653b8f00-b080-4ab5-b0a6-961a5fa0c53f, 2rem);
       }
       @media (max-width: 991px) {
-        .ww-e-dCm.ww-layout, .ww-e-dCm [data-ww-ls~="dCm"] {
+        .ww-e-dCl.ww-layout, .ww-e-dCl [data-ww-ls~="dCl"] {
           display: flex;
           flex-flow: column;
           align-items: flex-start;
@@ -710,7 +710,7 @@
         }
       }
       @media (max-width: 767px) {
-        .ww-e-dCm.ww-layout, .ww-e-dCm [data-ww-ls~="dCm"] {
+        .ww-e-dCl.ww-layout, .ww-e-dCl [data-ww-ls~="dCl"] {
           display: flex;
           flex-flow: column;
           align-items: flex-start;

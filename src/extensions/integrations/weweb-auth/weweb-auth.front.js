@@ -2,7 +2,7 @@ import { createAuthClient } from 'better-auth/client';
 import { magicLinkClient, emailOTPClient } from 'better-auth/client/plugins';
 import { getServerUrl } from '@/_common/helpers/code/backendWorkflows.js';
 import { useBackAuthStore } from '@/pinia/backAuth.js';
-
+ 
 function getPageUrl(pageConfig = {}) {
     if (pageConfig.type === 'internal') {
         const pageId = pageConfig.pageId;

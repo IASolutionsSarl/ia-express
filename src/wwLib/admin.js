@@ -1,15 +1,13 @@
 export default {
     cleanGhostElements(apply) {
-        const elementIds = Object.keys(wwLib.$store.state.websiteData.wwObjects).filter(
-            id => wwLib.$store.state.websiteData.wwObjects[id].parentSectionId
+        const elementIds = Object.keys(wwLib.store.websiteData.$state.wwObjects).filter(
+            id => wwLib.store.websiteData.$state.wwObjects[id].parentSectionId
         );
-        const sectionIds = Object.keys(wwLib.$store.state.websiteData.sections);
+        const sectionIds = Object.keys(wwLib.store.websiteData.$state.sections);
 
         console.log(`Analyzing ${elementIds.length} elements and ${sectionIds.length} sections for ghost elements...`);
 
-        const strangeIds = elementIds.filter(
-            id => wwLib.$store.state.websiteData.wwObjects[id].parentLibraryComponentId
-        );
+        const strangeIds = elementIds.filter(id => wwLib.store.websiteData.$state.wwObjects[id].parentLibraryComponentId);
         if (strangeIds.length > 0) {
             console.log(`Found ${strangeIds.length} elements with a parentLibraryComponentId:`);
             console.log(strangeIds);
@@ -42,12 +40,12 @@ export default {
             }
             children.forEach(id => {
                 hasBeenFound[id] = depth;
-                exploreFrom(wwLib.$store.state.websiteData.wwObjects[id], depth + 1);
+                exploreFrom(wwLib.store.websiteData.$state.wwObjects[id], depth + 1);
             });
         }
 
         sectionIds.forEach(sectionId => {
-            const section = wwLib.$store.state.websiteData.sections[sectionId];
+            const section = wwLib.store.websiteData.$state.sections[sectionId];
             console.log(`#### Exploring section ${sectionId} (${section.sectionTitle})...`);
             exploreFrom(section);
         });
@@ -58,7 +56,7 @@ export default {
 
         const parents = {};
         ghostElementsIds.forEach(id => {
-            const element = wwLib.$store.state.websiteData.wwObjects[id];
+            const element = wwLib.store.websiteData.$state.wwObjects[id];
             const children = getDirectChildren(element);
             children.forEach(childId => {
                 if (!parents[childId]) {
@@ -71,7 +69,7 @@ export default {
 
         const rootGhosts = ghostElementsIds.filter(id => !parents[id]);
         const rootGhostSections = [
-            ...new Set(rootGhosts.map(id => wwLib.$store.state.websiteData.wwObjects[id].parentSectionId)),
+            ...new Set(rootGhosts.map(id => wwLib.store.websiteData.$state.wwObjects[id].parentSectionId)),
         ];
 
         console.log(`Found ${rootGhosts.length} root ghost elements:`);
@@ -85,17 +83,17 @@ export default {
             console.log('############');
 
             const withinLinkedSections = rootGhosts.filter(id => {
-                const element = wwLib.$store.state.websiteData.wwObjects[id];
+                const element = wwLib.store.websiteData.$state.wwObjects[id];
                 const sectionId = element.parentSectionId;
-                return wwLib.$store.state.websiteData.sections[sectionId]?.linkedSectionId;
+                return wwLib.store.websiteData.$state.sections[sectionId]?.linkedSectionId;
             });
 
-            const sections = JSON.stringify(wwLib.$store.state.websiteData.sections);
+            const sections = JSON.stringify(wwLib.store.websiteData.$state.sections);
             const idsAfterSectionChecking = ghostElementsIds.filter(id => !sections.includes(id));
             console.log(`${idsAfterSectionChecking.length} elements after section checking:`);
 
             const idsAfterObjectChecking = idsAfterSectionChecking.filter(id => {
-                const elements = { ...wwLib.$store.state.websiteData.wwObjects };
+                const elements = { ...wwLib.store.websiteData.$state.wwObjects };
                 delete elements[id];
                 if (parents[id]) {
                     delete elements[parents[id]];
@@ -109,7 +107,7 @@ export default {
         if (apply) {
             rootGhosts.forEach(id => {
                 console.log(`Cleaning ghost element ${id}...`);
-                wwLib.$store.dispatch('websiteData/cleanElementParent', { wwObjectId: id });
+                wwLib.store.websiteData.cleanElementParent({ wwObjectId: id });
             });
         }
     },

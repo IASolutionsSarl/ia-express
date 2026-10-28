@@ -77,7 +77,7 @@ export default class wwObjectHelper {
         wwObjectTemplate.parentSectionId = parentSectionId;
         wwObjectTemplate.parentLibraryComponentId = parentLibraryComponentId;
 
-        return await wwLib.$store.dispatch('websiteData/createWwObjectFromTemplate', {
+        return await wwLib.store.websiteData.createWwObjectFromTemplate({
             wwObjectTemplate,
             noHistory: true,
             keepChildren,
@@ -86,7 +86,7 @@ export default class wwObjectHelper {
     }
 
     static async createLibraryComponentInstance(libraryComponentBaseId) {
-        return await wwLib.$store.dispatch('websiteData/createWwObjectFromTemplate', {
+        return await wwLib.store.websiteData.createWwObjectFromTemplate({
             wwObjectTemplate: {
                 isWwObject: true,
                 libraryComponentBaseId,
@@ -113,14 +113,14 @@ export default class wwObjectHelper {
     }
 
     static convertToTemplate(uid) {
-        return wwLib.$store.getters['websiteData/getFullWwObject'](uid, true);
+        return wwLib.store.websiteData.resolveFullObject(uid, true);
     }
 
     /**
      * @PUBLIC_API
      */
     static getWwObject(uid) {
-        return wwLib.$store.getters['websiteData/getWwObjects'][uid];
+        return wwLib.store.websiteData.wwObjects[uid];
     }
 
     static async removeWwObject(uidToRemove) {
@@ -133,7 +133,7 @@ export default class wwObjectHelper {
                         if (index !== -1) {
                             let newContent = JSON.parse(JSON.stringify(content[key]));
                             newContent.splice(index, 1);
-                            await wwLib.$store.dispatch('websiteData/removeWwObject', {
+                            await wwLib.store.websiteData.removeWwObject({
                                 wwObjectId: uidToRemove,
                                 originElement: {
                                     wwObjectId: parentType == 'element' ? parent.uid : null,
@@ -154,8 +154,8 @@ export default class wwObjectHelper {
         }
 
         let parent;
-        for (const uid in wwLib.$store.getters['websiteData/getSections']) {
-            const section = wwLib.$store.getters['websiteData/getSections'][uid];
+        for (const uid in wwLib.store.websiteData.sections) {
+            const section = wwLib.store.websiteData.sections[uid];
             if (section.uid === uidToRemove) continue;
             const parentData = await _removeWwObject('section', section);
             if (parentData) {
@@ -165,8 +165,8 @@ export default class wwObjectHelper {
                 };
             }
         }
-        for (const uid in wwLib.$store.getters['websiteData/getWwObjects']) {
-            const element = wwLib.$store.getters['websiteData/getWwObjects'][uid];
+        for (const uid in wwLib.store.websiteData.wwObjects) {
+            const element = wwLib.store.websiteData.wwObjects[uid];
             if (element.uid === uidToRemove) continue;
             const parentData = await _removeWwObject('element', element);
             if (parentData) {
@@ -213,8 +213,8 @@ export default class wwObjectHelper {
         }
 
         let parent;
-        for (const uid in wwLib.$store.getters['websiteData/getSections']) {
-            const section = wwLib.$store.getters['websiteData/getSections'][uid];
+        for (const uid in wwLib.store.websiteData.sections) {
+            const section = wwLib.store.websiteData.sections[uid];
             if (section.uid === uidToFind) continue;
             const parentData = _findParentWwObject('section', section);
             if (parentData) {
@@ -226,8 +226,8 @@ export default class wwObjectHelper {
                 };
             }
         }
-        for (const uid in wwLib.$store.getters['websiteData/getWwObjects']) {
-            const element = wwLib.$store.getters['websiteData/getWwObjects'][uid];
+        for (const uid in wwLib.store.websiteData.wwObjects) {
+            const element = wwLib.store.websiteData.wwObjects[uid];
             if (element.uid === uidToFind) continue;
             const parentData = _findParentWwObject('element', element);
             if (parentData) {
@@ -243,14 +243,14 @@ export default class wwObjectHelper {
     }
 
     static findWwObjectByName(name) {
-        for (const uid in wwLib.$store.getters['websiteData/getWwObjects']) {
-            const element = wwLib.$store.getters['websiteData/getWwObjects'][uid];
+        for (const uid in wwLib.store.websiteData.wwObjects) {
+            const element = wwLib.store.websiteData.wwObjects[uid];
             if (element.name === name) {
                 return element;
             }
         }
-        for (const uid in wwLib.$store.getters['websiteData/getSections']) {
-            const section = wwLib.$store.getters['websiteData/getSections'][uid];
+        for (const uid in wwLib.store.websiteData.sections) {
+            const section = wwLib.store.websiteData.sections[uid];
             if (section.sectionTitle === name) {
                 return section;
             }

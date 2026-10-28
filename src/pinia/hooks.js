@@ -2,7 +2,6 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 import integrationCore from '@/extensions/integrations/index.js';
-import { useIntegrationsStore } from '@/pinia/integrations';
 
 const HOOKS = ['init', 'auth-refresh'];
 
@@ -14,7 +13,7 @@ export const useHooksStore = defineStore('hooks', () => {
         }, {})
     );
 
-    const integrationsStore = useIntegrationsStore(wwLib.$pinia);
+    const integrationsStore = wwLib.store.integrations;
     function registerIntegrationHooks() {
         Object.entries(integrationCore).forEach(([integrationKey, integrationCore]) => {
             Object.entries(integrationCore?.hooks || {}).forEach(([hook, callback]) => {

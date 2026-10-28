@@ -1,7 +1,7 @@
 import { ref, markRaw } from 'vue';
  
 import { getComponentLabel } from '@/_common/helpers/component/component.js';
-import { useVariablesStore } from '@/pinia/variables.js';
+
 const LOG_TYPES = {
     ERROR: 'error',
     WARNING: 'warning',

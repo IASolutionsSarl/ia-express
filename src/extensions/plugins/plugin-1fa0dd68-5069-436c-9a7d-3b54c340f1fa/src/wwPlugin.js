@@ -47,7 +47,7 @@ export default {
 
             this.publicInstance = createClient(runtimeProjectUrl, effectivePublicKey, {
                 auth: {
-                    storageKey: wwLib.wwWebsiteData.getInfo().id,
+                    storageKey: wwLib.wwWebsiteData.info.id,
                 },
             });
 
@@ -273,7 +273,7 @@ export default {
 
         this.user = null;
         this.isAuthenticated = false;
-        const path = wwLib.manager ? '/' + wwLib.wwWebsiteData.getInfo().id : '/';
+        const path = wwLib.manager ? '/' + wwLib.wwWebsiteData.info.id : '/';
         window.vm.config.globalProperties.$cookie.removeCookie('sb-access-token', {
             path,
             domain: window.location.hostname,
@@ -406,7 +406,7 @@ export default {
 
 
 const setCookies = session => {
-    const path = wwLib.manager ? '/' + wwLib.wwWebsiteData.getInfo().id : '/';
+    const path = wwLib.manager ? '/' + wwLib.wwWebsiteData.info.id : '/';
     window.vm.config.globalProperties.$cookie.setCookie('sb-access-token', session.access_token, {
         expire: session.expires_in,
         path,

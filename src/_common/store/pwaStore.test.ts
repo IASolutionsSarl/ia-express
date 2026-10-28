@@ -1,3 +1,4 @@
+import { withStoreRegistry } from '@/pinia/testRegistry.test-support';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPwaStore } from './pwaStore';
 
@@ -72,12 +73,12 @@ describe('createPwaStore', () => {
             addEventListener: documentEvents.addEventListener,
         };
 
-        (globalThis as any).wwLib = {
+        (globalThis as any).wwLib = withStoreRegistry({
             getFrontWindow: vi.fn(() => wndw),
             getEditorWindow: vi.fn(() => wndw),
             getFrontDocument: vi.fn(() => doc),
             getEditorDocument: vi.fn(() => doc),
-        };
+        });
 
         const store = createPwaStore();
         store.start();
@@ -141,12 +142,12 @@ describe('createPwaStore', () => {
             addEventListener: documentEvents.addEventListener,
         };
 
-        (globalThis as any).wwLib = {
+        (globalThis as any).wwLib = withStoreRegistry({
             getFrontWindow: vi.fn(() => wndw),
             getEditorWindow: vi.fn(() => wndw),
             getFrontDocument: vi.fn(() => doc),
             getEditorDocument: vi.fn(() => doc),
-        };
+        });
 
         const store = createPwaStore();
         store.start();
@@ -203,12 +204,12 @@ describe('createPwaStore', () => {
             addEventListener: documentEvents.addEventListener,
         };
 
-        (globalThis as any).wwLib = {
+        (globalThis as any).wwLib = withStoreRegistry({
             getFrontWindow: vi.fn(() => wndw),
             getEditorWindow: vi.fn(() => wndw),
             getFrontDocument: vi.fn(() => doc),
             getEditorDocument: vi.fn(() => doc),
-        };
+        });
 
         const store = createPwaStore();
         store.start();

@@ -99,7 +99,7 @@ export default {
         const sectionId = inject('sectionId', null);
         const isDragPreview = inject('_wwIsDragPreview', false);
         const wwLibraryComponentUid_ = inject('wwLibraryComponentUid_', null);
-        const componentDataRef = computed(() => wwLib.$store.getters['websiteData/getWwObjects']?.[props.uid]);
+        const componentDataRef = computed(() => wwLib.store.websiteData.wwObjects?.[props.uid]);
         const styleSourceId = computed(() => componentDataRef.value?._si);
 
         provide('wwLayoutContext', {});
@@ -167,11 +167,11 @@ export default {
         // TODO: could be one common reactive property
         // This is already the case for Section
         const wwFrontState = reactive({
-            lang: computed(() => wwLib.$store.getters['front/getLang']),
-            pageId: computed(() => wwLib.$store.getters['websiteData/getPageId']),
+            lang: computed(() => wwLib.store.front.lang),
+            pageId: computed(() => wwLib.store.websiteData.pageId),
             sectionId, // THIS IS WRONG, SHOULD NOT BE HERE. PLEASE DELETE ONE DAY :(
-            screenSize: computed(() => wwLib.$store.getters['front/getScreenSize']),
-            screenSizes: computed(() => wwLib.$store.getters['front/getScreenSizes']),
+            screenSize: computed(() => wwLib.store.front.activeScreenSize),
+            screenSizes: computed(() => wwLib.store.front.screenSizes),
         });
         provide('wwFrontState', wwFrontState);
 
@@ -207,7 +207,7 @@ export default {
 
  
         if (!isDragPreview) {
-            useComponentAdvancedInteractions(state, wwLib.$store.getters['websiteData/getPageId']);
+            useComponentAdvancedInteractions(state, wwLib.store.websiteData.pageId);
         }
 
  

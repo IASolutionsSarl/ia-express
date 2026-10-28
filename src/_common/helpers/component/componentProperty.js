@@ -3,11 +3,11 @@ import { get } from 'lodash-es';
 
 const allScreenMedia = computed(() => getAllScreenMedia());
 function getActiveScreens(screenSize) {
-    const screenOrder = wwLib.$store.getters['front/getScreenSizes'][screenSize].order;
-    const screenSizes = wwLib.$store.getters['front/getScreenSizes'];
+    const screenOrder = wwLib.store.front.screenSizes[screenSize].order;
+    const screenSizes = wwLib.store.front.screenSizes;
     return allScreenMedia.value.filter(screen => screenSizes[screen].order <= screenOrder);
 }
-const currentActiveScreens = computed(() => getActiveScreens(wwLib.$store.getters['front/getScreenSize']));
+const currentActiveScreens = computed(() => getActiveScreens(wwLib.store.front.activeScreenSize));
 
 export function getComponentRawProperty({
     dataRef,
@@ -350,14 +350,14 @@ function concatenatePath(pathes) {
     return pathes.filter(path => path && path.length).join('.');
 }
 function getClassValue(classId, path) {
-    const classData = wwLib.$store.getters['libraries/getClasses'][classId];
+    const classData = wwLib.store.libraries.classes[classId];
     return get(classData, path);
 }
 function getSubClassValue(classId, subClassId, path) {
-    const classData = wwLib.$store.getters['libraries/getClasses'][classId];
+    const classData = wwLib.store.libraries.classes[classId];
     return get(classData, `subClasses.${subClassId}.${path}`);
 }
 export function getAllScreenMedia() {
-    const screenSizes = wwLib.$store.getters['front/getScreenSizes'];
+    const screenSizes = wwLib.store.front.screenSizes;
     return Object.keys(screenSizes).sort((key1, key2) => screenSizes[key1].order - screenSizes[key2].order);
 }

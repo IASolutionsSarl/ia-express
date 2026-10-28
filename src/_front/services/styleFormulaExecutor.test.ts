@@ -1,3 +1,5 @@
+import { withStoreRegistry } from '@/pinia/testRegistry.test-support';
+import '@/pinia/domainFixtures.test-support';
 import { createPinia } from 'pinia';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -130,7 +132,7 @@ describe('styleFormulaExecutor', () => {
 function installWwLib() {
     const pinia = createPinia();
     vi.stubGlobal('__WW_STORE_FRONT_CONNECTIONS__', {});
-    vi.stubGlobal('wwLib', {
+    vi.stubGlobal('wwLib', withStoreRegistry({
         $pinia: pinia,
         $store: {
             getters: {
@@ -142,5 +144,5 @@ function installWwLib() {
         wwPlugins: {},
         globalVariables: { customCodeVariables: {} },
         globalContext: {},
-    });
+    }));
 }

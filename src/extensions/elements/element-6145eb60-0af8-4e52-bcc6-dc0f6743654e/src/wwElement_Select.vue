@@ -177,7 +177,7 @@ export default {
 
             const actualDropdownHeight = dropdownElement.value?.getBoundingClientRect().height || 0;
             const estimatedDropdownHeight = parseInt(props.content.dropdownMaxHeight) || 300;
-            const dropdownHeight = actualDropdownHeight > 50 ? actualDropdownHeight : estimatedDropdownHeight;
+            const dropdownHeight = actualDropdownHeight > 0 ? actualDropdownHeight : estimatedDropdownHeight;
 
             const spaceBelow = viewportHeight - triggerRect.bottom;
             const spaceAbove = triggerRect.top;

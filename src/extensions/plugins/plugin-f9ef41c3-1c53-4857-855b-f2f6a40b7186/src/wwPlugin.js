@@ -88,7 +88,7 @@ export default {
             return await wwAxios({
                 method,
                 url: `${wwLib.wwApiRequests._getPluginsUrl()}/designs/${
-                    wwLib.$store.getters['websiteData/getDesignInfo'].id
+                    (wwLib.wwWebsiteData.info || {}).id
                 }/supabase${path}`,
                 data,
                 params: {
@@ -107,7 +107,7 @@ export default {
             if (retry && [401, 403].includes(error.response?.status) && isOauthToken) {
                 const { data } = await wwAxios.post(
                     `${wwLib.wwApiRequests._getPluginsUrl()}/designs/${
-                        wwLib.$store.getters['websiteData/getDesignInfo'].id
+                        (wwLib.wwWebsiteData.info || {}).id
                     }/supabase/refresh`
                 );
                 return await this.requestAPI({ method, path, data, params, signal }, false);
@@ -182,6 +182,7 @@ export default {
         // this.instance.removeAllChannels();
         for (const tableName of Object.keys(realtimeTables)) {
             if (!realtimeTables[tableName]) continue;
+            if (this.instance.getChannels().some(c => c.subTopic === 'ww:public:' + tableName)) continue;
             this.instance
                 .channel('ww:public:' + tableName)
                 .on('postgres_changes', { event: '*', schema: 'public', table: tableName }, this.onSubscribe)
@@ -528,7 +529,7 @@ export default {
         return data;
     },
     onSubscribe(payload) {
-        const collections = Object.values(wwLib.$store.getters['data/getCollections']).filter(
+        const collections = Object.values(wwLib.wwCollection.collectionsById).filter(
             collection =>
                 collection.pluginId === 'f9ef41c3-1c53-4857-855b-f2f6a40b7186' &&
                 collection.config.table === payload.table
@@ -543,7 +544,7 @@ export default {
                         collection.config.primaryData
                     );
                     if (itemIndex !== -1) continue;
-                    wwLib.$store.dispatch('data/setCollection', {
+                    wwLib.wwCollection.setCollection({
                         ...collection,
                         total: collection.total + 1,
                         data: [...(Array.isArray(collection.data) ? collection.data : []), payload.new],
@@ -560,7 +561,7 @@ export default {
                     if (itemIndex === -1) continue;
                     const data = [...(Array.isArray(collection.data) ? collection.data : [])];
                     data.splice(itemIndex, 1, { ...data[itemIndex], ...payload.new });
-                    wwLib.$store.dispatch('data/setCollection', { ...collection, data });
+                    wwLib.wwCollection.setCollection({ ...collection, data });
                 }
                 return;
             case 'UPSERT':
@@ -575,7 +576,7 @@ export default {
                     isInsert
                         ? data.push(payload.new)
                         : data.splice(itemIndex, 1, { ...data[itemIndex], ...payload.new });
-                    wwLib.$store.dispatch('data/setCollection', {
+                    wwLib.wwCollection.setCollection({
                         ...collection,
                         total: collection.total + (isInsert ? 1 : 0),
                         data,
@@ -592,7 +593,7 @@ export default {
                     if (itemIndex === -1) continue;
                     const data = [...(Array.isArray(collection.data) ? collection.data : [])];
                     data.splice(itemIndex, 1);
-                    wwLib.$store.dispatch('data/setCollection', { ...collection, total: collection.total - 1, data });
+                    wwLib.wwCollection.setCollection({ ...collection, total: collection.total - 1, data });
                 }
                 return;
         }
@@ -607,6 +608,8 @@ export default {
         self = false,
         presence = false,
     }) {
+        // realtime-js throws when adding postgres_changes/presence listeners to an already joined channel
+        if (this.instance.getChannels().some(c => c.subTopic === channel)) return;
         const _channel = this.instance.channel(channel, { config: { broadcast: { self } } });
         _channel.on(
             type,
@@ -639,13 +642,12 @@ export default {
         }
         _channel.subscribe();
     },
-    unsubscribeFromChannel({ channel }) {
+    async unsubscribeFromChannel({ channel }) {
         const _channel = this.instance.getChannels().find(c => c.subTopic === channel);
         if (!_channel) throw new Error('Channel not found, please subscribe to the channel before unsubscribing.');
-        this.instance.removeChannel(_channel);
+        await this.instance.removeChannel(_channel);
     },
     sendMessageToChannel({ channel, type = 'broadcast', event, payload }) {
-        debugger;
         const _channel = this.instance.getChannels().find(c => c.subTopic === channel);
         if (!_channel) throw new Error('Channel not found, please subscribe to the channel before sending a message.');
         _channel.send({ type, event, payload });

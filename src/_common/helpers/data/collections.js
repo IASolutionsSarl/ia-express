@@ -1,6 +1,6 @@
  
 export async function fetchStaticCollectionsData() {
-    const collectionsToFetch = Object.values(wwLib.$store.getters['data/getCollections']).filter(
+    const collectionsToFetch = Object.values(wwLib.store.data.collections).filter(
         collection => collection.mode === 'static'
     );
     await Promise.all(collectionsToFetch.map(cmsDataSet => wwLib.wwCollection.fetchCollection(cmsDataSet.id)));
@@ -8,13 +8,13 @@ export async function fetchStaticCollectionsData() {
 
 export async function fetchNonStaticCollectionsData() {
      /* wwFront:start */
-    await _fetchNonStaticCollectionsData(Object.values(wwLib.$store.getters['data/getCollections']));
+    await _fetchNonStaticCollectionsData(Object.values(wwLib.store.data.collections));
     /* wwFront:end */
 }
 
 export async function _fetchNonStaticCollectionsData(allCollections) {
     const collectionsToFetch = allCollections.filter(collection => {
-        const _collection = wwLib.$store.getters['data/getCollections'][collection.id];
+        const _collection = wwLib.store.data.collections[collection.id];
         return _collection.mode !== 'static' && !_collection.isFetched && _collection.config.isAutoFetch;
     });
     const collections = collectionsToFetch.filter(collection => {
@@ -31,10 +31,10 @@ export async function _fetchNonStaticCollectionsData(allCollections) {
 }
 
 export function resetCollections(resetPersistant) {
-    const collections = Object.values(wwLib.$store.getters['data/getCollections']);
+    const collections = Object.values(wwLib.store.data.collections);
     for (const collection of collections) {
         if (collection.mode === 'static') continue;
-        wwLib.$store.dispatch('data/setCollectionFetching', {
+        wwLib.store.data.setCollectionFetching({
             id: collection.id,
             isFetching: false,
             isFetched: collection.isFetched,
@@ -46,12 +46,12 @@ export function resetCollections(resetPersistant) {
             (collection.isFetched || collection.isFetching)
         )
             continue;
-        wwLib.$store.dispatch('data/setCollection', {
+        wwLib.store.data.setCollection({
             ...collection,
             data: collection.type === 'collection' ? [] : {},
             total: 0,
         });
-        wwLib.$store.dispatch('data/setCollectionFetching', { id: collection.id, isFetching: false, isFetched: false });
+        wwLib.store.data.setCollectionFetching({ id: collection.id, isFetching: false, isFetched: false });
     }
 }
 

@@ -4,6 +4,7 @@ import { set } from 'lodash-es';
 import { computed } from 'vue';
 
 export const useVariablesStore = defineStore('variables', () => {
+    const customCodeVariables = reactive({});
     const website = shallowReactive({});
     const plugins = shallowReactive({});
     const components = reactive({});
@@ -28,7 +29,7 @@ export const useVariablesStore = defineStore('variables', () => {
 
             this.setValue(variable.id, defaultValue, { ignoreQuery: true });
         }
-        wwLib.$store.dispatch('data/setPageParameterVariables');
+        wwLib.store.data.setPageParameterVariables();
     }
 
     function getConfiguration(variableId) {
@@ -36,7 +37,7 @@ export const useVariablesStore = defineStore('variables', () => {
             this.website[variableId] ||
             this.components[variableId] ||
             this.plugins[variableId] ||
-            wwLib.$store.getters['data/getPageParameterVariables'][variableId]
+            wwLib.store.data.pageParameterVariables[variableId]
         );
     }
 
@@ -76,8 +77,8 @@ export const useVariablesStore = defineStore('variables', () => {
         scopes[id] = effectScope(true);
 
         scopes[id].run(() => {
-            if (wwLib.globalVariables.customCodeVariables[id] === undefined) {
-                wwLib.globalVariables.customCodeVariables[id] = computed({
+            if (customCodeVariables[id] === undefined) {
+                customCodeVariables[id] = computed({
                     get,
                     set,
                 });
@@ -85,8 +86,8 @@ export const useVariablesStore = defineStore('variables', () => {
             if (category === 'plugin' || category === 'component' || !variable.name || variable.name === previousName) {
                 return;
             }
-            if (wwLib.globalVariables.customCodeVariables[variable?.name] === undefined) {
-                wwLib.globalVariables.customCodeVariables[variable?.name] = computed({
+            if (customCodeVariables[variable?.name] === undefined) {
+                customCodeVariables[variable?.name] = computed({
                     get,
                     set,
                 });
@@ -94,7 +95,7 @@ export const useVariablesStore = defineStore('variables', () => {
         });
         // TODO; maybe a small memory leak when variable change name
         if (previousName) {
-            delete wwLib.globalVariables.customCodeVariables[previousName];
+            delete customCodeVariables[previousName];
         }
     }
 
@@ -297,9 +298,9 @@ export const useVariablesStore = defineStore('variables', () => {
 
         scopes[variableId]?.stop();
         delete scopes[variableId];
-        delete wwLib.globalVariables.customCodeVariables[item.id];
+        delete customCodeVariables[item.id];
         if (item.name) {
-            delete wwLib.globalVariables.customCodeVariables[item.name];
+            delete customCodeVariables[item.name];
         }
     }
 
@@ -319,6 +320,7 @@ export const useVariablesStore = defineStore('variables', () => {
     }
 
     return {
+        customCodeVariables,
         website,
         plugins,
         components,

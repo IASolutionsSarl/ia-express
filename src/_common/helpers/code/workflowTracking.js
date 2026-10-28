@@ -18,16 +18,7 @@ function isAuthAction(type) {
     return prefix === null || actionName?.startsWith(prefix);
 }
 
-export function saveWorkflowLogs(logData) {
-    try {
-        if (!logData.designId || !logData.workflowId) return;
-
-        api.projects.saveWorkflowLogs(logData);
-    } catch {
-        // never block workflow execution
-    }
-}
-
+ 
 export function trackAuthWorkflowRun(workflow) {
     try {
         const authProviders = [
@@ -40,7 +31,7 @@ export function trackAuthWorkflowRun(workflow) {
 
         if (!authProviders.length) return;
 
-        const projectId = wwLib.$store?.getters['websiteData/getDesignInfo']?.id;
+        const projectId = wwLib.store.websiteData.designInfo?.id;
 
         wwLib.getEditorWindow().analytics?.track('AUTH_WORKFLOW_RUN', {
             project_id: projectId,

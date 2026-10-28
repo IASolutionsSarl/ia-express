@@ -4,8 +4,8 @@ import { getValue } from '@/_common/helpers/code/customCode.js';
 export async function executeWorkflows(_trigger = 'onload', workflowParams = {}) {
     const trigger = typeof _trigger === 'string' ? _trigger : _trigger.trigger;
     const conditions = typeof _trigger === 'string' ? {} : _trigger.conditions || {};
-    const { workflows: pageWorkflows = [], id: pageId } = wwLib.$store.getters['websiteData/getPage'] || {};
-    const { workflows: appWorkflows = [] } = wwLib.$store.getters['websiteData/getDesignInfo'] || {};
+    const { workflows: pageWorkflows = [], id: pageId } = wwLib.store.websiteData.page || {};
+    const { workflows: appWorkflows = [] } = wwLib.store.websiteData.designInfo || {};
     await Promise.all([
         ...pageWorkflows
             .filter(
@@ -39,5 +39,5 @@ export async function executeWorkflows(_trigger = 'onload', workflowParams = {})
 }
 
 export function resetWorkflows() {
-    wwLib.$store.dispatch('data/resetWorkflowsResult');
+    wwLib.store.data.resetWorkflowsResult();
 }

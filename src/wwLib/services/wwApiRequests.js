@@ -7,7 +7,7 @@ export default {
         return import.meta.env.VITE_APP_PLUGINS_URL;
     },
     _getPreviewUrl() {
-        const designInfo = wwLib.$store.getters['websiteData/getDesignInfo'];
+        const designInfo = wwLib.store.websiteData.designInfo;
         if (designInfo.wewebPreviewURL) {
             return designInfo.wewebPreviewURL;
         }

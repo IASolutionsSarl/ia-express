@@ -1,10 +1,21 @@
 import { filterData, sortData, getValue } from '@/_common/helpers/code/customCode.js';
 import { executeWorkflows } from '@/_common/helpers/data/workflows.js';
-import { useComponentBasesStore } from '@/pinia/componentBases.js';
- 
+
 export default {
+    /** @PUBLIC_API Live collections indexed by ID; pagination totals and data references are retained. */
+    get collectionsById() {
+        return wwLib.store.data.collections;
+    },
+    /** @PUBLIC_API Live collection registry; reads retain their reactive dependencies. */
+    getCollections() {
+        return wwLib.store.data.collections;
+    },
+    /** @PUBLIC_API Merge collection fields while preserving pagination totals and data identity. */
+    setCollection(collection) {
+        return wwLib.store.data.setCollection(collection);
+    },
     getCollection(collectionId) {
-        const collection = wwLib.$store.getters['data/getCollections'][collectionId];
+        const collection = wwLib.store.data.collections[collectionId];
         if (!collection) {
             wwLib.wwLog.error(`Collection ${collectionId} not found`);
             return null;
@@ -16,13 +27,11 @@ export default {
         const collection = wwLib.wwCollection.getCollection(collectionId);
         if (!collection) return null;
 
-        const plugin = collection.pluginId
-            ? wwLib.$store.getters['websiteData/getPluginById'](collection.pluginId)
-            : null;
+        const plugin = collection.pluginId ? wwLib.store.websiteData.pluginsById[collection.pluginId] : null;
 
         if (!plugin) return null;
 
-        const store = useComponentBasesStore(wwLib.$pinia);
+        const store = wwLib.store.componentBases;
         return store.configurations[`plugin-${plugin.id}`];
     },
     getCollectionQueryConfig(collectionId) {
@@ -30,9 +39,9 @@ export default {
         return collectionPluginConfig?.editor?.collection?.queryConfig || null;
     },
     async _fetchCollection(id, { limit, offset } = {}) {
-        const websiteId = wwLib.$store.getters['websiteData/getDesignInfo'].id;
-        const collection = wwLib.$store.getters['data/getCollections'][id];
-        const plugin = wwLib.$store.getters['websiteData/getPluginById'](collection.pluginId);
+        const websiteId = wwLib.store.websiteData.designInfo.id;
+        const collection = wwLib.store.data.collections[id];
+        const plugin = wwLib.store.websiteData.pluginsById[collection.pluginId];
 
         limit = limit || parseInt(getValue(collection.limit));
 
@@ -84,9 +93,9 @@ export default {
  
         const currentNavigationId = wwLib.globalVariables._navigationId;
         try {
-            const currentCollectionInfo = wwLib.$store.getters['data/getCollections'][id];
+            const currentCollectionInfo = wwLib.store.data.collections[id];
             if (!currentCollectionInfo) return;
-             wwLib.$store.dispatch('data/setCollectionFetching', {
+             wwLib.store.data.setCollectionFetching({
                 id,
                 isFetching: true,
             });
@@ -143,13 +152,13 @@ export default {
                     },
                 });
             }
-            wwLib.$store.dispatch('data/setCollection', collection);
+            wwLib.store.data.setCollection(collection);
              if (currentNavigationId === wwLib.globalVariables._navigationId) {
-                wwLib.$store.dispatch('data/setCollectionFetching', { id, isFetching: false });
+                wwLib.store.data.setCollectionFetching({ id, isFetching: false });
             }
         } catch (err) {
             if (currentNavigationId === wwLib.globalVariables._navigationId) {
-                wwLib.$store.dispatch('data/setCollectionFetching', { id, isFetching: false });
+                wwLib.store.data.setCollectionFetching({ id, isFetching: false });
             }
         }
     },
@@ -167,7 +176,7 @@ export default {
             refreshSort = false,
         } = {}
     ) {
-        const currentCollectionInfo = wwLib.$store.getters['data/getCollections'][collectionId];
+        const currentCollectionInfo = wwLib.store.data.collections[collectionId];
         let newData = updateType === 'delete' ? null : JSON.parse(JSON.stringify(data)); // prevent linking reference when binding variables
         let collectionData =
             updateType && Array.isArray(currentCollectionInfo.data) ? [...currentCollectionInfo.data] : newData;
@@ -193,7 +202,7 @@ export default {
         }
         if (refreshFilter) collectionData = filterData(collectionData, currentCollectionInfo.filter);
         if (refreshSort) collectionData = sortData(collectionData, currentCollectionInfo.sort);
-        wwLib.$store.dispatch('data/setCollection', {
+        wwLib.store.data.setCollection({
             id: collectionId,
             data: collectionData,
             total: collectionData.length,
@@ -204,16 +213,16 @@ export default {
      * @PUBLIC_API
      */
     async setOffset(collectionId, offset) {
-        const collection = wwLib.$store.getters['data/getCollections'][collectionId];
+        const collection = wwLib.store.data.collections[collectionId];
         const queryConfig = wwLib.wwCollection.getCollectionQueryConfig(collectionId) || {};
         if (collection.mode !== 'dynamic' || queryConfig.hasNativePagination) {
             await this.fetchCollection(collectionId, { offset });
         } else {
-            await wwLib.$store.dispatch('data/setCollection', { ...collection, offset });
+            await wwLib.store.data.setCollection({ ...collection, offset });
         }
     },
     getPaginationOptions(collectionId) {
-        return wwLib.$store.getters['data/getPaginationOptions'](collectionId);
+        return wwLib.store.data.resolvePaginationOptions(collectionId);
     },
 
     isCollection(value) {

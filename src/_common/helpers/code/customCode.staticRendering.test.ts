@@ -1,3 +1,5 @@
+import { withStoreRegistry } from '@/pinia/testRegistry.test-support';
+import '@/pinia/domainFixtures.test-support';
 // @vitest-environment jsdom
 
 import { createSSRApp, defineComponent, h, inject, provide } from 'vue';
@@ -31,7 +33,7 @@ describe('getValue during static rendering', () => {
     beforeEach(() => {
         const pinia = createPinia();
         runtime.__WW_STORE_FRONT_CONNECTIONS__ = {};
-        runtime.wwLib = {
+        runtime.wwLib = withStoreRegistry({
             $pinia: pinia,
             $store: {
                 getters: {
@@ -44,7 +46,7 @@ describe('getValue during static rendering', () => {
             globalContext: {},
             globalVariables: { customCodeVariables: {} },
             wwPlugins: {},
-        };
+        });
         activateStaticRendering();
     });
 

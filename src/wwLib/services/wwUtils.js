@@ -230,11 +230,11 @@ export default {
     },
 
     getComponentType(uid) {
-        if (wwLib.$store.getters['websiteData/getWwObjects'][uid]?.wwObjectBaseId) {
+        if (wwLib.store.websiteData.wwObjects[uid]?.wwObjectBaseId) {
             return 'element';
-        } else if (wwLib.$store.getters['websiteData/getWwObjects'][uid]?.libraryComponentBaseId) {
+        } else if (wwLib.store.websiteData.wwObjects[uid]?.libraryComponentBaseId) {
             return 'libraryComponent';
-        } else if (wwLib.$store.getters['websiteData/getSections'][uid]?.sectionBaseId) {
+        } else if (wwLib.store.websiteData.sections[uid]?.sectionBaseId) {
             return 'section';
         }
         return null;

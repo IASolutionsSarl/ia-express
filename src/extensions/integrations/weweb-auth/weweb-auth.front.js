@@ -1,7 +1,6 @@
 import { createAuthClient } from 'better-auth/client';
 import { magicLinkClient, emailOTPClient } from 'better-auth/client/plugins';
 import { getServerUrl } from '@/_common/helpers/code/backendWorkflows.js';
-import { useBackAuthStore } from '@/pinia/backAuth.js';
  
 function getPageUrl(pageConfig = {}) {
     if (pageConfig.type === 'internal') {
@@ -37,7 +36,7 @@ export default {
     hooks: {
         'auth-refresh': async ({ instance } = {}) => {
             if (!instance) throw new Error('WeWeb Auth instance is required');
-            const backAuthStore = useBackAuthStore(wwLib.$pinia);
+            const backAuthStore = wwLib.store.backAuth;
 
             try {
                 const { data, error } = await instance.getSession();
@@ -66,7 +65,7 @@ export default {
 
             if (error) throw error;
 
-            const backAuthStore = useBackAuthStore(wwLib.$pinia);
+            const backAuthStore = wwLib.store.backAuth;
             await backAuthStore.refresh();
 
             return data;
@@ -84,7 +83,7 @@ export default {
 
             if (error) throw error;
 
-            const backAuthStore = useBackAuthStore(wwLib.$pinia);
+            const backAuthStore = wwLib.store.backAuth;
             await backAuthStore.refresh();
 
             return data;
@@ -128,7 +127,7 @@ export default {
 
             if (error) throw error;
 
-            const backAuthStore = useBackAuthStore(wwLib.$pinia);
+            const backAuthStore = wwLib.store.backAuth;
             await backAuthStore.refresh();
 
             return data;
@@ -145,7 +144,7 @@ export default {
                 },
             });
 
-            const backAuthStore = useBackAuthStore(wwLib.$pinia);
+            const backAuthStore = wwLib.store.backAuth;
             backAuthStore.setAuthUser(null);
             backAuthStore.setAuthSession(null);
 
@@ -291,7 +290,7 @@ export default {
             });
 
             if (!error) {
-                const backAuthStore = useBackAuthStore(wwLib.$pinia);
+                const backAuthStore = wwLib.store.backAuth;
                 await backAuthStore.refresh();
             }
 
@@ -308,7 +307,7 @@ export default {
             });
 
             if (!error) {
-                const backAuthStore = useBackAuthStore(wwLib.$pinia);
+                const backAuthStore = wwLib.store.backAuth;
                 await backAuthStore.refresh();
             }
 

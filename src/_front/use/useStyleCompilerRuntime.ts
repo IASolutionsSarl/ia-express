@@ -40,13 +40,13 @@ function usePublishedPageStyleRuntime() {
     let stopCurrentRuntime: () => void = () => {};
     const stopManifestWatch = watch(
         () => {
-            const page = wwLib.$store.getters['websiteData/getPage'];
-            const pageStyleSourceUids = wwLib.$store.getters['websiteData/getStyleSourceUids'];
+            const page = wwLib.store.websiteData.page;
+            const pageStyleSourceUids = wwLib.store.websiteData.styleSourceUids;
             const sourceUids = Array.isArray(pageStyleSourceUids)
                 ? pageStyleSourceUids
                 : [
-                      ...Object.keys(wwLib.$store.getters['websiteData/getSections'] || {}),
-                      ...Object.keys(wwLib.$store.getters['websiteData/getWwObjects'] || {}),
+                      ...Object.keys(wwLib.store.websiteData.sections || {}),
+                      ...Object.keys(wwLib.store.websiteData.wwObjects || {}),
                   ];
             return [page?.id, page?._sm, sourceUids] as const;
         },
@@ -85,25 +85,22 @@ function resolvePublishedAtomicClasses(
     assignments: readonly StyleRuntimeAtomicClassAssignment[],
     sourceUids: readonly string[]
 ) {
-    return assignments.reduce<StyleAtomicClassAssignment[] | null>(
-        (resolved, assignment) => {
-            if (!resolved) return null;
-            if ('sourceUid' in assignment) {
-                resolved.push(assignment);
-                return resolved;
-            }
-
-            const sourceUid = sourceUids[assignment.sourceIndex];
-            if (!sourceUid) return null;
-            resolved.push({
-                sourceUid,
-                surfaceKind: assignment.surfaceKind,
-                className: assignment.className,
-            });
+    return assignments.reduce<StyleAtomicClassAssignment[] | null>((resolved, assignment) => {
+        if (!resolved) return null;
+        if ('sourceUid' in assignment) {
+            resolved.push(assignment);
             return resolved;
-        },
-        []
-    );
+        }
+
+        const sourceUid = sourceUids[assignment.sourceIndex];
+        if (!sourceUid) return null;
+        resolved.push({
+            sourceUid,
+            surfaceKind: assignment.surfaceKind,
+            className: assignment.className,
+        });
+        return resolved;
+    }, []);
 }
 
 function mountStyleCompiler(mode: Extract<StyleCompilerMode, 'editor' | 'runtime'>) {

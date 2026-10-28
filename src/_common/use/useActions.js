@@ -6,7 +6,7 @@ export function useLibraryComponentActions({ uid, componentId, repeatIndex }, { 
     const baseUid = getComponentBaseUid('libraryComponent', uid);
 
     function executeFunction(workflowId, parameters) {
-        const workflow = wwLib.$store.getters['libraries/getComponents'][baseUid]?.inner?.workflows[workflowId];
+        const workflow = wwLib.store.libraries.components[baseUid]?.inner?.workflows[workflowId];
         return executeWorkflow(workflow, {
             context: {
                 ...context,
@@ -54,7 +54,7 @@ export function useLibraryComponentActions({ uid, componentId, repeatIndex }, { 
 
     let hasActions;
      /* wwFront:start */
-    const workflows = wwLib.$store.getters['libraries/getComponents'][baseUid]?.inner?.workflows || {};
+    const workflows = wwLib.store.libraries.components[baseUid]?.inner?.workflows || {};
     hasActions = {
         value: Object.values(workflows).some(workflow => workflow.isExternal),
     };

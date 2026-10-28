@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { withStoreRegistry } from './testRegistry.test-support';
 import { createPinia, setActivePinia } from 'pinia';
 
 const mocks = vi.hoisted(() => ({
@@ -31,10 +32,13 @@ describe('backTableViews store', () => {
         const pinia = createPinia();
         setActivePinia(pinia);
         globalThis.__WW_STORE_FRONT_TABLE_VIEWS__ = {};
-        globalThis.wwLib = {
-            $pinia: pinia,
-            globalVariables: { _navigationId: 'navigation-id' },
-        };
+        globalThis.wwLib = withStoreRegistry(
+            {
+                $pinia: pinia,
+                globalVariables: { _navigationId: 'navigation-id' },
+            },
+            pinia
+        );
     });
 
     it('exposes grouped results through groups and fetches their initial rows', async () => {

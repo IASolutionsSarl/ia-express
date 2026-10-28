@@ -1,8 +1,11 @@
+import '@/pinia/domainFixtures.test-support';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const flushHistory = vi.fn();
-const requestWithOptionalSSE = vi.fn();
-const variableValues = {};
+const { flushHistory, requestWithOptionalSSE, variableValues } = vi.hoisted(() => ({
+    flushHistory: vi.fn(),
+    requestWithOptionalSSE: vi.fn(),
+    variableValues: {},
+}));
 
 vi.mock('@/wwLib/servicesManager/wwEditorHistory', () => ({
     default: {
@@ -159,5 +162,4 @@ describe('testBackendWorkflow', () => {
         expect(url).toBe('https://example.weweb.io//api/stream-workflow');
         expect(stream).toBe(true);
     });
-
 });

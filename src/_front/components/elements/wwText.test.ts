@@ -1,3 +1,4 @@
+import { withStoreRegistry } from '@/pinia/testRegistry.test-support';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const richTextRendering = vi.hoisted(() => ({
@@ -17,11 +18,11 @@ describe('wwText rich text validation', () => {
     beforeEach(() => {
         richTextRendering.createNormalizedRichTextContent.mockClear();
         richTextRendering.isRichTextMarkupBrowserStable.mockClear();
-        vi.stubGlobal('wwLib', {
+        vi.stubGlobal('wwLib', withStoreRegistry({
             wwLang: {
                 getText: vi.fn(value => value.en),
             },
-        });
+        }));
     });
 
     it('validates the active translation when inline editing emits localized text', () => {

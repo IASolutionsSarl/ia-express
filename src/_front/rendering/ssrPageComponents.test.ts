@@ -8,10 +8,6 @@ const { captureClientIslandError, configurations, isKnownClientIsland, registerC
     registerClientIsland: vi.fn(),
 }));
 
-vi.mock('@/pinia/componentBases', () => ({
-    useComponentBasesStore: () => ({ configurations }),
-}));
-
 vi.mock('./clientIslandContext', () => ({
     captureClientIslandError,
     createClientIslandBaseId: (type: string, baseId: string) => `${type}-base:${baseId}`,
@@ -21,6 +17,7 @@ vi.mock('./clientIslandContext', () => ({
 
 describe('registerSsrPageComponents', () => {
     beforeEach(() => {
+        vi.stubGlobal('wwLib', { store: { componentBases: { configurations } } });
         for (const key of Object.keys(configurations)) delete configurations[key];
         captureClientIslandError.mockReset();
         isKnownClientIsland.mockReset().mockReturnValue(false);

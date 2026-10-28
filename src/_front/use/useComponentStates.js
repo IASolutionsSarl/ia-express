@@ -6,7 +6,7 @@ const FORCED_STATES_KEY = Symbol.for('weweb.forcedStates');
 
 export function useComponentStates({ uid, type }, { context = {}, propsState = [], isSelected = false }) {
     // State define by the user on this component
-    const rawStates = computed(() => wwLib.$store.getters['websiteData/getComponentRawStates']({ uid, type }));
+    const rawStates = computed(() => wwLib.store.websiteData.resolveComponentStates({ uid, type }));
 
     // Store state handle by weweb like _wwHover/ _wwLinkActive
     const internalStates = reactive(new Set());

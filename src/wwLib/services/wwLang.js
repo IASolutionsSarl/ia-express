@@ -6,16 +6,13 @@ export default {
 
         const base = wwLib.useBaseTag() ? wwLib.getBaseTag() : '/';
 
-        wwLib.$store.dispatch(
-            'front/setLang',
-            router.resolve(window.location.pathname.replace(base, '/'))?.meta?.lang?.lang
-        );
+        wwLib.store.front.setLang(router.resolve(window.location.pathname.replace(base, '/'))?.meta?.lang?.lang);
     },
     /**
      * @PUBLIC_API
      */
     get lang() {
-        return wwLib.$store ? wwLib.$store.getters['front/getLang'] : this.defaultLang;
+        return wwLib.$pinia ? wwLib.store.front.lang : this.defaultLang;
     },
 
     /**
@@ -29,14 +26,14 @@ export default {
      * @PUBLIC_API
      */
     setLang(lang) {
-        const pageLangs = wwLib.$store.getters['websiteData/getPage'].langs || [];
+        const pageLangs = wwLib.store.websiteData.page.langs || [];
         if (!pageLangs.includes(lang)) {
             return false;
         }
 
         var oldLang = this.lang;
 
-        wwLib.$store.dispatch('front/setLang', lang);
+        wwLib.store.front.setLang(lang);
 
         // eslint-disable-next-line vue/custom-event-name-casing
         wwLib.$emit('wwLang:changed', {

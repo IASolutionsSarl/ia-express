@@ -3,16 +3,18 @@
      <div :ww-page-id="page.id" class="website-wrapper">
         <!-- __WW_PAGE_MADE_WITH_WEWEB__ -->
         <div v-if="page && page.pageLoaded" class="sections-wrapper">
-            <template v-for="(section, index) in sections" :key="section.uid">
-                 <!-- wwFront:start -->
-                <div class="placeholder-section" :data-placeholder-section-uid="section.uid"></div>
-                <!-- wwFront:end -->
-                <wwSection
-                    :uid="section.uid"
-                    :section-index="index"
-                    :index="index"
-                    :ww-responsive="`ww-section-${index}`"
-                />
+            <template v-for="(section, index) in sections" :key="page.sections[index].uid">
+                <template v-if="section">
+                     <!-- wwFront:start -->
+                    <div class="placeholder-section" :data-placeholder-section-uid="section.uid"></div>
+                    <!-- wwFront:end -->
+                    <wwSection
+                        :uid="section.uid"
+                        :section-index="index"
+                        :index="index"
+                        :ww-responsive="`ww-section-${index}`"
+                    />
+                </template>
             </template>
           </div>
          <!-- POPUPS -->
@@ -33,10 +35,10 @@
 
 <script>
 import { computed, ref } from 'vue';
-import { mapGetters, useStore } from 'vuex';
+
 import wwPageLoadProgress from '@/_front/components/wwPageLoadProgress.vue';
 import { getBackgroundStyle } from '@/_front/helpers/wwBackgroungStyle.js';
-import { usePopupStore } from '@/pinia/popup.js';
+
 import wwFrontPopup from '@/_front/components/wwFrontPopup.vue';
 import { usePageStyleCompilerRuntime } from '@/_front/use/useStyleCompilerRuntime';
 
@@ -51,18 +53,17 @@ export default {
         wwFrontPopup,
      },
     setup() {
-        const store = useStore();
-        const page = computed(() => store.getters['websiteData/getPage'] || { id: null, meta: {} });
-        const popupStore = usePopupStore();
+        const page = computed(() => wwLib.store.websiteData.page || { id: null, meta: {} });
+        const popupStore = wwLib.store.popups;
 
-        const designInfo = computed(() => store.getters['websiteData/getDesignInfo'] || {});
+        const designInfo = computed(() => wwLib.store.websiteData.designInfo || {});
 
  
         /* wwFront:start */
         usePageStyleCompilerRuntime('runtime');
 
         const homePage = computed(
-            () => store.getters['websiteData/getPageById'](designInfo.value.homePageId) || { id: null, meta: {} }
+            () => wwLib.store.websiteData.pagesById[designInfo.value.homePageId] || { id: null, meta: {} }
         );
         // TODO: not execute on first load
         useHead({
@@ -80,7 +81,7 @@ export default {
             popupStore,
             /* wwFront:start */
             sections: computed(() => {
-                const sections = store.getters['websiteData/getSections'];
+                const sections = wwLib.store.websiteData.sections;
                 return page.value.sections.map(({ uid }) => sections[uid]);
             }),
             /* wwFront:end */
@@ -94,12 +95,20 @@ export default {
         };
     },
     computed: {
-        ...mapGetters({
-            designInfo: 'websiteData/getDesignInfo',
-            activeLinkPopup: 'front/getActiveLinkPopup',
-            screen: 'front/getScreenSize',
-            theme: 'front/getTheme',
-         }),
+        ...{
+            designInfo() {
+                return wwLib.store.websiteData.designInfo;
+            },
+            activeLinkPopup() {
+                return wwLib.store.front.activeLinkPopup;
+            },
+            screen() {
+                return wwLib.store.front.activeScreenSize;
+            },
+            theme() {
+                return wwLib.store.front.resolvedTheme;
+            },
+        },
         background() {
             return getBackgroundStyle(this.designInfo?.background || {});
         },

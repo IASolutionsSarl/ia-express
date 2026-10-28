@@ -5,14 +5,12 @@ import { applyVariableUpdate } from '@/_common/helpers/updateVariable.js';
 import { getFrontWorkflowCapabilities } from '@/_common/helpers/workflowVersion';
 import { set } from 'lodash-es';
 import { unref } from 'vue';
-import { useVariablesStore } from '@/pinia/variables.js';
+
 import { executeBackendWorkflow, parseSSEStreamAsync } from '@/_common/helpers/code/backendWorkflows.js';
-import { usePopupStore } from '@/pinia/popup';
-import { useBackTableViewsStore } from '@/pinia/backTableViews.js';
+
 import { betterFetch } from '@better-fetch/fetch';
 import integrationsCore from '@/extensions/integrations/index.js';
-import { useIntegrationsStore } from '@/pinia/integrations';
-import { useBackAuthStore } from '@/pinia/backAuth';
+
  
 export async function executeWorkflow(
     workflow,
@@ -62,7 +60,7 @@ export async function executeWorkflow(
         if (internal) {
             set(context.component, `workflowsResults.${workflow.id}.error`, convertErrorToObject(error));
         } else {
-            await wwLib.$store.dispatch('data/setWorkflowError', {
+            await wwLib.store.data.setWorkflowError({
                 workflowId: workflow.id,
                 value: convertErrorToObject(error),
             });
@@ -96,7 +94,7 @@ function cleanupScopedWorkflowVariables(workflowId, scopeId, internal, context) 
 
     const variables = internal
         ? context?.component?.workflowsResults?.[workflowId]?.variables
-        : wwLib.$store.getters['data/getWorkflowResults'](workflowId)?.variables;
+        : wwLib.store.data.workflowResultsById[workflowId]?.variables;
 
     if (!variables) return;
 
@@ -105,7 +103,7 @@ function cleanupScopedWorkflowVariables(workflowId, scopeId, internal, context) 
             if (internal) {
                 delete context.component.workflowsResults[workflowId].variables[actionId];
             } else {
-                wwLib.$store.dispatch('data/deleteWorkflowVariable', { workflowId, actionId });
+                wwLib.store.data.deleteWorkflowVariable({ workflowId, actionId });
             }
         }
     }
@@ -126,7 +124,7 @@ export async function executeWorkflowActions(
             ...context,
             workflow: internal
                 ? context?.component?.workflowsResults?.[workflow.id]
-                : wwLib.$store.getters['data/getWorkflowResults'](workflow.id),
+                : wwLib.store.data.workflowResultsById[workflow.id],
         };
 
         const { result, stop, breakLoop } = await executeWorkflowAction(workflow, actionId, {
@@ -222,7 +220,7 @@ export async function executeWorkflowAction(
             ...context,
             workflow: internal
                 ? context?.component?.workflowsResults[workflow.id]
-                : wwLib.$store.getters['data/getWorkflowResults'](workflow.id),
+                : wwLib.store.data.workflowResultsById[workflow.id],
         };
     }
 
@@ -305,9 +303,7 @@ export async function executeWorkflowAction(
                     if (internal) {
                         currentVar = context?.component?.workflowsResults?.[workflow.id]?.variables?.[action.varId];
                     } else {
-                        currentVar = wwLib.$store.getters['data/getWorkflowResults'](workflow.id)?.variables?.[
-                            action.varId
-                        ];
+                        currentVar = wwLib.store.data.workflowResultsById[workflow.id]?.variables?.[action.varId];
                     }
                     if (!currentVar) throw new Error('Workflow variable not found. Create it first.');
 
@@ -324,7 +320,7 @@ export async function executeWorkflowAction(
                             newValue
                         );
                     } else {
-                        wwLib.$store.dispatch('data/setWorkflowVariable', {
+                        wwLib.store.data.setWorkflowVariable({
                             workflowId: workflow.id,
                             actionId: action.varId,
                             value: newValue,
@@ -336,10 +332,9 @@ export async function executeWorkflowAction(
                     break;
                 }
 
-                const variablesStore = useVariablesStore(wwLib.$pinia);
+                const variablesStore = wwLib.store.variables;
                 const innerVariables =
-                    wwLib.$store.getters['libraries/getComponents'][context?.component?.baseUid]?.inner?.variables ||
-                    {};
+                    wwLib.store.libraries.components[context?.component?.baseUid]?.inner?.variables || {};
                 const innerComponentVariables = context?.component?.componentVariablesConfiguration || {};
 
                 if (innerVariables[action.varId] || innerComponentVariables[action.varId]) {
@@ -365,10 +360,9 @@ export async function executeWorkflowAction(
                 break;
             }
             case 'reset-variables': {
-                const variablesStore = useVariablesStore(wwLib.$pinia);
+                const variablesStore = wwLib.store.variables;
                 const innerVariables =
-                    wwLib.$store.getters['libraries/getComponents'][context?.component?.baseUid]?.inner?.variables ||
-                    {};
+                    wwLib.store.libraries.components[context?.component?.baseUid]?.inner?.variables || {};
                 const innerComponentVariables = context?.component?.componentVariablesConfiguration || {};
                 for (const varId of action.varsId || []) {
                     if (!varId) continue;
@@ -385,10 +379,9 @@ export async function executeWorkflowAction(
                                 initialValue
                             );
                         } else {
-                            const currentVar = wwLib.$store.getters['data/getWorkflowResults'](workflow.id)
-                                ?.variables?.[varId];
+                            const currentVar = wwLib.store.data.workflowResultsById[workflow.id]?.variables?.[varId];
                             if (currentVar) {
-                                wwLib.$store.dispatch('data/setWorkflowVariable', {
+                                wwLib.store.data.setWorkflowVariable({
                                     workflowId: workflow.id,
                                     actionId: varId,
                                     value: initialValue,
@@ -444,7 +437,7 @@ export async function executeWorkflowAction(
                         scopeId,
                     });
                 } else {
-                    wwLib.$store.dispatch('data/setWorkflowVariable', {
+                    wwLib.store.data.setWorkflowVariable({
                         workflowId: workflow.id,
                         actionId: action.id,
                         value,
@@ -457,7 +450,7 @@ export async function executeWorkflowAction(
             }
             case 'fetch-collection': {
                 if (!action.collectionId) throw new Error('No collection selected.');
-                const collection = wwLib.$store.getters['data/getCollections'][action.collectionId] || {};
+                const collection = wwLib.store.data.collections[action.collectionId] || {};
                 if (!collection) throw new Error('Collection not found.');
                 await wwLib.wwCollection.fetchCollection(
                     action.collectionId,
@@ -473,7 +466,7 @@ export async function executeWorkflowAction(
             }
             case 'fetch-collections': {
                 if (!action.collectionsId.length) throw new Error('No collection selected.');
-                const collections = wwLib.$store.getters['data/getCollections'];
+                const collections = wwLib.store.data.collections;
                 await Promise.all(
                     action.collectionsId
                         .filter(id => !!id)
@@ -495,7 +488,7 @@ export async function executeWorkflowAction(
             }
             case 'update-collection': {
                 if (!action.collectionId) throw new Error('No collection selected.');
-                const collection = wwLib.$store.getters['data/getCollections'][action.collectionId];
+                const collection = wwLib.store.data.collections[action.collectionId];
                 if (!collection) throw new Error('Collection not found.');
                 const data = resolveConfig('data', action.data, context, { event });
                 const updateIndex = resolveConfig('updateIndex', action.updateIndex, context, { event });
@@ -519,7 +512,7 @@ export async function executeWorkflowAction(
             case 'fetch-table-view': {
                 if (!action.tableViewId) throw new Error('No table view selected.');
 
-                const backTableViewsStore = useBackTableViewsStore(wwLib.$pinia);
+                const backTableViewsStore = wwLib.store.backTableViews;
                 const parameters = {
                     offset: resolveConfig('offset', action.offset, context, { event }),
                     limit: resolveConfig('limit', action.limit, context, { event }),
@@ -535,7 +528,7 @@ export async function executeWorkflowAction(
             case 'fetch-table-view-offset': {
                 if (!action.tableViewId) throw new Error('No table view selected.');
 
-                const backTableViewsStore = useBackTableViewsStore(wwLib.$pinia);
+                const backTableViewsStore = wwLib.store.backTableViews;
                 const parameters = {
                     ...backTableViewsStore.latestFetchParameters[action.tableViewId],
                     limit: resolveConfig('limit', action.limit, context, { event }),
@@ -551,7 +544,7 @@ export async function executeWorkflowAction(
             case 'fetch-table-view-load-more': {
                 if (!action.tableViewId) throw new Error('No table view selected.');
 
-                const backTableViewsStore = useBackTableViewsStore(wwLib.$pinia);
+                const backTableViewsStore = wwLib.store.backTableViews;
                 await backTableViewsStore.fetchMore(action.tableViewId, {
                     group: resolveConfig('group', action.group, context, { event }),
                     parameters: {
@@ -586,14 +579,14 @@ export async function executeWorkflowAction(
                     if (!action.pageId) throw new Error('No page selected.');
                     const value = resolveConfig('pageId', action.pageId, context, { event });
                     const pageId = typeof value === 'object' ? value.id : value;
-                    const page = wwLib.$store.getters['websiteData/getPageById'](pageId);
+                    const page = wwLib.store.websiteData.pagesById[pageId];
                     if (!page) throw new Error('Page not found.');
                      /* wwFront:start */
                     href = wwLib.wwPageHelper.getPagePath(pageId);
                     /* wwFront:end */
                     const resolvedParameters = resolveConfig('parameters', action.parameters || {}, context, { event });
                     setResolvedConfig('parameters', resolvedParameters);
-                    const variables = wwLib.$store.getters['data/getPageParameterVariablesFromId'](pageId);
+                    const variables = wwLib.store.data.resolvePageParameterVariables(pageId);
                      /* wwFront:start */
                     for (const variable of variables) {
                         href = href.replace(
@@ -617,12 +610,10 @@ export async function executeWorkflowAction(
                 }
 
                 if (action.loadProgress && action.loadProgressColor) {
-                    wwLib.$store.dispatch('front/showPageLoadProgress', { color: action.loadProgressColor });
+                    wwLib.store.front.setPageLoadProgress({ color: action.loadProgressColor });
                 }
                 const section = resolveConfig('section', action.section, context, { event });
-                const hash = wwLib.wwUtils.sanitize(
-                    wwLib.$store.getters['websiteData/getSectionTitle'](section) || section
-                );
+                const hash = wwLib.wwUtils.sanitize(wwLib.store.websiteData.resolveSectionTitle(section) || section);
                 wwLib.wwApp.goTo(href, queries, {
                     openInNewTab: action.openInNewTab,
                     hash: hash ? `#${hash}` : null,
@@ -639,7 +630,7 @@ export async function executeWorkflowAction(
                     if (!action.pageId) throw new Error('No page selected.');
                     const value = resolveConfig('pageId', action.pageId, context, { event });
                     const pageId = typeof value === 'object' ? value.id : value;
-                    const page = wwLib.$store.getters['websiteData/getPageById'](pageId);
+                    const page = wwLib.store.websiteData.pagesById[pageId];
                     if (!page) throw new Error('Page not found.');
                      /* wwFront:start */
                     href = wwLib.wwPageHelper.getPagePath(pageId);
@@ -654,15 +645,15 @@ export async function executeWorkflowAction(
             }
             case 'page-loader': {
                 if (action.show) {
-                    wwLib.$store.dispatch('front/showPageLoadProgress', { color: action.color || 'blue' });
+                    wwLib.store.front.setPageLoadProgress({ color: action.color || 'blue' });
                 } else {
-                    wwLib.$store.dispatch('front/showPageLoadProgress', false);
+                    wwLib.store.front.setPageLoadProgress(false);
                 }
 
                 break;
             }
             case 'upload-file': {
-                const variablesStore = useVariablesStore(wwLib.$pinia);
+                const variablesStore = wwLib.store.variables;
                 if (!action.varId) throw new Error('No file variable selected.');
 
                 const isVariable = typeof action.varId === 'string';
@@ -703,9 +694,7 @@ export async function executeWorkflowAction(
                         : variablesStore.components[`${fileVariable.componentUid}-status`]
                     : null;
 
-                const element = isVariable
-                    ? wwLib.$store.getters['websiteData/getWwObjects'][fileVariable.componentUid] || {}
-                    : null;
+                const element = isVariable ? wwLib.store.websiteData.wwObjects[fileVariable.componentUid] || {} : null;
                 const isMultiple = isVariable
                     ? element?.content?.default?.multiple || statusVariable
                     : Array.isArray(actionValue);
@@ -750,7 +739,7 @@ export async function executeWorkflowAction(
                 let progress = 0;
                 result = [];
 
-                const designId = wwLib.$store.getters['websiteData/getDesignInfo'].id;
+                const designId = wwLib.store.websiteData.designInfo.id;
                 const files = isMultiple ? actionValue : [actionValue];
                 let uploadClient = axios;
  
@@ -820,7 +809,7 @@ export async function executeWorkflowAction(
                 break;
             }
             case 'file-upload-url': {
-                const variablesStore = useVariablesStore(wwLib.$pinia);
+                const variablesStore = wwLib.store.variables;
                 if (!action.args.varId) throw new Error('No file variable selected.');
 
                 const isVariable = typeof action.args.varId === 'string';
@@ -918,9 +907,7 @@ export async function executeWorkflowAction(
                 if (!_workflowId) throw new Error('No workflow selected.');
 
                 const workflow =
-                    wwLib.$store.getters['libraries/getComponents'][context?.component?.baseUid]?.inner?.workflows?.[
-                        _workflowId
-                    ];
+                    wwLib.store.libraries.components[context?.component?.baseUid]?.inner?.workflows?.[_workflowId];
                 const childExecutionContext = {
                     libraryComponentIdentifier: executionContext?.libraryComponentIdentifier,
                     parentExecutionId: executionContext?.executionId,
@@ -960,11 +947,10 @@ export async function executeWorkflowAction(
                 };
                 if (action.internal) {
                     workflow =
-                        wwLib.$store.getters['libraries/getComponents'][context?.component?.baseUid]?.inner
-                            ?.workflows?.[_workflowId];
+                        wwLib.store.libraries.components[context?.component?.baseUid]?.inner?.workflows?.[_workflowId];
                     childExecutionContext.libraryComponentIdentifier = executionContext?.libraryComponentIdentifier;
                 } else {
-                    workflow = wwLib.$store.getters['data/getGlobalWorkflows'][_workflowId];
+                    workflow = wwLib.store.data.frontendWorkflows[_workflowId];
                 }
                 if (!workflow) throw new Error('Workflow not found.');
 
@@ -979,7 +965,7 @@ export async function executeWorkflowAction(
                         parameters,
                         workflow: action.internal
                             ? context?.component?.workflowsResults?.[_workflowId] || {}
-                            : wwLib.$store.getters['data/getWorkflowResults'](_workflowId),
+                            : wwLib.store.data.workflowResultsById[_workflowId],
                     },
                     event,
                     callstack,
@@ -1002,8 +988,9 @@ export async function executeWorkflowAction(
             case 'trigger-event': {
                 if (!action.triggerId) throw new Error('No trigger selected.');
                 const trigger =
-                    wwLib.$store.getters['libraries/getComponents'][context?.component?.baseUid]?.configuration
-                        ?.triggers?.[action.triggerId];
+                    wwLib.store.libraries.components[context?.component?.baseUid]?.configuration?.triggers?.[
+                        action.triggerId
+                    ];
                 const value = resolveConfig('event', action.event, context, { event, recursive: false });
                 context?.component?.methods?.triggerEvent(action.triggerId, value);
                 break;
@@ -1087,7 +1074,7 @@ export async function executeWorkflowAction(
                     if (internal) {
                         set(context.component, `workflowsResults.${workflow.id}.${actionId}.result`, result);
                     } else {
-                        wwLib.$store.dispatch('data/setWorkflowActionResult', {
+                        wwLib.store.data.setWorkflowActionResult({
                             workflowId: workflow.id,
                             actionId,
                             result,
@@ -1241,7 +1228,7 @@ export async function executeWorkflowAction(
                             items,
                         });
                     } else {
-                        wwLib.$store.dispatch('data/setWorkflowActionLoop', {
+                        wwLib.store.data.setWorkflowActionLoop({
                             workflowId: workflow.id,
                             actionId,
                             loop: {
@@ -1307,7 +1294,7 @@ export async function executeWorkflowAction(
                         ...context,
                         workflow: internal
                             ? context?.component?.workflowsResults?.[workflow.id]
-                            : wwLib.$store.getters['data/getWorkflowResults'](workflow.id),
+                            : wwLib.store.data.workflowResultsById[workflow.id],
                     };
                     value = resolveConfig('value', action.value, localContext, { event });
                 }
@@ -1335,7 +1322,13 @@ export async function executeWorkflowAction(
             }
             case 'copy-clipboard': {
                 result = resolveConfig('value', action.value, context, { event });
-                await navigator.clipboard.writeText(`${result}`);
+                // Preview clicks focus the canvas iframe, so use its clipboard instead of the editor document.
+                const frontWindow = wwLib.getFrontWindow();
+                try {
+                    await frontWindow.navigator.clipboard.writeText(`${result}`);
+                } catch (error) {
+                     throw error;
+                }
                 break;
             }
             case 'share': {
@@ -1430,7 +1423,7 @@ export async function executeWorkflowAction(
                 break;
             }
             case 'file-encode-base64': {
-                const variablesStore = useVariablesStore(wwLib.$pinia);
+                const variablesStore = wwLib.store.variables;
                 let file;
                 if (typeof action.file === 'string') {
                     const innerComponentVariables = context?.component?.componentVariablesConfiguration || {};
@@ -1495,7 +1488,7 @@ export async function executeWorkflowAction(
                 let theme = resolveConfig('theme', action.theme, context, { event }) || 'light';
 
                 if (theme === 'toggle') {
-                    const currentTheme = wwLib.$store.getters['front/getTheme'];
+                    const currentTheme = wwLib.store.front.resolvedTheme;
                     if (currentTheme === 'light') {
                         theme = 'dark';
                     } else if (currentTheme === 'dark') {
@@ -1507,16 +1500,16 @@ export async function executeWorkflowAction(
                     theme = 'light';
                 }
 
-                wwLib.$store.dispatch('front/setTheme', theme);
+                wwLib.store.front.setTheme(theme);
                 break;
             }
             case 'open-popup': {
                 const _action = JSON.parse(JSON.stringify(action));
 
-                const modalsStore = usePopupStore(wwLib.$pinia);
+                const modalsStore = wwLib.store.popups;
 
                 // AI Fix : AI sometimes use the label as the key of the popup properties
-                const popup = wwLib.$store.getters['libraries/getComponents']?.[_action.libraryComponentBaseId];
+                const popup = wwLib.store.libraries.components?.[_action.libraryComponentBaseId];
                 const popupProperties = popup?.configuration?.properties || {};
 
                 for (const key in _action.content?.default || {}) {
@@ -1543,7 +1536,7 @@ export async function executeWorkflowAction(
                 break;
             }
             case 'close-all-popup': {
-                const modalsStore = usePopupStore(wwLib.$pinia);
+                const modalsStore = wwLib.store.popups;
                 modalsStore.closeAll(action.libraryComponentBaseId);
                 break;
             }
@@ -1590,8 +1583,8 @@ export async function executeWorkflowAction(
             default: {
                 if (action.type.includes('/')) {
                     const [integration, actionName] = action.type.split('/');
-                    const integrationsStore = useIntegrationsStore(wwLib.$pinia);
-                    const backAuthStore = useBackAuthStore(wwLib.$pinia);
+                    const integrationsStore = wwLib.store.integrations;
+                    const backAuthStore = wwLib.store.backAuth;
 
                     if (!action.connectionId && integration === backAuthStore.authIntegration) {
                         action.connectionId = backAuthStore.connectionId;
@@ -1617,12 +1610,11 @@ export async function executeWorkflowAction(
                         }
                     }
                 } else {
-                    const actions = wwLib.$store.getters['data/getPluginActions'];
+                    const actions = wwLib.store.data.pluginActions;
                     const currentAction = actions[action.type];
                     if (!currentAction) break;
                     const plugin =
-                        currentAction.pluginId &&
-                        wwLib.$store.getters['websiteData/getPluginById'](currentAction.pluginId);
+                        currentAction.pluginId && wwLib.store.websiteData.pluginsById[currentAction.pluginId];
                     if (!plugin) break;
                     const args = resolveConfig('args', action.args || [], context, { event });
                     try {
@@ -1653,7 +1645,7 @@ export async function executeWorkflowAction(
                     chunk: null,
                 });
             } else {
-                wwLib.$store.dispatch('data/setWorkflowActionStream', {
+                wwLib.store.data.setWorkflowActionStream({
                     workflowId: workflow.id,
                     actionId,
                     stream: {
@@ -1670,7 +1662,7 @@ export async function executeWorkflowAction(
                     set(context.component, `workflowsResults.${workflow.id}.${actionId}.stream.chunks`, chunks);
                     set(context.component, `workflowsResults.${workflow.id}.${actionId}.stream.chunk`, parsedChunk);
                 } else {
-                    wwLib.$store.dispatch('data/setWorkflowActionStream', {
+                    wwLib.store.data.setWorkflowActionStream({
                         workflowId: workflow.id,
                         actionId,
                         stream: {
@@ -1700,7 +1692,7 @@ export async function executeWorkflowAction(
                 set(context.component, `workflowsResults.${workflow.id}.${actionId}.result`, result);
                 set(context.component, `workflowsResults.${workflow.id}.${actionId}.error`, null);
              } else {
-                wwLib.$store.dispatch('data/setWorkflowActionResult', {
+                wwLib.store.data.setWorkflowActionResult({
                     workflowId: workflow.id,
                     actionId,
                     result,
@@ -1717,7 +1709,7 @@ export async function executeWorkflowAction(
                 set(context.component, `workflowsResults.${workflow.id}.${actionId}.error`, error);
                 set(context.component, `workflowsResults.${workflow.id}.${actionId}.result`, result);
              } else {
-                wwLib.$store.dispatch('data/setWorkflowActionResult', {
+                wwLib.store.data.setWorkflowActionResult({
                     workflowId: workflow.id,
                     actionId,
                     error,
@@ -1864,7 +1856,7 @@ export const workflowFunctions = {
 
     openPopup: async (libraryComponentBaseId, params) => {
         // Check if the libraryComponentBaseId is a popup (libraryComponentBaseId of type 'modal'), otherwise use its parentLibraryComponentId
-        const element = wwLib.$store.getters['websiteData/getWwObjects']?.[libraryComponentBaseId];
+        const element = wwLib.store.websiteData.wwObjects?.[libraryComponentBaseId];
         if (element?.parentLibraryComponentId) {
             libraryComponentBaseId = element.parentLibraryComponentId;
         }
@@ -1891,7 +1883,7 @@ export const workflowFunctions = {
         {
             get(_target, workflowId) {
                 return async (...args) => {
-                    const globalWorkflow = wwLib.$store.getters['data/getGlobalWorkflows'][workflowId];
+                    const globalWorkflow = wwLib.store.data.frontendWorkflows[workflowId];
                     if (!globalWorkflow) {
                          throw new Error(`Global workflow "${workflowId}" not found.`);
                     }
@@ -1916,7 +1908,7 @@ export const workflowFunctions = {
                 get(_target, workflowId) {
                     return async (...args) => {
                         // Get popup library component
-                        const libraryComponent = Object.values(wwLib.$store.getters['libraries/getComponents'])?.find(
+                        const libraryComponent = Object.values(wwLib.store.libraries.components)?.find(
                             e => e.id == context.component.baseUid && e.type == 'modal'
                         );
                         if (!libraryComponent)

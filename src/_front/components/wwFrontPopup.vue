@@ -7,7 +7,6 @@
 <script>
 import { provide, computed } from 'vue';
 import wwLibraryComponent from './wwLibraryComponent.vue';
-import { usePopupStore } from '@/pinia/popup.js';
 
 export default {
     name: 'wwFrontPopup',
@@ -20,7 +19,7 @@ export default {
         stacked: { type: Boolean, default: false },
     },
     setup(props) {
-        const popupStore = usePopupStore();
+        const popupStore = wwLib.store.popups;
         const localMethods = {
             close: {
                 description: 'Close the popup',

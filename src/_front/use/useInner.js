@@ -2,19 +2,14 @@ import { cloneDeep, set } from 'lodash-es';
 import { computed, onUnmounted, reactive, watch, onMounted, inject } from 'vue';
 import { checkVariableType } from '@/_common/helpers/updateVariable.js';
 import { getValue } from '@/_common/helpers/code/customCode.js';
-import { useVariablesStore } from '@/pinia/variables.js';
+
 import { escapeHTMLInObject } from '@/_common/helpers/htmlEscaper.js';
- 
 export function useInner(baseUid, { context, props }, componentIdentifier) {
     const sectionId = inject('sectionId', null);
-    const variablesStore = useVariablesStore();
+    const variablesStore = wwLib.store.variables;
 
-    const variableConfiguration = computed(
-        () => wwLib.$store.getters['libraries/getComponents'][baseUid]?.inner?.variables || {}
-    );
-    const formulaConfiguration = computed(
-        () => wwLib.$store.getters['libraries/getComponents'][baseUid]?.inner?.formulas || {}
-    );
+    const variableConfiguration = computed(() => wwLib.store.libraries.components[baseUid]?.inner?.variables || {});
+    const formulaConfiguration = computed(() => wwLib.store.libraries.components[baseUid]?.inner?.formulas || {});
 
     const bindingContext = inject('bindingContext', null);
     const isInsideRepeat = computed(() => bindingContext !== null);

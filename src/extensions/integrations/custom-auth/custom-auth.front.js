@@ -1,4 +1,3 @@
-import { useBackAuthStore } from '@/pinia/backAuth.js';
 import { executeWorkflows } from '@/_common/helpers/data/workflows.js';
 export default {
     hooks: {
@@ -8,11 +7,11 @@ export default {
     },
     actions: {
         'auth-set-user': async ({ args }) => {
-            const backAuthStore = useBackAuthStore(wwLib.$pinia);
+            const backAuthStore = wwLib.store.backAuth;
             await backAuthStore.setAuthUser(args.user);
         },
         'auth-set-session': async ({ args }) => {
-            const backAuthStore = useBackAuthStore(wwLib.$pinia);
+            const backAuthStore = wwLib.store.backAuth;
             await backAuthStore.setAuthSession(
                 {
                     accessToken: args.accessToken,
@@ -26,7 +25,7 @@ export default {
             );
         },
         'auth-clear-session': async () => {
-            const backAuthStore = useBackAuthStore(wwLib.$pinia);
+            const backAuthStore = wwLib.store.backAuth;
             await backAuthStore.clearAuthSession();
         },
     },

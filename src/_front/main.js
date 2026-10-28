@@ -1,4 +1,5 @@
 import { createApp, createSSRApp, nextTick } from 'vue';
+import { setActivePinia } from 'pinia';
 import axios from 'axios';
 import { VueCookieNext } from 'vue-cookie-next';
 import { isEqual, isEmpty, cloneDeep, get, set, merge } from 'lodash-es';
@@ -22,9 +23,10 @@ let isStaticRendering = false;
 let browserRuntimeActivationError;
 
 /* wwFront:start */
-import storeImport from '@/store';
+
 import wwLibImport from '@/wwLib';
 import { createPinia } from 'pinia';
+import { createCompatibilityStore } from '@/compat';
 import { initializeCurrentRouteRuntime, startCurrentRouteDataInitialization } from '@/_front/router.js';
 import { activateHydratedRuntime } from '@/_front/rendering/hydrationRuntime.ts';
 import { releaseClientIslandHydrationState } from '@/_front/rendering/clientIslandContext';
@@ -44,9 +46,12 @@ if (!isServerRendering && window.localStorage?.getItem('ww-app-theme') === 'dark
 else if (!isServerRendering && window.localStorage?.getItem('ww-app-theme') === 'light')
     document.documentElement.classList.remove('ww-app-theme-dark');
 
-store = storeImport;
 pinia = createPinia();
-globalThis.wwLib = wwLibImport;
+setActivePinia(pinia);
+// Object.assign avoids a JS-inferred global declaration overriding the typed WwLib contract.
+Object.assign(globalThis, { wwLib: wwLibImport });
+wwLibImport.initializeStores(pinia);
+store = createCompatibilityStore();
 /* wwFront:end */
 
  
@@ -67,8 +72,7 @@ globalThis._ = {
 };
 globalThis.axios = axios.create({});
 
-import { useHooksStore } from '@/pinia/hooks.js';
-const hooksStore = useHooksStore(pinia);
+const hooksStore = wwLib.store.hooks;
 hooksStore.registerIntegrationHooks();
 
  /* wwFront:start */
@@ -235,8 +239,8 @@ function activateBrowserRuntime() {
 
     try {
         wwLib.activateRuntime();
-        addMediaQueriesListener(wwLib.$store.getters['front/getScreenSizes'], (screenSize, isActive) => {
-            wwLib.$store.dispatch('front/setIsScreenSizeActive', { screenSize, isActive });
+        addMediaQueriesListener(wwLib.store.front.screenSizes, (screenSize, isActive) => {
+            wwLib.store.front.setIsScreenSizeActive({ screenSize, isActive });
         });
         registerServiceWorker();
 

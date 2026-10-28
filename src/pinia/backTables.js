@@ -1,9 +1,8 @@
 import { defineStore } from 'pinia';
 import { reactive, watch } from 'vue';
- import { useIntegrationsStore } from '@/pinia/integrations';
-
+ 
 export const useBackTablesStore = defineStore('backTables', () => {
-    const integrationsStore = useIntegrationsStore();
+    const integrationsStore = wwLib.store.integrations;
     const tables = reactive({
         editor: {},
         staging: {},

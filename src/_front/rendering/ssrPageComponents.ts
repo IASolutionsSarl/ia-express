@@ -1,5 +1,5 @@
 import type { App, Component } from 'vue';
-import { useComponentBasesStore } from '@/pinia/componentBases';
+
 import {
     captureClientIslandError,
     createClientIslandBaseId,
@@ -22,7 +22,7 @@ const clientIslandPlaceholder: Component = {
 };
 
 export async function registerSsrPageComponents(app: App, loaders: SsrPageComponentLoader[]): Promise<void> {
-    const componentBasesStore = useComponentBasesStore();
+    const componentBasesStore = wwLib.store.componentBases;
     const serverLoaders: SsrPageComponentLoader[] = [];
 
     for (const loader of loaders) {

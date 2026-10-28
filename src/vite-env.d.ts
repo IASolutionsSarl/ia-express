@@ -32,3 +32,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
     readonly env: ImportMetaEnv;
 }
+
+/** Replaced in extracted library state by the publisher. */
+declare const __WW_LIBRARY_CLASSES__: import('./pinia/entities').Registry<import('./pinia/entities').LibraryItem>;

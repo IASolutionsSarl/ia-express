@@ -1,3 +1,5 @@
+import { withStoreRegistry } from '@/pinia/testRegistry.test-support';
+import '@/pinia/domainFixtures.test-support';
 import { createSSRApp, defineComponent, h } from 'vue';
 import { renderToString } from '@vue/server-renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -64,7 +66,10 @@ vi.mock('@/_common/use/useComponent.js', async () => {
         }),
     };
 });
-vi.mock('@/_common/helpers/styleCompiler', () => ({ createElementClassName: () => 'library-instance' }));
+vi.mock('@/_common/helpers/styleCompiler', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/_common/helpers/styleCompiler')>()),
+    createElementClassName: () => 'library-instance',
+}));
 vi.mock('@/_front/use/useInner.js', () => ({
     useInner: () => ({
         variables: {},
@@ -132,7 +137,7 @@ import wwLibraryComponentEditor from './wwLibraryComponent.vue?ww-target=editor'
 import wwLibraryComponentFront from './wwLibraryComponent.vue?ww-target=front';
 
 function installWwLib({ hasBase = true } = {}) {
-    vi.stubGlobal('wwLib', {
+    vi.stubGlobal('wwLib', withStoreRegistry({
         $store: {
             getters: {
                 'libraries/getComponents': hasBase ? { 'library-base': { rootElementId: 'root-element' } } : {},
@@ -145,7 +150,7 @@ function installWwLib({ hasBase = true } = {}) {
         editorSelectionStore: {
             unselectAllComponents: vi.fn(),
         },
-    });
+    }));
 }
 
 describe('wwLibraryComponent Vue adapter', () => {

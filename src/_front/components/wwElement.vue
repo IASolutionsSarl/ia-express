@@ -27,8 +27,8 @@ export default {
 
         /* wwFront:start */
         return {
-            isLibraryComponent: !!wwLib.$store.getters['websiteData/getWwObjects'][props.uid]?.libraryComponentBaseId,
-            parentKey: `${wwLib.$store.getters['websiteData/getWwObjects'][props.uid]?.parentLibraryComponentId}`,
+            isLibraryComponent: !!wwLib.store.websiteData.wwObjects[props.uid]?.libraryComponentBaseId,
+            parentKey: `${wwLib.store.websiteData.wwObjects[props.uid]?.parentLibraryComponentId}`,
         };
         /* wwFront:end */
     },

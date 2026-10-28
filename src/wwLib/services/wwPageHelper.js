@@ -41,7 +41,7 @@ function generateTmpRouter() {
     for (const page of wwLib.wwWebsiteData.getPages()) {
         Object.keys(page.paths).forEach(lang => {
             if (page.cmsDataSetPath) {
-                const data = get(wwLib.$store.getters['data/getCollections'], page.cmsDataSetPath);
+                const data = get(wwLib.store.data.collections, page.cmsDataSetPath);
                 data.forEach((data, index) => {
                     const slugPath = page.paths[lang].match(/{{__wwPage\.data\.(\w+)}}/)[1];
                     const path = get(data, slugPath)

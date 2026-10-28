@@ -3,8 +3,7 @@ import { computed } from 'vue';
 import { isFile, isFileList } from '@/_common/helpers/code/filePayload.js';
 import { _wwFormulas } from '@/_common/helpers/code/wwFormulas';
 import { workflowFunctions } from '@/_common/helpers/code/workflows';
-import { useIntegrationsStore } from '@/pinia/integrations';
-import {
+ import {
     isStaticRenderPermissionError,
     resolveStaticBinding,
     StaticRenderFatalError,
@@ -27,7 +26,7 @@ class FormulaError extends Error {
 }
 
 export const _collections = computed(() => {
-    const collections = wwLib.$store.getters['data/getCollections'];
+    const collections = wwLib.store.data.collections;
     return Object.keys(collections).reduce((obj, key) => {
         const item = collections[key];
         obj[item.name] = item;
@@ -37,7 +36,7 @@ export const _collections = computed(() => {
 });
 
 export const _formulas = computed(() =>
-    Object.values(wwLib.$store.getters['data/getFormulas']).reduce((obj, item) => {
+    Object.values(wwLib.store.data.formulas).reduce((obj, item) => {
         obj[item.name] = obj[item.id] = (...args) => {
             const __wwParameters = (item.parameters || []).map(parameter => parameter.name || '');
             const __wwClosureParameters = ['getValue', '__wwItem', 'args', ...__wwParameters];
@@ -57,7 +56,7 @@ export const _formulas = computed(() =>
 );
 
 export const _pluginFormulas = computed(() => {
-    return Object.values(wwLib.$store.getters['data/getPluginFormulas']).reduce((obj, item) => {
+    return Object.values(wwLib.store.data.pluginFormulas).reduce((obj, item) => {
         if (!obj[item.pluginId]) obj[item.pluginId] = {};
         const plugin = wwLib.wwPlugins[item.pluginId];
         obj[item.pluginId][item.name] = (...args) => plugin[item.name].call(plugin, ...args);
@@ -65,7 +64,7 @@ export const _pluginFormulas = computed(() => {
     }, {});
 });
 
-export const _integrations = () => useIntegrationsStore(wwLib.$pinia).getCodeBindings();
+export const _integrations = () => wwLib.store.integrations.getCodeBindings();
 
 // eslint-disable-next-line no-unused-vars
 export function evaluateCode({ code, filter, sort, __wwmap, throwError = false }, context, event, args) {

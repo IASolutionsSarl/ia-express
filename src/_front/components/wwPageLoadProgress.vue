@@ -5,8 +5,6 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
-
 export default {
     data() {
         return {
@@ -16,9 +14,11 @@ export default {
         };
     },
     computed: {
-        ...mapGetters({
-            showPageLoadProgress: 'front/showPageLoadProgress',
-        }),
+        ...{
+            showPageLoadProgress() {
+                return wwLib.store.front.showPageLoadProgress;
+            },
+        },
     },
     watch: {
         showPageLoadProgress() {

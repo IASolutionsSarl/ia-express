@@ -1,4 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
+import { withStoreRegistry } from './testRegistry.test-support';
 import { createPinia, setActivePinia } from 'pinia';
 const mocks = vi.hoisted(() => ({ load: vi.fn() }));
 vi.mock('@/_common/helpers/code/tablesViews.js', () => ({ loadTableView: mocks.load }));
@@ -11,7 +12,7 @@ beforeEach(() => {
     const pinia = createPinia();
     setActivePinia(pinia);
     globalThis.__WW_STORE_FRONT_TABLE_VIEWS__ = { [id]: { id, groupingDepth: 2 } };
-    vi.stubGlobal('wwLib', { $pinia: pinia, globalVariables: { _navigationId: 'navigation-id' } });
+    withStoreRegistry({ globalVariables: { _navigationId: 'navigation-id' } }, pinia);
 });
 it('hydrates a published grouping and paginates intermediate groups without editor config', async () => {
     mocks.load

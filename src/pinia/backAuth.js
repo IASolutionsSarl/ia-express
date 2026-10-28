@@ -1,18 +1,15 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
-import { useEnvVariablesStore } from '@/pinia/envVariables.js';
-import { useHooksStore } from '@/pinia/hooks.js';
- import { useIntegrationsStore } from '@/pinia/integrations';
 
 export const useBackAuthStore = defineStore('backAuth', () => {
     const projectAuth = ref(null);
-    const hooksStore = useHooksStore();
-    const integrationsStore = useIntegrationsStore();
+    const hooksStore = wwLib.store.hooks;
+    const integrationsStore = wwLib.store.integrations;
     const user = ref(undefined);
     const session = ref(undefined);
     const isAuthenticated = computed(() => !!user.value);
 
-    const envVariablesStore = useEnvVariablesStore();
+    const envVariablesStore = wwLib.store.envVariables;
     const authIntegration = computed(() => projectAuth.value?.integration || null);
     const connectionId = computed(() => projectAuth.value?.connectionId || null);
     const authEnabled = computed(() => !!authIntegration.value);
@@ -60,8 +57,7 @@ export const useBackAuthStore = defineStore('backAuth', () => {
         localStorage.setItem('ww-auth-session', options.persist ? JSON.stringify(session.value) : '{}');
         let isServerSetup = false;
          /* wwFront:start */
-        isServerSetup =
-            wwLib.$store.getters['websiteData/getDesignInfo']?.back?.isServerSetup?.[wwLib.getEnvironment()];
+        isServerSetup = wwLib.store.websiteData.designInfo?.back?.isServerSetup?.[wwLib.getEnvironment()];
         /* wwFront:end */
         if (isServerSetup) {
             await wwServerClient('/ww/auth/session', { method: 'POST', body: { session: _session } });
@@ -75,8 +71,7 @@ export const useBackAuthStore = defineStore('backAuth', () => {
         localStorage.removeItem('ww-auth-session');
         let isServerSetup = false;
          /* wwFront:start */
-        isServerSetup =
-            wwLib.$store.getters['websiteData/getDesignInfo']?.back?.isServerSetup?.[wwLib.getEnvironment()];
+        isServerSetup = wwLib.store.websiteData.designInfo?.back?.isServerSetup?.[wwLib.getEnvironment()];
         /* wwFront:end */
         if (isServerSetup) {
             await wwServerClient('/ww/auth/session', { method: 'DELETE' });

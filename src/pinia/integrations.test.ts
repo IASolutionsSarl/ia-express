@@ -1,3 +1,4 @@
+import { withStoreRegistry } from '@/pinia/testRegistry.test-support';
 import { createPinia, setActivePinia } from 'pinia';
 import { computed } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -34,9 +35,9 @@ describe('useIntegrationsStore', () => {
     beforeEach(() => {
         mocks.initializeConnection.mockReset();
         vi.stubGlobal('__WW_STORE_FRONT_CONNECTIONS__', {});
-        vi.stubGlobal('wwLib', {
+        vi.stubGlobal('wwLib', withStoreRegistry({
             wwLog: { error: vi.fn() },
-        });
+        }));
     });
 
     it('reactively exposes a connection after its instance initializes', async () => {

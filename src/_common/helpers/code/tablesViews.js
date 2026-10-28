@@ -1,15 +1,12 @@
-import { useBackTableViewsStore } from '@/pinia/backTableViews.js';
-import { useBackTablesStore } from '@/pinia/backTables.js';
-import { useIntegrationsStore } from '@/pinia/integrations';
 import integrationsCore from '@/extensions/integrations/index.js';
 import { serializeTableViewQueryParameters } from './tableViewQueryParameters';
  
 let latestRequestId = {};
 
 function getTableViewExecutionContext(id, env = null) {
-    const backTableViewsStore = useBackTableViewsStore(wwLib.$pinia);
-    const backTablesStore = useBackTablesStore(wwLib.$pinia);
-    const integrationsStore = useIntegrationsStore(wwLib.$pinia);
+    const backTableViewsStore = wwLib.store.backTableViews;
+    const backTablesStore = wwLib.store.backTables;
+    const integrationsStore = wwLib.store.integrations;
     const tableView = backTableViewsStore.tableViews[id];
     const integrationTable = tableView?.tableId ? backTablesStore.integrationTables[tableView.tableId] : null;
 

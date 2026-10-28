@@ -1,3 +1,4 @@
+import { withStoreRegistry } from '@/pinia/testRegistry.test-support';
 import { computed, createSSRApp, defineComponent, h, provide, reactive, ref, unref } from 'vue';
 import { renderToString } from '@vue/server-renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -47,39 +48,43 @@ vi.mock('@/_common/helpers/pathResolver.js', () => ({ getPath: (path: string) =>
 vi.mock('./wwLayoutItem.vue', () => ({ default: defineComponent({ render: () => null }) }));
 import wwLayout from './wwLayout.vue';
 import { useLayoutItemStyle } from '@/_front/use/useLayoutItemMarker';
+import { moveWwObjectBetweenLayouts } from '@/_common/editor/layout/moveWwObjectBetweenLayouts';
 
 function installWwLib() {
-    vi.stubGlobal('wwLib', {
-        wwFormula: { getValue: (value: unknown) => value },
-        editorDragStore: {
-            isDraggingElement: ref(false),
-            dropElementLayoutId: ref(null),
-            dropElementLayoutIndex: ref(null),
-            dropElementVisuallyConstrained: ref(false),
-            dropElementStructuralOrder: ref(null),
-            dropElementOperation: ref(null),
-            draggedSize: ref(null),
-        },
-        editorUXStore: {
-            isEditing: ref(false),
-            editingComponent: ref(null),
-        },
-        editorSelectionStore: {
-            unselectAllComponents: vi.fn(),
-            selectComponent: vi.fn(),
-        },
-        globalVariables: {
-            layoutOptions: new Map(),
-            componentLayoutChildren: new Map(),
-            componentHasTooMuchData: new Map(),
-        },
-        getFrontDocument: () => null,
-        getFrontWindow: () => null,
-        $store: { dispatch: vi.fn(), getters: {} },
-        $on: vi.fn(),
-        $off: vi.fn(),
-        $emit: vi.fn(),
-    });
+    vi.stubGlobal(
+        'wwLib',
+        withStoreRegistry({
+            wwFormula: { getValue: (value: unknown) => value },
+            editorDragStore: {
+                isDraggingElement: ref(false),
+                dropElementLayoutId: ref(null),
+                dropElementLayoutIndex: ref(null),
+                dropElementVisuallyConstrained: ref(false),
+                dropElementStructuralOrder: ref(null),
+                dropElementOperation: ref(null),
+                draggedSize: ref(null),
+            },
+            editorUXStore: {
+                isEditing: ref(false),
+                editingComponent: ref(null),
+            },
+            editorSelectionStore: {
+                unselectAllComponents: vi.fn(),
+                selectComponent: vi.fn(),
+            },
+            globalVariables: {
+                layoutOptions: new Map(),
+                componentLayoutChildren: new Map(),
+                componentHasTooMuchData: new Map(),
+            },
+            getFrontDocument: () => null,
+            getFrontWindow: () => null,
+            $store: { dispatch: vi.fn(), getters: {} },
+            $on: vi.fn(),
+            $off: vi.fn(),
+            $emit: vi.fn(),
+        })
+    );
 }
 
 function createLayoutApp({
@@ -157,6 +162,28 @@ function createLayoutApp({
 describe('wwLayout Vue adapter', () => {
     beforeEach(() => {
         installWwLib();
+    });
+
+    it('moves a child once across two repeat occurrences of the same authored layout', async () => {
+        await renderToString(createLayoutApp({}));
+        await renderToString(createLayoutApp({}));
+        const options = wwLib.globalVariables.layoutOptions;
+        const [first, second] = [...options.keys()];
+        const commit = vi.fn();
+        const runtime = { prepare: (id, request) => options.get(id).prepareWwObjectMove(request), commit };
+        const request = {
+            wwObjectId: 'first',
+            source: { layoutId: first, index: 0 },
+            destination: { layoutId: second, index: 0 },
+        };
+        await expect(moveWwObjectBetweenLayouts(request, runtime)).resolves.toBe(false);
+        expect(commit).not.toHaveBeenCalled();
+        request.destination.index = 2;
+        await expect(moveWwObjectBetweenLayouts(request, runtime)).resolves.toBe(true);
+        const mutation = commit.mock.calls[0][0];
+        expect(mutation.originElement.value).toEqual([layoutFixture.items[1], layoutFixture.items[0]]);
+        expect(mutation.targetElement).toEqual(mutation.originElement);
+        expect(layoutFixture.items.map(item => item.uid)).toEqual(['first', 'last']);
     });
 
     it('forwards push-last through extraStyle to the default wwElement adapter', async () => {

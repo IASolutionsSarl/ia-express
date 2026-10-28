@@ -1,3 +1,5 @@
+import type { Registry, ComponentDefinition, LibraryComponent } from '@/pinia/entities';
+import { withStoreRegistry } from '@/pinia/testRegistry.test-support';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, nextTick, reactive, watchEffect } from 'vue';
 
@@ -86,28 +88,13 @@ beforeEach(() => {
     popupStore.instances = reactive<Record<string, StyleSourceData>>({});
     previewElementUids = reactive<string[]>([]);
 
-    vi.stubGlobal('wwLib', {
-        $store: {
-            getters: {
-                get 'websiteData/getWwObjects'() {
-                    return elements;
-                },
-                get 'websiteData/getSections'() {
-                    return sections;
-                },
-                get 'websiteData/getPage'() {
-                    return { sections: [{ uid: 'sectionA' }] };
-                },
-                get 'websiteData/getWwObjectPreviewUids'() {
-                    return previewElementUids;
-                },
-                get 'libraries/getComponents'() {
-                    return libraryComponents;
-                },
-                'libraries/getClasses': {},
-            },
-        },
-    });
+    const runtime = withStoreRegistry({});
+    runtime.store.websiteData.wwObjects = elements as Registry<ComponentDefinition>;
+    runtime.store.websiteData.sections = sections as Registry<ComponentDefinition>;
+    runtime.store.websiteData.wwObjectPreviewUids = previewElementUids;
+    runtime.store.websiteData.pageId = 'page';
+    runtime.store.websiteData.design.pages = [{ id: 'page', sections: [{ uid: 'sectionA' }] }];
+    runtime.store.libraries.components = libraryComponents as Registry<LibraryComponent>;
 });
 
 describe('styleCompilerReader source indexing', () => {
@@ -161,6 +148,7 @@ describe('styleCompilerReader source indexing', () => {
             )
         );
 
+        wwLib.store.websiteData.wwObjects = elements as Registry<ComponentDefinition>;
         const libraryComponentCount = 40;
         elements.pageRoot = {
             uid: 'pageRoot',
@@ -316,6 +304,7 @@ describe('styleCompilerReader source indexing', () => {
         }
     });
 
+    // This 14,500-element fixture checks invalidation by read counts; initial compilation needs time under suite load.
     it('keeps GoodNow-scale parent-state targets idle during popup and paste mutations', async () => {
         const projectElementCount = 14_500;
         const activePageElementCount = 3_718;
@@ -385,7 +374,7 @@ describe('styleCompilerReader source indexing', () => {
         } finally {
             run.stop();
         }
-    });
+    }, 15_000);
 
     it('recompiles only the replaced target when membership is unchanged', async () => {
         for (let index = 0; index < 100; index += 1) {

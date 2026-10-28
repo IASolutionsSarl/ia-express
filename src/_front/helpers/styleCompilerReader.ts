@@ -1,3 +1,4 @@
+import type { StoreRegistry } from '@/pinia/storeRegistry';
 import { computed } from 'vue';
 
 import {
@@ -5,7 +6,7 @@ import {
     getDisplayAllowedValues as getConfigurationDisplayAllowedValues,
 } from '@/_common/helpers/component/component';
 import { getInheritedConfiguration } from '@/_common/helpers/configuration/configuration';
-import { useComponentBasesStore } from '@/pinia/componentBases';
+
 import {
     createElementSelector,
     createSectionContainerSelector,
@@ -31,7 +32,6 @@ import type {
     StyleStateDescriptor,
     StyleStateReader,
 } from '@/_common/helpers/styleCompiler';
-import { usePopupStore } from '@/pinia/popup';
 
 const BASE_STATE = 'base';
 const DEFAULT_STATE = 'default';
@@ -80,8 +80,8 @@ export function createEditorStyleCompilerSources() {
 
 function createEditorStyleSourceIndex(previous?: EditorStyleSourceIndex): EditorStyleSourceIndex {
     const wwObjectsByUid = getWwObjects();
-    const popupInstancesByUid = usePopupStore().instances || {};
-    const previewElementUids = wwLib.$store.getters['websiteData/getWwObjectPreviewUids'] || [];
+    const popupInstancesByUid = wwLib.store.popups.instances || {};
+    const previewElementUids = wwLib.store.websiteData.wwObjectPreviewUids || [];
     const sections = getSections();
     const wwObjectUids = Object.keys(wwObjectsByUid);
     const popupInstanceUids = Object.keys(popupInstancesByUid);
@@ -218,9 +218,9 @@ function createEditorStyleReader(
  * Creates the current page compile scope from store ownership fields.
  */
 function createEditorStyleCompileScope(sourceIndex: EditorStyleSourceIndex): StyleCompileScope {
-    const page = wwLib.$store.getters['websiteData/getPage'];
+    const page = wwLib.store.websiteData.page;
     const pageSectionUids = (page?.sections || []).map((section: { uid: string }) => section.uid).filter(Boolean);
-    const componentBasesStore = useComponentBasesStore(wwLib.$pinia);
+    const componentBasesStore = wwLib.store.componentBases;
     const sections = getSections();
     const { elementUidsBySectionId, popupInstanceUids, previewElementUids, libraryComponentsById } = sourceIndex;
     const pageElementUids = pageSectionUids.flatMap(uid => elementUidsBySectionId.get(uid) || []);
@@ -530,7 +530,7 @@ function createLibraryComponentReader(
     id: string,
     getSourceIndex: EditorStyleSourceIndexAccessor
 ): StyleLibraryComponentReader | null {
-    const component = wwLib.$store.getters['libraries/getComponents'][id];
+    const component = wwLib.store.libraries.components[id];
     if (!component) return null;
 
     return {
@@ -888,28 +888,28 @@ function collectDeepLibraryComponentElements(
 }
 
 function getWwObjects(): Record<string, StyleSourceData> {
-    return wwLib.$store.getters['websiteData/getWwObjects'] || {};
+    return wwLib.store.websiteData.wwObjects || {};
 }
 
 function getElementData(uid: string): StyleSourceData | undefined {
-    return getWwObjects()[uid] || usePopupStore().instances?.[uid];
+    return getWwObjects()[uid] || wwLib.store.popups.instances?.[uid];
 }
 
 function getSections(): Record<string, StyleSourceData> {
-    return wwLib.$store.getters['websiteData/getSections'] || {};
+    return wwLib.store.websiteData.sections || {};
 }
 
 function getClasses(): Record<string, StyleSourceData> {
-    return wwLib.$store.getters['libraries/getClasses'] || {};
+    return wwLib.store.libraries.classes || {};
 }
 
 function getLibraryComponents(): Record<string, StyleSourceData> {
-    return wwLib.$store.getters['libraries/getComponents'] || {};
+    return wwLib.store.libraries.components || {};
 }
 
 function isSectionStyleSourceReady(
     data: StyleSourceData | undefined,
-    componentBasesStore: ReturnType<typeof useComponentBasesStore>
+    componentBasesStore: StoreRegistry['componentBases']
 ) {
     if (!data) return false;
 
@@ -918,7 +918,7 @@ function isSectionStyleSourceReady(
 
 function isElementStyleSourceReady(
     data: StyleSourceData | undefined,
-    componentBasesStore: ReturnType<typeof useComponentBasesStore>
+    componentBasesStore: StoreRegistry['componentBases']
 ) {
     if (!data) return false;
     if (!data.wwObjectBaseId) return true;
@@ -928,7 +928,7 @@ function isElementStyleSourceReady(
 
 function isLibraryComponentStyleSourceReady(
     libraryComponentId: string,
-    componentBasesStore: ReturnType<typeof useComponentBasesStore>
+    componentBasesStore: StoreRegistry['componentBases']
 ) {
     const rootElementUid = getLibraryComponents()[libraryComponentId]?.rootElementId;
     if (!rootElementUid) return true;
@@ -939,7 +939,7 @@ function isLibraryComponentStyleSourceReady(
 function isRegisteredComponentBaseReady(
     type: 'section' | 'wwobject',
     baseId: string | undefined,
-    componentBasesStore: ReturnType<typeof useComponentBasesStore>
+    componentBasesStore: StoreRegistry['componentBases']
 ) {
     if (!baseId) return true;
 

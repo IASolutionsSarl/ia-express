@@ -10,7 +10,7 @@ setInterval(() => {
 export const dateFormulas = createDateFormulas({
     getLanguage() {
         try {
-            return wwLib?.$store?.getters?.['front/getLang'] || 'en';
+            return wwLib.store.front.lang || 'en';
         } catch {
             return 'en';
         }

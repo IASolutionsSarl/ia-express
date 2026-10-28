@@ -3,6 +3,7 @@
         :is="tag"
         class="ww-layout"
         :data-ww-layout-id="layoutId"
+        :data-ww-layout-is-bound="isBound ? 'true' : undefined"
         :data-ww-layout-owner-type="parentElementUid ? 'element' : sectionId ? 'section' : undefined"
         :data-ww-layout-owner-uid="parentElementUid || sectionId || undefined"
         :data-ww-ls="layoutStyleScopes"

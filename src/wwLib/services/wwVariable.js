@@ -1,15 +1,14 @@
 import { ref, readonly as setReadonly, computed, inject, unref, watch } from 'vue';
 import { checkVariableType } from '@/_common/helpers/updateVariable.js';
 import { cloneDeep } from 'lodash-es';
-import { useVariablesStore } from '@/pinia/variables.js';
+
 import { storeToRefs } from 'pinia';
- 
 export default {
     /**
      * @PUBLIC_API
      */
     getValue(variableId) {
-        const variablesStore = useVariablesStore(wwLib.$pinia);
+        const variablesStore = wwLib.store.variables;
         return variablesStore.values[variableId];
     },
 
@@ -17,7 +16,7 @@ export default {
      * @PUBLIC_API
      */
     updateValue(variableId, value, { path, index, arrayUpdateType, workflowContext, silent } = {}) {
-        const variablesStore = useVariablesStore(wwLib.$pinia);
+        const variablesStore = wwLib.store.variables;
         const variable = variablesStore.getConfiguration(variableId);
         try {
             if (!variable) {
@@ -68,7 +67,7 @@ export default {
         const isInsideRepeat = computed(() => bindingContext !== null);
         const isInsideLibraryComponent = computed(() => libraryContext !== null);
         const sectionId = inject('sectionId');
-        const variablesStore = useVariablesStore();
+        const variablesStore = wwLib.store.variables;
 
         watch(
             isActive,
@@ -125,8 +124,8 @@ export default {
             isInsideRepeat.value
                 ? unref(defaultValue)
                 : isInsideLibraryComponent.value
-                ? libraryContext?.component?.variables[variableId.value]
-                : variablesStore.values[variableId.value]
+                  ? libraryContext?.component?.variables[variableId.value]
+                  : variablesStore.values[variableId.value]
         );
         const currentValue = computed(() => {
             if (hasPropValue.value) {
@@ -183,7 +182,7 @@ export default {
         preserveReference = false,
     }) {
         id = id || `${uid}-${name}`;
-        const variablesStore = useVariablesStore(wwLib.$pinia);
+        const variablesStore = wwLib.store.variables;
         variablesStore.add('component', id, {
             componentUid: uid,
             id,
@@ -203,7 +202,7 @@ export default {
     },
     registerLibraryComponentVariable,
     registerPluginVariable({ uid, name, defaultValue, type }) {
-        const variablesStore = useVariablesStore(wwLib.$pinia);
+        const variablesStore = wwLib.store.variables;
         const id = `${uid}-${name}`;
         variablesStore.add('plugin', id, {
             pluginId: uid,
@@ -216,7 +215,7 @@ export default {
         return id;
     },
     unregisterPluginVariable(id) {
-        const variablesStore = useVariablesStore(wwLib.$pinia);
+        const variablesStore = wwLib.store.variables;
         variablesStore.remove(id);
     },
     unregisterComponentVariable,
@@ -264,6 +263,6 @@ function unregisterLibraryComponentVariable({ id, libraryContext }) {
 }
 
 function unregisterComponentVariable(id) {
-    const variablesStore = useVariablesStore(wwLib.$pinia);
+    const variablesStore = wwLib.store.variables;
     variablesStore.remove(id);
 }

@@ -80,8 +80,8 @@ export default {
             const rawLink = forcedLinkRef
                 ? forcedLinkRef.value
                 : wwProps.value.wwLink
-                ? wwProps.value.wwLink
-                : componentState.link;
+                  ? wwProps.value.wwLink
+                  : componentState.link;
 
             if (!rawLink || typeof rawLink !== 'object' || !Object.keys(rawLink).length || rawLink.type === 'none') {
                 return { type: 'none' };
@@ -119,9 +119,7 @@ export default {
             switch (rawLink.type) {
                 case 'internal':
                 case 'collection': {
-                    const variables = Object.values(
-                        wwLib.$store.getters['data/getPageParameterVariablesFromId'](rawLink.pageId)
-                    );
+                    const variables = Object.values(wwLib.store.data.resolvePageParameterVariables(rawLink.pageId));
                      /* wwFront:start */
                     if (!rawLink.pageId) link.href = '';
                     else {
@@ -129,8 +127,7 @@ export default {
                             rawLink.type === 'collection' ? `_${bindingContext?.repeatIndex || 0}` : ''
                         }`;
                         const page =
-                            wwLib.$store.getters['websiteData/getPageById'](pageId) ||
-                            wwLib.$store.getters['websiteData/getPageByLinkId'](pageId);
+                            wwLib.store.websiteData.pagesById[pageId] || wwLib.store.websiteData.pagesByLinkId[pageId];
                         if (!page) return { type: 'none' };
                         link.href = wwLib.wwPageHelper.getPagePath(page.id);
                         link.pageId = page.id;
@@ -176,8 +173,8 @@ export default {
             if (rawLink.sectionId && rawLink.pageId) {
                 link.sectionId = rawLink.sectionId;
                 const page =
-                    wwLib.$store.getters['websiteData/getPageById'](rawLink.pageId) ||
-                    wwLib.$store.getters['websiteData/getPageByLinkId'](rawLink.pageId);
+                    wwLib.store.websiteData.pagesById[rawLink.pageId] ||
+                    wwLib.store.websiteData.pagesByLinkId[rawLink.pageId];
                 if (page && page.sections) {
                     const _section = page.sections.find(
                         ({ uid, linkId }) => uid === rawLink.sectionId || linkId === rawLink.sectionId
@@ -251,13 +248,13 @@ export default {
             if (isOnSamePage.value && !attributes.target) {
                 //SCROLL TO SECTION
                 if (normalizedLink.value.sectionId) {
-                    const _section = wwLib.$store.getters['websiteData/getPage'].sections.find(
+                    const _section = wwLib.store.websiteData.page.sections.find(
                         ({ uid, linkId }) =>
                             uid === normalizedLink.value.sectionId || linkId === normalizedLink.value.sectionId
                     );
 
                     if (_section) {
-                        const section = wwLib.$store.getters['websiteData/getSections'][_section.uid];
+                        const section = wwLib.store.websiteData.sections[_section.uid];
                         wwLib.wwApp.scrollIntoView(
                             wwLib.getFrontDocument().querySelector(`[data-section-uid="${section.uid}"]`)
                         );
@@ -297,7 +294,7 @@ export default {
 
                             // eslint-disable-next-line vue/custom-event-name-casing
                             wwLib.$emit('wwLink:closePopup');
-                            wwLib.$store.dispatch('front/closeActiveLinkPopup', null);
+                            wwLib.store.front.closeActiveLinkPopup(null);
                         };
                         break;
                     case 'open-popup':
@@ -305,7 +302,7 @@ export default {
                             if (unref(isDisabled)) return;
                              event.stopPropagation();
 
-                            wwLib.$store.dispatch('front/setActiveLinkPopup', {
+                            wwLib.store.front.setActiveLinkPopup({
                                 content: normalizedLink.value.content,
                                 background: normalizedLink.value.background,
                                 sectionId,
@@ -360,7 +357,7 @@ export default {
                             if (unref(isDisabled)) return;
                             properties.onClick = event => {
                                  if (normalizedLink.value.loadProgress && !isOnSamePage.value)
-                                    wwLib.$store.dispatch('front/showPageLoadProgress', {
+                                    wwLib.store.front.setPageLoadProgress({
                                         color: normalizedLink.value.loadProgressColor,
                                     });
                                 navigate(event, properties);
@@ -370,7 +367,7 @@ export default {
                                  // eslint-disable-next-line vue/custom-event-name-casing
                                 wwLib.$emit('wwLink:clicked');
                                 if (normalizedLink.value.loadProgress && !isOnSamePage.value)
-                                    wwLib.$store.dispatch('front/showPageLoadProgress', {
+                                    wwLib.store.front.setPageLoadProgress({
                                         color: normalizedLink.value.loadProgressColor,
                                     });
                                 event.stopPropagation();

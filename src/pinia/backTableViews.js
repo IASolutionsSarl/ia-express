@@ -1,7 +1,7 @@
 import { shallowReactive, reactive, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { loadTableView } from '@/_common/helpers/code/tablesViews.js';
-import { useBackTablesStore } from '@/pinia/backTables.js';
+
  
 const regexUid = /^[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}$/;
 
@@ -45,7 +45,7 @@ export const useBackTableViewsStore = defineStore('backTableViews', () => {
     tableViews = {};
     /* wwFront:end */
      const currentNavigationId = ref(undefined);
-     const backTablesStore = useBackTablesStore();
+     const backTablesStore = wwLib.store.backTables;
     const latestFetchParameters = reactive({});
     const groupPagination = reactive({});
     const states = reactive({});

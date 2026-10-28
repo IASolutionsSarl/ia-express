@@ -1,3 +1,4 @@
+import { withStoreRegistry } from '@/pinia/testRegistry.test-support';
 import { JSDOM } from 'jsdom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -31,10 +32,10 @@ describe('style compiler prerender runtime', () => {
 
     it('serializes the runtime CSSOM after server-rendered scopes finish', () => {
         const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>');
-        vi.stubGlobal('wwLib', {
+        vi.stubGlobal('wwLib', withStoreRegistry({
             getFrontDocument: () => dom.window.document,
             wwLog: { warn: vi.fn() },
-        });
+        }));
         prepareStyleCompilerPrerenderRuntime();
 
         setStyleCompilerRuntimeVariable({

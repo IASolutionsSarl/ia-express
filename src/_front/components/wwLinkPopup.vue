@@ -44,7 +44,7 @@ export default {
     },
     methods: {
         close() {
-            wwLib.$store.dispatch('front/closeActiveLinkPopup', null);
+            wwLib.store.front.closeActiveLinkPopup(null);
         },
         handleWwObjectClick($event) {
             if (this.$refs.wwObject.$el === $event.target) {

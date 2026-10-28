@@ -14,12 +14,12 @@ export default {
      */
     async executeGlobal(uid, parameters) {
         if (!uid) throw new Error('No workflow provided.');
-        const workflow = wwLib.$store.getters['data/getGlobalWorkflows'][uid];
+        const workflow = wwLib.store.data.frontendWorkflows[uid];
         if (!workflow) throw new Error('Workflow not found.');
         const execution = await executeWorkflow(workflow, {
             context: {
                 parameters,
-                workflow: wwLib.$store.getters['data/getWorkflowResults'](uid),
+                workflow: wwLib.store.data.workflowResultsById[uid],
             },
         });
         if (execution.error) {

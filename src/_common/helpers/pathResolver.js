@@ -25,7 +25,7 @@ export function getPathLabel(path) {
     } else if (collection === '__wwParent') {
         name = 'Parent';
     } else {
-        ({ name } = wwLib.$store.getters['data/getCollections'][collection] || {});
+        ({ name } = wwLib.store.data.collections[collection] || {});
     }
     return [name, ...others].join('.').replace('.data', '');
 }

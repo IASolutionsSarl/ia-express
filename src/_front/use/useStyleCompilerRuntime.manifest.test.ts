@@ -1,3 +1,4 @@
+import '@/pinia/domainFixtures.test-support';
 import { nextTick, reactive } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -201,6 +202,8 @@ function setReactiveWebsiteData(websiteData: {
 }) {
     wwLib.$store = {
         getters: {
+            // Older published pages have no explicit source ordering.
+            'websiteData/getStyleSourceUids': undefined,
             get 'websiteData/getPage'() {
                 return websiteData.page;
             },

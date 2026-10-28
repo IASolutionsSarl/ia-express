@@ -159,7 +159,7 @@ export default {
         });
 
  
-        useComponentAdvancedInteractions(state, wwLib.$store.getters['websiteData/getPageId']);
+        useComponentAdvancedInteractions(state, wwLib.store.websiteData.pageId);
         useComponentActions({ uid: props.uid, type: 'section' }, { configuration, componentRef: component });
 
  
@@ -169,7 +169,7 @@ export default {
             sectionContainerComponentId,
             sectionElementComponentId,
             sectionStyleClass: computed(() =>
-                createSectionClassName(props.uid, wwLib.$store.getters['websiteData/getSections']?.[props.uid]?._si)
+                createSectionClassName(props.uid, wwLib.store.websiteData.sections?.[props.uid]?._si)
             ),
             sectionContainerAtomicStyleClasses,
             sectionElementAtomicStyleClasses,
@@ -188,7 +188,7 @@ export default {
             wwSectionState,
             wwFrontState: inject('wwFrontState'),
             anchorId: computed(() => {
-                const { sectionTitle } = wwLib.$store.getters['websiteData/getSections'][props.uid] || {};
+                const { sectionTitle } = wwLib.store.websiteData.sections[props.uid] || {};
                 return wwLib.wwUtils.sanitize(sectionTitle);
             }),
             isRendering,

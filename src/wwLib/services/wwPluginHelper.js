@@ -1,15 +1,26 @@
 import { watchEffect, shallowReactive } from 'vue';
-import { useComponentBasesStore } from '@/pinia/componentBases.js';
-import { useVariablesStore } from '@/pinia/variables.js';
+
 import { cloneDeep } from 'lodash-es';
 import { pluginLifecycleScheduler } from './pluginLifecycleScheduler';
 
 export default {
+    /** @PUBLIC_API Reactive plugin metadata indexed by project plugin ID. */
+    get pluginsById() {
+        return wwLib.store.websiteData.pluginsById;
+    },
+    /** @PUBLIC_API Reactive metadata for a project plugin. */
+    getPluginById(id) {
+        return wwLib.store.websiteData.pluginsById[id];
+    },
+    /** @PUBLIC_API Save plugin settings before updating their local reactive value. */
+    updateSettings({ pluginId, settings }) {
+        return wwLib.store.websiteData.updatePluginSettings({ pluginId, settings });
+    },
      async registerPlugin(componentId, content, devOptions = null) {
         const plugin =
-            wwLib.$store.getters['websiteData/getPluginByComponentId'](componentId) ||
-            wwLib.$store.getters['websiteData/getPluginByName'](componentId) ||
-            (await wwLib.$store.dispatch('websiteData/addDevPlugin', { ...(devOptions || {}) }));
+            wwLib.store.websiteData.pluginsByComponentId[componentId] ||
+            wwLib.store.websiteData.pluginsByNamespace[componentId] ||
+            (await wwLib.store.websiteData.addDevPlugin({ ...(devOptions || {}) }));
         if (!wwLib.wwPlugins) wwLib.wwPlugins = shallowReactive({});
         let settings;
          /* wwFront:start */
@@ -17,10 +28,10 @@ export default {
         settings = window.wwg_pluginsSettings[plugin.id] || { publicData: {}, privateData: {} };
         /* wwFront:end */
 
-        const store = useComponentBasesStore(wwLib.$pinia);
+        const store = wwLib.store.componentBases;
         const config = store.configurations[componentId];
  
-        wwLib.$store.dispatch('websiteData/updatePlugin', {
+        wwLib.store.websiteData.updatePlugin({
             pluginId: plugin.id,
             settings,
             isLoaded: plugin.isLoaded || false,
@@ -40,17 +51,17 @@ export default {
             namespace: plugin.namespace,
             isDev: plugin.isDev,
             get id() {
-                const pluginFound = wwLib.$store.getters['websiteData/getPluginByName'](plugin.namespace) || {};
+                const pluginFound = wwLib.store.websiteData.pluginsByNamespace[plugin.namespace] || {};
                 return pluginFound.id;
             },
             get isLoaded() {
-                const pluginFound = wwLib.$store.getters['websiteData/getPluginByName'](plugin.namespace) || {};
-                return wwLib.$store.getters['websiteData/getPluginIsLoaded'](pluginFound.id);
+                const pluginFound = wwLib.store.websiteData.pluginsByNamespace[plugin.namespace] || {};
+                return wwLib.store.websiteData.isPluginLoaded(pluginFound.id);
             },
             get settings() {
-                const pluginFound = wwLib.$store.getters['websiteData/getPluginByName'](plugin.namespace) || {};
+                const pluginFound = wwLib.store.websiteData.pluginsByNamespace[plugin.namespace] || {};
                 return cloneDeep(
-                    wwLib.$store.getters['websiteData/getPluginSettings'](pluginFound.id) || {
+                    wwLib.store.websiteData.resolvePluginSettings(pluginFound.id) || {
                         publicData: {},
                         privateData: {},
                     }
@@ -62,7 +73,7 @@ export default {
             wwLib.wwPlugins[plugin.id] = wwLib.wwPlugins[plugin.namespace];
         }
 
-        const variablesStore = useVariablesStore(wwLib.$pinia);
+        const variablesStore = wwLib.store.variables;
         let variables = config?.variables;
         if (typeof variables === 'function') {
             variables = variables(settings);
@@ -90,7 +101,7 @@ export default {
         });
 
         (config?.formulas || []).forEach(formula => {
-            wwLib.$store.dispatch('data/setPluginFormula', {
+            wwLib.store.data.setPluginFormula({
                 ...formula,
                 pluginId: plugin.id,
                 id: `${plugin.id}-${formula.name}`,
@@ -106,7 +117,7 @@ export default {
             } catch (err) {
                 wwLib.wwLog.error(err);
             }
-            wwLib.$store.dispatch('websiteData/updatePlugin', {
+            wwLib.store.websiteData.updatePlugin({
                 pluginId: plugin.id,
                 isLoaded: true,
             });

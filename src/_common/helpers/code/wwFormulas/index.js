@@ -2,7 +2,6 @@ import { get, isEqual } from 'lodash-es';
 import { escape } from 'html-escaper';
 
 import { isPlainObject } from '@/_common/helpers/objectGuards';
-import { useBackAuthStore } from '@/pinia/backAuth.js';
 
 import { createWwFormulas } from './core';
 import { dateFormulas } from './dateFormulas';
@@ -11,7 +10,7 @@ export const _wwFormulas = createWwFormulas({
     date: {
         getLanguage() {
             try {
-                return wwLib?.$store?.getters?.['front/getLang'] || 'en';
+                return wwLib.store.front.lang || 'en';
             } catch {
                 return 'en';
             }
@@ -29,10 +28,10 @@ export const _wwFormulas = createWwFormulas({
     isPlainObject,
     logError: message => wwLib.wwLog.error(message),
     matchAnyRoles(args) {
-        return useBackAuthStore(wwLib.$pinia).matchAnyRoles(args);
+        return wwLib.store.backAuth.matchAnyRoles(args);
     },
     matchAllRoles(args) {
-        return useBackAuthStore(wwLib.$pinia).matchAllRoles(args);
+        return wwLib.store.backAuth.matchAllRoles(args);
     },
     translate: text => wwLib.wwLang.getText(text),
 });

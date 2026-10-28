@@ -2,7 +2,9 @@ import { reactive } from 'vue';
 
 export default {
     _navigationId: 0,
-    customCodeVariables: reactive({}),
+    get customCodeVariables() {
+        return wwLib.store.variables.customCodeVariables;
+    },
     globalComponentActionsFn: reactive({
         sections: {},
         elements: {},

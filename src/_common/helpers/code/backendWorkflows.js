@@ -1,4 +1,4 @@
- import { useVariablesStore } from '@/pinia/variables.js';
+ 
 import { buildEditorRequestHeaders, buildRequestPayload, requestWithOptionalSSE } from './editorRequests.ts';
 import { isFile, normalizeFiles } from './filePayload.js';
 import { getValue } from './customCode.js';
@@ -105,7 +105,7 @@ function buildWorkflowRequestPayload(method, parameters, fileParameters, shouldB
 }
 
 function resolveParameterVariableReferences(parameters = {}, parameterNames = [], context = {}) {
-    const variablesStore = useVariablesStore(wwLib.$pinia);
+    const variablesStore = wwLib.store.variables;
     const resolvedParameters = { ...parameters };
 
     for (const key of parameterNames) {
@@ -126,7 +126,7 @@ function resolveParameterVariableReferences(parameters = {}, parameterNames = []
 }
 
 function resolveEditorWorkflowParameters(parameters = {}, fileParameters = [], fileMetaParameters = [], context = {}) {
-    const variablesStore = useVariablesStore(wwLib.$pinia);
+    const variablesStore = wwLib.store.variables;
     const resolvedParameters = { ...parameters };
 
     for (const fileParam of [...fileParameters, ...fileMetaParameters]) {
@@ -198,7 +198,7 @@ export async function executeBackendWorkflow(workflowId, parameters = {}, option
  
     /* wwFront:start */
     // eslint-disable-next-line no-unreachable
-    workflows = Object.values(wwLib.$store.getters['data/getBackendWorkflows']);
+    workflows = Object.values(wwLib.store.data.backendWorkflows);
     workflow = workflows.find(w => w.id === workflowId);
     const headers = options.headers || {};
     let path = `/ww/workflows/${workflowId}`;

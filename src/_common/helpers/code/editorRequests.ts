@@ -34,7 +34,7 @@ export function buildEditorRequestHeaders({
 } = {}) {
     const baseHeaders: RequestHeaders = {
         'ww-socket-id': wwLib.$socket?.id,
-        'ww-editor-user-id': wwLib.$store.getters['manager/getUser']?.id,
+        'ww-editor-user-id': wwLib.store.manager.user?.id,
         'ww-editor-test': isTest ? 'true' : 'false',
         ...(actionId ? { 'ww-editor-action-id': actionId } : {}),
         ...(encodedPreviousResults ? { 'ww-editor-previous-results': encodedPreviousResults } : {}),

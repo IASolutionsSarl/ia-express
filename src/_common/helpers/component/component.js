@@ -1,6 +1,3 @@
-import { useComponentBasesStore } from '@/pinia/componentBases';
-import { usePopupStore } from '@/pinia/popup';
-
 const ELEMENT_BASE_ALIASES = {
     'ww-text': 'd7904e9d-fc9a-4d80-9e32-728e097879ad',
 };
@@ -22,14 +19,14 @@ export function getComponentBaseVueComponentName(type, baseUid) {
 
 export function getComponentBaseUid(type, uid, noLog = false) {
     if (uid?.startsWith('popup-')) {
-        const modalStore = usePopupStore(wwLib.$pinia);
+        const modalStore = wwLib.store.popups;
         return modalStore.instances[uid]?.libraryComponentBaseId;
     } else if (type === 'element') {
-        return wwLib.$store.getters['websiteData/getWwObjects'][uid]?.wwObjectBaseId;
+        return wwLib.store.websiteData.wwObjects[uid]?.wwObjectBaseId;
     } else if (type === 'libraryComponent') {
-        return wwLib.$store.getters['websiteData/getWwObjects'][uid]?.libraryComponentBaseId;
+        return wwLib.store.websiteData.wwObjects[uid]?.libraryComponentBaseId;
     } else if (type === 'section') {
-        const baseId = wwLib.$store.getters['websiteData/getSections'][uid]?.sectionBaseId;
+        const baseId = wwLib.store.websiteData.sections[uid]?.sectionBaseId;
         if (!baseId) {
             if (!noLog) wwLib.wwLog.error(`Component base not found : ${type} / ${uid}`);
             return null;
@@ -44,7 +41,7 @@ function _getIcon(type, config, uid) {
     if (deprecated) return 'warning';
     if (icon) return icon;
     if (type === 'element') {
-        if (uid && !wwLib.$store.getters['websiteData/getWwObjects'][uid]) return 'warning';
+        if (uid && !wwLib.store.websiteData.wwObjects[uid]) return 'warning';
         return 'element';
     } else if (type === 'section') {
         return 'section';
@@ -66,14 +63,15 @@ export function getComponentBaseIcon(type, baseUid) {
 }
 
 function _getComponentConfiguration(name) {
-    const store = useComponentBasesStore(wwLib.$pinia);
+    const store = wwLib.store.componentBases;
     return store.configurations[name] || {};
 }
 
 export function getComponentConfiguration(type, uid, noLog = false) {
     if (type === 'libraryComponent') {
         const baseUid = getComponentBaseUid(type, uid, noLog);
-        return wwLib.$store.getters['libraries/getComponents'][baseUid]?.configuration || {};
+
+        return wwLib.store.libraries.components[baseUid]?.configuration || {};
     }
     const name = getComponentVueComponentName(type, uid, noLog);
     return _getComponentConfiguration(name);
@@ -81,7 +79,7 @@ export function getComponentConfiguration(type, uid, noLog = false) {
 
 export function getComponentBaseConfiguration(type, baseUid) {
     if (type === 'libraryComponent') {
-        return wwLib.$store.getters['libraries/getComponents'][baseUid]?.configuration || {};
+        return wwLib.store.libraries.components[baseUid]?.configuration || {};
     }
     const name = getComponentBaseVueComponentName(type, getComponentBaseAlias(type, baseUid));
     return _getComponentConfiguration(name);
@@ -114,7 +112,7 @@ function _getLabel(type, config) {
 
 export function getComponentBaseLabel(type, baseUid) {
     if (type === 'libraryComponent') {
-        const longName = wwLib.$store.getters['libraries/getComponents'][baseUid]?.name || 'Component';
+        const longName = wwLib.store.libraries.components[baseUid]?.name || 'Component';
         const pathes = longName.split('/');
         return pathes[pathes.length - 1];
     }
@@ -127,10 +125,10 @@ export function getComponentLabel(type, uid) {
     const name = getComponentName(type, uid);
     if (name) return name;
     if (type === 'libraryComponent') {
-        const baseUid = getComponentBaseUid(type, uid);
+        const baseUid = getComponentBaseUid(type, uid, false);
         return getComponentBaseLabel(type, baseUid);
     }
-    const config = getComponentConfiguration(type, uid);
+    const config = getComponentConfiguration(type, uid, false);
     return _getLabel(type, config);
 }
 
@@ -177,11 +175,11 @@ export function getComponentSize(size, defaultSize = 'unset') {
 }
 
 export function getPageSectionsIds() {
-    return Object.keys(wwLib.$store.getters['websiteData/getSections']);
+    return Object.keys(wwLib.store.websiteData.sections);
 }
 
 export function getPageElementsIds() {
-    const page = JSON.stringify(wwLib.$store.getters['websiteData/getFullPage']);
+    const page = JSON.stringify(wwLib.store.websiteData.fullPage);
     const r = /"uid":"([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})"/g;
     let matches,
         output = [];
@@ -194,13 +192,14 @@ export function getPageElementsIds() {
 
 export function getComponentName(type, uid) {
     if (!type) return '';
+
     if (uid?.startsWith('popup-')) {
         return null;
     } else if (type === 'section') {
-        const { sectionTitle } = wwLib.$store.getters['websiteData/getSections'][uid] || {};
+        const { sectionTitle } = wwLib.store.websiteData.sections[uid] || {};
         return sectionTitle;
     } else {
-        const { name } = wwLib.$store.getters['websiteData/getWwObjects'][uid] || { name: 'Element undefined' };
+        const { name } = wwLib.store.websiteData.wwObjects[uid] || { name: 'Element undefined' };
         return name;
     }
 }
@@ -208,7 +207,7 @@ export function setComponentName(type, uid, value) {
     if (uid?.startsWith('popup-')) {
         return;
     }
-    wwLib.$store.dispatch('websiteData/setComponentProperty', {
+    wwLib.store.websiteData.setComponentProperty({
         type,
         uid,
         path: `${type === 'section' ? 'sectionTitle' : 'name'}`,

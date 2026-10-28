@@ -1,4 +1,3 @@
- 
 export function resolveConnection(connection, env = null) {
     if (!connection) return null;
 

@@ -3,8 +3,8 @@ import { ref } from 'vue';
 export default {
     isInitialized: ref(false),
     get plugin() {
-        if (!wwLib.$store.getters['websiteData/getAuthPlugin']) return null;
-        return wwLib.wwPlugins[wwLib.$store.getters['websiteData/getAuthPlugin']?.namespace];
+        if (!wwLib.store.websiteData.authPlugin) return null;
+        return wwLib.wwPlugins[wwLib.store.websiteData.authPlugin?.namespace];
     },
     async init() {
         if (this.isInitialized.value) return;

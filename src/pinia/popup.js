@@ -5,8 +5,8 @@ const createId = new ShortUniqueId();
  
 export const usePopupStore = defineStore('popups', () => {
     const availablePopups = computed(() => {
-        const libraryId = wwLib.$store.getters['libraries/getLibrary'].id;
-        return Object.values(wwLib.$store.getters['libraries/getComponents'])
+        const libraryId = wwLib.store.libraries.library.id;
+        return Object.values(wwLib.store.libraries.components)
             .filter(libraryComponent => libraryComponent.type === 'modal' && libraryComponent.libraryId === libraryId)
             .map(libraryComponent => {
                 return {
@@ -22,7 +22,7 @@ export const usePopupStore = defineStore('popups', () => {
     const instances = ref({});
 
     async function open(libraryComponentBaseId, content, { waitClosing = false } = {}) {
-        if (!wwLib.$store.getters['libraries/getComponents'][libraryComponentBaseId]?.configuration?.popup?.isStacked) {
+        if (!wwLib.store.libraries.components[libraryComponentBaseId]?.configuration?.popup?.isStacked) {
             const existingInstance = Object.values(instances.value).find(
                 instance => instance.libraryComponentBaseId === libraryComponentBaseId
             );
@@ -47,7 +47,7 @@ export const usePopupStore = defineStore('popups', () => {
             libraryComponentBaseId,
             content,
         };
-        wwLib.$store.commit('websiteData/ensureStyleSourceIds', [instance]);
+        wwLib.store.websiteData.ensureStyleSourceIds([instance]);
         instances.value[uid] = instance;
         if (waitClosing) {
             return new Promise(resolve => {
@@ -83,14 +83,11 @@ export const usePopupStore = defineStore('popups', () => {
             const stacks = {};
             Object.values(instances.value).forEach(popup => {
                 const isStacked =
-                    wwLib.$store.getters['libraries/getComponents'][popup.libraryComponentBaseId]?.configuration?.popup
-                        ?.isStacked &&
-                    wwLib.$store.getters['libraries/getComponents'][popup.libraryComponentBaseId]?.configuration?.popup
-                        ?.containerUid;
+                    wwLib.store.libraries.components[popup.libraryComponentBaseId]?.configuration?.popup?.isStacked &&
+                    wwLib.store.libraries.components[popup.libraryComponentBaseId]?.configuration?.popup?.containerUid;
                 if (!isStacked) return;
                 const containerUid =
-                    wwLib.$store.getters['libraries/getComponents'][popup.libraryComponentBaseId]?.configuration?.popup
-                        ?.containerUid;
+                    wwLib.store.libraries.components[popup.libraryComponentBaseId]?.configuration?.popup?.containerUid;
                 if (!stacks[containerUid]) {
                     stacks[containerUid] = [];
                 }
@@ -102,8 +99,7 @@ export const usePopupStore = defineStore('popups', () => {
         singlePopupUids: computed(() => {
             return Object.keys(instances.value).filter(uid => {
                 const popup = instances.value[uid];
-                return !wwLib.$store.getters['libraries/getComponents'][popup.libraryComponentBaseId]?.configuration
-                    ?.popup?.isStacked;
+                return !wwLib.store.libraries.components[popup.libraryComponentBaseId]?.configuration?.popup?.isStacked;
             });
         }),
      };

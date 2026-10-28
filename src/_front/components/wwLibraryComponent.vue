@@ -36,7 +36,6 @@ import { useComponentStates } from '@/_front/use/useComponentStates.js';
 import { useLibraryComponentActions } from '@/_common/use/useActions.js';
 import { getStyleAtomicClassesForSource } from '@/_front/services/styleCompilerAtomicClasses';
 import { provideLibraryComponentLayoutStyleScope } from '@/_front/use/useLayoutStyleScopes';
-import { usePopupStore } from '@/pinia/popup';
 
 let componentId = 1;
 
@@ -58,9 +57,9 @@ export default {
         const bindingContext = inject('bindingContext', null);
         const isDragPreview = inject('_wwIsDragPreview', false);
         const isACopy = computed(() => bindingContext && bindingContext.isACopy);
-        const modalsStore = usePopupStore();
+        const modalsStore = wwLib.store.popups;
         const componentDataRef = computed(
-            () => wwLib.$store.getters['websiteData/getWwObjects']?.[props.uid] || modalsStore.instances?.[props.uid]
+            () => wwLib.store.websiteData.wwObjects?.[props.uid] || modalsStore.instances?.[props.uid]
         );
         const styleSourceId = computed(() => componentDataRef.value?._si);
 
@@ -247,7 +246,7 @@ export default {
     computed: {
         base() {
             const baseUid = getComponentBaseUid('libraryComponent', this.uid);
-            return wwLib.$store.getters['libraries/getComponents'][baseUid];
+            return wwLib.store.libraries.components[baseUid];
         },
         rootUid() {
             return this.base?.rootElementId;

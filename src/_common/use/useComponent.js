@@ -13,7 +13,7 @@ import {
     resolveLibraryComponentRawLayoutValue,
 } from '@/_common/helpers/component/libraryComponentRendering';
 import { lazySet } from '@/_common/helpers/reactivity.js';
-import { usePopupStore } from '@/pinia/popup';
+
 import { scheduleRuntimeLifecycle } from '@/_front/rendering/runtimeLifecycleScheduler';
 
 export function useComponentData({
@@ -25,6 +25,10 @@ export function useComponentData({
     libraryComponentDataRef,
     wwProps = {},
  }) {
+    const websiteData = wwLib.store.websiteData;
+    // Cache registry reads in this render path while tracking registry replacement.
+    const wwObjects = computed(() => websiteData.wwObjects);
+    const sections = computed(() => websiteData.sections);
     let content = {};
     let rawContent = {};
     let sidepanelContent = reactive({
@@ -34,17 +38,17 @@ export function useComponentData({
     let rawState = {};
     let state = {};
 
-    const popupsStore = usePopupStore();
+    const popupsStore = wwLib.store.popups;
 
  
     const configuration = getComponentConfiguration(type, uid);
     const component = computed(() => {
         if (type === 'section') {
-            return wwLib.$store.getters['websiteData/getSections'][uid];
+            return sections.value[uid];
         } else if (uid.startsWith('popup-')) {
             return popupsStore.instances[uid];
         } else {
-            return wwLib.$store.getters['websiteData/getWwObjects'][uid];
+            return wwObjects.value[uid];
         }
     });
     const layers = inject('_wwLibraryComponentLayers', {});
@@ -396,11 +400,12 @@ export function useLibraryComponentWorkflow({ baseUid, componentIdentifier, isRu
             executeLibraryComponentWorkflow: () => undefined,
         };
     }
+    const librariesStore = wwLib.store.libraries;
 
     function triggerEvent(name, event = {}, property) {
-        const workflows = Object.values(
-            wwLib.$store.getters['libraries/getComponents'][baseUid]?.inner?.workflows || {}
-        ).filter(({ trigger, triggerProperty }) => trigger === name && (!property || property === triggerProperty));
+        const workflows = Object.values(librariesStore.components[baseUid]?.inner?.workflows || {}).filter(
+            ({ trigger, triggerProperty }) => trigger === name && (!property || property === triggerProperty)
+        );
         // Launch all workflows in parallel
         workflows.forEach(workflow => {
             executeWorkflow(workflow, {
@@ -416,7 +421,7 @@ export function useLibraryComponentWorkflow({ baseUid, componentIdentifier, isRu
     }
 
     function executeLibraryComponentWorkflow(workflowId, parameters, { parentExecutionId } = {}) {
-        const workflow = wwLib.$store.getters['libraries/getComponents'][baseUid]?.inner?.workflows?.[workflowId];
+        const workflow = librariesStore.components[baseUid]?.inner?.workflows?.[workflowId];
         if (!workflow) {
             console.error(`Workflow with id ${workflowId} not found`);
             return;
@@ -436,7 +441,7 @@ export function useLibraryComponentWorkflow({ baseUid, componentIdentifier, isRu
      /* wwFront:start */
     propertiesToWatch = [
         ...new Set(
-            Object.values(wwLib.$store.getters['libraries/getComponents'][baseUid]?.inner?.workflows || {})
+            Object.values(librariesStore.components[baseUid]?.inner?.workflows || {})
                 .filter(({ trigger }) => trigger === '_wwOnPropertyChange')
                 .map(({ triggerProperty }) => triggerProperty)
         ),

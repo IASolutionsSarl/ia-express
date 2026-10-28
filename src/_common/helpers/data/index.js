@@ -1,9 +1,5 @@
 import { resetCollections, fetchNonStaticCollectionsData } from './collections';
 import { executeWorkflows, resetWorkflows } from './workflows';
-import { useVariablesStore } from '@/pinia/variables.js';
-import { useBackTableViewsStore } from '@/pinia/backTableViews.js';
-import { useBackAuthStore } from '@/pinia/backAuth.js';
-import { useIntegrationsStore } from '@/pinia/integrations';
 
  
 let isFirstLoad = true;
@@ -22,19 +18,19 @@ let isIntegrationInstancesInitialized = false;
 export async function initializeIntegrationInstances() {
     if (isIntegrationInstancesInitialized) return;
     isIntegrationInstancesInitialized = true;
-    const integrationsStore = useIntegrationsStore(wwLib.$pinia);
+    const integrationsStore = wwLib.store.integrations;
     await integrationsStore.initializeInstances();
 }
 
  export async function initializeData(toRoute, forceReset = false) {
  
-    const variablesStore = useVariablesStore(wwLib.$pinia);
-    const backTableViewsStore = useBackTableViewsStore(wwLib.$pinia);
-    const backAuthStore = useBackAuthStore(wwLib.$pinia);
+    const variablesStore = wwLib.store.variables;
+    const backTableViewsStore = wwLib.store.backTableViews;
+    const backAuthStore = wwLib.store.backAuth;
     const resetPersistant = isFirstLoad || forceReset;
     isFirstLoad = false;
 
-    wwLib.$store.dispatch('front/showPageLoadProgress', false);
+    wwLib.store.front.setPageLoadProgress(false);
 
     /*=================================/
     / RESET & INIT                     /

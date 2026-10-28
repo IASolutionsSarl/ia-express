@@ -3,7 +3,7 @@ export default {
     async init() {
         /* wwFront:start */
         const designInfo = wwLib.getFrontWindow().wwg_designInfo;
-        await wwLib.$store.dispatch('websiteData/setFullDesign', designInfo);
+        await wwLib.store.websiteData.setFullDesign(designInfo);
         /* wwFront:end */
      },
 
@@ -20,7 +20,7 @@ export default {
                     this.infrastructureWakePollingTimer = null;
                     return;
                 }
-                wwLib.$store.dispatch('manager/setEnvironmentInfrastructureWake', error.response.data);
+                wwLib.store.manager.setEnvironmentInfrastructureWake(error.response.data);
             }
         }, 30000);
     },
@@ -52,14 +52,34 @@ export default {
      */
     getWebsiteName() {
         wwLib.wwLog.warn('wwUtils.wwWebsiteData.getWebsiteName is deprecated');
-        return wwLib.$store.getters['websiteData/getDesignInfo'].name;
+        return wwLib.store.websiteData.designInfo.name;
     },
 
+    /** @PUBLIC_API Reactive project definition. */
+    get design() {
+        return wwLib.store.websiteData.currentDesign || null;
+    },
+    /** @PUBLIC_API Reactive project metadata. */
+    get info() {
+        return this.design.info;
+    },
+    /** @PUBLIC_API Project pages, retaining the stored page references. */
+    get pages() {
+        return this.design.pages;
+    },
+    /** @PUBLIC_API Active page definition. */
+    get currentPage() {
+        return wwLib.store.websiteData.page;
+    },
+    /** @PUBLIC_API Active page ID. */
+    get currentPageId() {
+        return wwLib.store.websiteData.pageId;
+    },
     /**
      * @PUBLIC_API
      */
     getDesign() {
-        return wwLib.$store.getters['websiteData/getDesign'] || null;
+        return wwLib.store.websiteData.currentDesign || null;
     },
 
     /**
@@ -70,6 +90,7 @@ export default {
         return design.info;
     },
 
+ 
     /**
      * @PUBLIC_API
      */
@@ -82,14 +103,14 @@ export default {
      * @PUBLIC_API
      */
     getCurrentPage() {
-        return wwLib.$store.getters['websiteData/getPage'];
+        return wwLib.store.websiteData.page;
     },
 
     /**
      * @PUBLIC_API
      */
     getCurrentPageId() {
-        return wwLib.$store.getters['websiteData/getPageId'];
+        return wwLib.store.websiteData.pageId;
     },
 };
 
@@ -101,11 +122,19 @@ async function fetchData(pageId) {
     /* wwFront:start */
     if (import.meta.env.SSR) {
         const payload = await readPageDataFromDisk(pageId);
-        const { page: pageData, sections, wwObjects, collections, variables, formulas, workflows, libraryComponents } =
-            payload;
+        const {
+            page: pageData,
+            sections,
+            wwObjects,
+            collections,
+            variables,
+            formulas,
+            workflows,
+            libraryComponents,
+        } = payload;
 
         page = { page: pageData, sections, wwObjects };
-        await wwLib.$store.dispatch('websiteData/setAllData', {
+        await wwLib.store.websiteData.setAllData({
             page,
             collections,
             variables,
@@ -162,7 +191,7 @@ async function fetchData(pageId) {
         if (collections) {
             const promises = [];
             for (const collection of Object.values(collections).filter(collection => collection.mode === 'static')) {
-                if (!wwLib.$store.getters['data/getCollections'][collection.id])
+                if (!wwLib.store.data.collections[collection.id])
                     promises.push(
                         axios
                             .get(`/collections/${collection.id}.json?_wwcv=${window.wwg_cacheVersion}`)
@@ -174,7 +203,7 @@ async function fetchData(pageId) {
         }
         page = { page: pageData, sections, wwObjects };
 
-        await wwLib.$store.dispatch('websiteData/setAllData', {
+        await wwLib.store.websiteData.setAllData({
             page,
             collections,
             variables,

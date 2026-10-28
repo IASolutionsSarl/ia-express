@@ -11,10 +11,10 @@ import { reactive, computed, provide, onMounted, watch } from 'vue';
 export default {
     setup() {
         const wwFrontState = reactive({
-            lang: computed(() => wwLib.$store.getters['front/getLang']),
-            pageId: computed(() => wwLib.$store.getters['websiteData/getPageId']),
-            screenSize: computed(() => wwLib.$store.getters['front/getScreenSize']),
-            screenSizes: computed(() => wwLib.$store.getters['front/getScreenSizes']),
+            lang: computed(() => wwLib.store.front.lang),
+            pageId: computed(() => wwLib.store.websiteData.pageId),
+            screenSize: computed(() => wwLib.store.front.activeScreenSize),
+            screenSizes: computed(() => wwLib.store.front.screenSizes),
         });
         provide('wwFrontState', wwFrontState);
 

@@ -8,6 +8,7 @@ import element_3a7d6379_12d3_4387_98ff_b332bb492a63 from "@weweb-internal/ext-el
 import element_6145eb60_0af8_4e52_bcc6_dc0f6743654e from "@weweb-internal/ext-element-6145eb60-0af8-4e52-bcc6-dc0f6743654e";
 import element_69d0b3ef_b265_494c_8cd1_874da4aa1834 from "@weweb-internal/ext-element-69d0b3ef-b265-494c-8cd1-874da4aa1834";
 import element_b783dc65_d528_4f74_8c14_e27c934c39b1 from "@weweb-internal/ext-element-b783dc65-d528-4f74-8c14-e27c934c39b1";
+import element_c6c0c00e_49fd_4cb9_bd78_5bc09945721e from "@weweb-internal/ext-element-c6c0c00e-49fd-4cb9-bd78-5bc09945721e";
 import element_d7904e9d_fc9a_4d80_9e32_728e097879ad from "@weweb-internal/ext-element-d7904e9d-fc9a-4d80-9e32-728e097879ad";
 
 // eslint-disable-next-line no-undef
@@ -65,6 +66,12 @@ export default async function registerPageComponents(app) {
         "type": "element"
     },
     {
+        "baseId": "c6c0c00e-49fd-4cb9-bd78-5bc09945721e",
+        "importPath": "@weweb-internal/ext-element-c6c0c00e-49fd-4cb9-bd78-5bc09945721e",
+        "name": "wwobject-c6c0c00e-49fd-4cb9-bd78-5bc09945721e",
+        "type": "element"
+    },
+    {
         "baseId": "d7904e9d-fc9a-4d80-9e32-728e097879ad",
         "importPath": "@weweb-internal/ext-element-d7904e9d-fc9a-4d80-9e32-728e097879ad",
         "name": "wwobject-d7904e9d-fc9a-4d80-9e32-728e097879ad",
@@ -87,6 +94,7 @@ app.component("wwobject-3a7d6379-12d3-4387-98ff-b332bb492a63", element_3a7d6379_
 app.component("wwobject-6145eb60-0af8-4e52-bcc6-dc0f6743654e", element_6145eb60_0af8_4e52_bcc6_dc0f6743654e);
 app.component("wwobject-69d0b3ef-b265-494c-8cd1-874da4aa1834", element_69d0b3ef_b265_494c_8cd1_874da4aa1834);
 app.component("wwobject-b783dc65-d528-4f74-8c14-e27c934c39b1", element_b783dc65_d528_4f74_8c14_e27c934c39b1);
+app.component("wwobject-c6c0c00e-49fd-4cb9-bd78-5bc09945721e", element_c6c0c00e_49fd_4cb9_bd78_5bc09945721e);
 app.component("wwobject-d7904e9d-fc9a-4d80-9e32-728e097879ad", element_d7904e9d_fc9a_4d80_9e32_728e097879ad);
 
         // eslint-disable-next-line no-undef

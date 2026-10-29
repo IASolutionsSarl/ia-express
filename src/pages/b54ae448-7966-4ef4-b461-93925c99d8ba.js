@@ -5,6 +5,7 @@ import './styleCompiler/ww-style-page-b54ae448-7966-4ef4-b461-93925c99d8ba.css';
 import element_1b1e2173_9b78_42cc_a8ee_a6167caea340 from "@weweb-internal/ext-element-1b1e2173-9b78-42cc-a8ee-a6167caea340";
 import element_3a7d6379_12d3_4387_98ff_b332bb492a63 from "@weweb-internal/ext-element-3a7d6379-12d3-4387-98ff-b332bb492a63";
 import element_b783dc65_d528_4f74_8c14_e27c934c39b1 from "@weweb-internal/ext-element-b783dc65-d528-4f74-8c14-e27c934c39b1";
+import element_c6c0c00e_49fd_4cb9_bd78_5bc09945721e from "@weweb-internal/ext-element-c6c0c00e-49fd-4cb9-bd78-5bc09945721e";
 import element_d7904e9d_fc9a_4d80_9e32_728e097879ad from "@weweb-internal/ext-element-d7904e9d-fc9a-4d80-9e32-728e097879ad";
 
 // eslint-disable-next-line no-undef
@@ -44,6 +45,12 @@ export default async function registerPageComponents(app) {
         "type": "element"
     },
     {
+        "baseId": "c6c0c00e-49fd-4cb9-bd78-5bc09945721e",
+        "importPath": "@weweb-internal/ext-element-c6c0c00e-49fd-4cb9-bd78-5bc09945721e",
+        "name": "wwobject-c6c0c00e-49fd-4cb9-bd78-5bc09945721e",
+        "type": "element"
+    },
+    {
         "baseId": "d7904e9d-fc9a-4d80-9e32-728e097879ad",
         "importPath": "@weweb-internal/ext-element-d7904e9d-fc9a-4d80-9e32-728e097879ad",
         "name": "wwobject-d7904e9d-fc9a-4d80-9e32-728e097879ad",
@@ -63,6 +70,7 @@ export default async function registerPageComponents(app) {
         app.component("wwobject-1b1e2173-9b78-42cc-a8ee-a6167caea340", element_1b1e2173_9b78_42cc_a8ee_a6167caea340);
 app.component("wwobject-3a7d6379-12d3-4387-98ff-b332bb492a63", element_3a7d6379_12d3_4387_98ff_b332bb492a63);
 app.component("wwobject-b783dc65-d528-4f74-8c14-e27c934c39b1", element_b783dc65_d528_4f74_8c14_e27c934c39b1);
+app.component("wwobject-c6c0c00e-49fd-4cb9-bd78-5bc09945721e", element_c6c0c00e_49fd_4cb9_bd78_5bc09945721e);
 app.component("wwobject-d7904e9d-fc9a-4d80-9e32-728e097879ad", element_d7904e9d_fc9a_4d80_9e32_728e097879ad);
 
         // eslint-disable-next-line no-undef

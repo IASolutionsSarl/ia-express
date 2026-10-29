@@ -489,17 +489,17 @@
         border: 0 solid #e0e0e0;
         border-radius: 5px;
       }
-      .ww-e-dDL {
+      .ww-e-dDK {
         display: flex;
         width: 100%;
       }
-      .ww-e-dDL.ww-layout, .ww-e-dDL [data-ww-ls~="dDL"] {
+      .ww-e-dDK.ww-layout, .ww-e-dDK [data-ww-ls~="dDK"] {
         display: flex;
         flex-direction: row;
         justify-content: space-between;
         flex-wrap: revert-layer;
       }
-      .ww-e-dDM {
+      .ww-e-dDL {
         padding: 20px 0 30px;
         font-size: 16px;
         font-weight: 400;
@@ -510,7 +510,7 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-dDN {
+      .ww-e-dDM {
         padding: 30px 0 0;
         width: revert-layer;
         font: var(--5cd34ef8-3e66-48d9-a40c-173b6be0752a, 700 36px/40px var(--ww-default-font-family, sans-serif));
@@ -521,7 +521,7 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-dDO {
+      .ww-e-dDN {
         margin: 0;
         padding: 0 10px;
         overflow: unset;
@@ -531,40 +531,40 @@
         height: auto;
         aspect-ratio: unset;
       }
-      .ww-e-dDO.ww-layout, .ww-e-dDO [data-ww-ls~="dDO"] {
+      .ww-e-dDN.ww-layout, .ww-e-dDN [data-ww-ls~="dDN"] {
         display: flex;
         flex-flow: column;
       }
-      .ww-e-dDQ {
+      .ww-e-dDP {
         display: flex;
         width: 8%;
       }
-      .ww-e-dDQ.ww-layout, .ww-e-dDQ [data-ww-ls~="dDQ"] {
+      .ww-e-dDP.ww-layout, .ww-e-dDP [data-ww-ls~="dDP"] {
         display: flex;
         flex-flow: column;
         justify-content: flex-end;
       }
-      .ww-e-dDR {
+      .ww-e-dDQ {
         display: flex;
         width: 100%;
       }
       @media (max-width: 767px) {
-        .ww-e-dDR {
+        .ww-e-dDQ {
           width: 100%;
         }
       }
-      .ww-e-dDR.ww-layout, .ww-e-dDR [data-ww-ls~="dDR"] {
+      .ww-e-dDQ.ww-layout, .ww-e-dDQ [data-ww-ls~="dDQ"] {
         display: flex;
         flex-flow: column;
       }
-      .ww-e-dDS {
+      .ww-e-dDR {
         margin: 0 auto;
         align-self: center;
         display: flex;
         width: 95%;
         max-width: 1200px;
       }
-      .ww-e-dDS.ww-layout, .ww-e-dDS [data-ww-ls~="dDS"] {
+      .ww-e-dDR.ww-layout, .ww-e-dDR [data-ww-ls~="dDR"] {
         display: flex;
         flex-flow: column;
       }

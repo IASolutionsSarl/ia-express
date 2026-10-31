@@ -154,35 +154,35 @@
       }
     }
     @layer ordered {
+      .ww-e-d41 {
+        width: revert-layer;
+      }
       .ww-e-d42 {
         width: revert-layer;
       }
       .ww-e-d43 {
-        width: revert-layer;
-      }
-      .ww-e-d44 {
         margin: 50px 0 0;
         display: flex;
         width: 100%;
         max-width: 940px;
         background-color: var(--cc540069-0132-4820-803b-67fe555d743d,#F9FAFB);
       }
-      .ww-e-d44.ww-layout, .ww-e-d44 [data-ww-ls~="d44"] {
+      .ww-e-d43.ww-layout, .ww-e-d43 [data-ww-ls~="d43"] {
         display: flex;
         flex-flow: column;
       }
-      .ww-e-d45 {
+      .ww-e-d44 {
         margin: 0 0 20px;
         width: 100%;
       }
-      .ww-e-d45.ww-layout, .ww-e-d45 [data-ww-ls~="d45"] {
+      .ww-e-d44.ww-layout, .ww-e-d44 [data-ww-ls~="d44"] {
         display: flex;
         flex-flow: column;
         justify-content: center;
         align-items: flex-start;
         align-content: revert-layer;
       }
-      .ww-e-d6S {
+      .ww-e-d6R {
         margin: 0 0 4px;
         align-self: center;
         font: var(--f2a71115-b847-4f32-ade9-6ec28c04d178, 400 16px/24px var(--ww-default-font-family, sans-serif));
@@ -198,7 +198,7 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-d6i {
+      .ww-e-d6h {
         margin: 16px 0 0;
         display: var(--ww-style-display, none);
         font: var(--e627551f-2a56-4b99-b7ba-0c6b0940ab96, 500 14px/20px var(--ww-default-font-family, sans-serif));
@@ -214,7 +214,7 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-dC2 {
+      .ww-e-dC0 {
         padding: 32px 24px;
         overflow: hidden;
         align-self: center;
@@ -225,14 +225,14 @@
         border: 1px solid var(--5df2264d-813f-4e12-959b-e86f202e40b0, #E4E4E7);
         border-radius: 12px;
       }
-      .ww-e-dC2.ww-layout, .ww-e-dC2 [data-ww-ls~="dC2"] {
+      .ww-e-dC0.ww-layout, .ww-e-dC0 [data-ww-ls~="dC0"] {
         display: flex;
         flex-flow: column;
         justify-content: center;
         align-items: center;
         align-content: revert-layer;
       }
-      .ww-e-dC3 {
+      .ww-e-dC1 {
         margin: 48px 0 0;
         width: 100%;
         animation-duration: 1s;
@@ -245,7 +245,7 @@
         100% {
         }
       }
-      .ww-e-dC3.ww-layout, .ww-e-dC3 [data-ww-ls~="dC3"] {
+      .ww-e-dC1.ww-layout, .ww-e-dC1 [data-ww-ls~="dC1"] {
         display: flex;
       }
     }

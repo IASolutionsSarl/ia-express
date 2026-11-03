@@ -22,7 +22,11 @@ import * as _ from 'lodash-es';
 
  
 import { getPath } from '@/_common/helpers/pathResolver';
-import { assignDenseStyleSourceIds, createStyleSourceIdRegistry } from '@/_common/helpers/styleCompiler';
+import {
+    assignDenseStyleSourceIds,
+    createStyleSourceIdRegistry,
+    isDenseStyleSourceId,
+} from '@/_common/helpers/styleCompiler';
 
 function ensureStyleSourceIds(
     styleSourceIdRegistry: WebsiteDataStateRefs['styleSourceIdRegistry'],
@@ -112,8 +116,19 @@ export function useWebsiteDataWriters({
 
          },
  
-        // Popup instances are created at runtime too, so this writer must survive front extraction.
-        ensureStyleSourceIds(sources: ComponentDefinition[] = []): void {
+        ensureStyleSourceIds(sources: ComponentDefinition[] = [], { runtime = false } = {}): void {
+            /* wwFront:start */
+            if (runtime) {
+                const start = stateRefs.design.value.info?.runtimeStyleIdStart;
+                // Older publications do not describe the full CSS id range. Keep their UID-based
+                // runtime identity rather than risk colliding with an unloaded persisted source.
+                if (!isDenseStyleSourceId(start)) return;
+                const registry = stateRefs.styleSourceIdRegistry.value;
+                const nextId = Math.max(registry.nextId, start);
+                if (!Number.isSafeInteger(nextId + sources.length)) return;
+                registry.nextId = nextId;
+            }
+            /* wwFront:end */
             ensureStyleSourceIds(stateRefs.styleSourceIdRegistry, sources);
         },
 

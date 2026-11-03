@@ -54,6 +54,7 @@ export interface Page {
     [key: string]: unknown;
 }
 export interface DesignInfo {
+    runtimeStyleIdStart?: number;
     id?: string;
     name?: string;
     homePageId?: string;

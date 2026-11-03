@@ -47,7 +47,7 @@ export const usePopupStore = defineStore('popups', () => {
             libraryComponentBaseId,
             content,
         };
-        wwLib.store.websiteData.ensureStyleSourceIds([instance]);
+        wwLib.store.websiteData.ensureStyleSourceIds([instance], { runtime: true });
         instances.value[uid] = instance;
         if (waitClosing) {
             return new Promise(resolve => {

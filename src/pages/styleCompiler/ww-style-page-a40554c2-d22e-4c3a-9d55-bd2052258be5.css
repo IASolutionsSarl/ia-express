@@ -323,7 +323,7 @@
         display: flex;
         flex-flow: column;
       }
-      .ww-e-d8y {
+      .ww-e-d8x {
         margin: 0 auto;
         align-self: center;
         display: flex;
@@ -334,40 +334,40 @@
         background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
       }
       @media (max-width: 767px) {
-        .ww-e-d8y {
+        .ww-e-d8x {
           width: 100%;
         }
       }
-      .ww-e-d8y.ww-layout, .ww-e-d8y [data-ww-ls~="d8y"] {
+      .ww-e-d8x.ww-layout, .ww-e-d8x [data-ww-ls~="d8x"] {
         display: flex;
         flex-direction: row;
         flex-wrap: revert-layer;
       }
-      .ww-e-d8z {
+      .ww-e-d8y {
         margin: 0 0 0 6px;
         width: 20px;
+      }
+      .ww-e-d8z {
+        margin: 0 6px 0 0;
+        width: 32px;
       }
       .ww-e-d90 {
         margin: 0 6px 0 0;
         width: 32px;
       }
       .ww-e-d91 {
-        margin: 0 6px 0 0;
-        width: 32px;
+        margin: 0 0 0 6px;
+        width: 20px;
       }
       .ww-e-d92 {
-        margin: 0 0 0 6px;
-        width: 20px;
-      }
-      .ww-e-d93 {
         margin: 0 6px 0 0;
         width: 32px;
       }
-      .ww-e-d94 {
+      .ww-e-d93 {
         margin: 0 0 0 6px;
         width: 20px;
       }
-      .ww-e-d95 {
+      .ww-e-d94 {
         padding: 3px 5px;
         font-size: 0;
         font-weight: 500;
@@ -381,7 +381,7 @@
         border-radius: 8px;
         --ww-element-transition: all 0.2s ease;
       }
-      .ww-e-d95:where(:hover) {
+      .ww-e-d94:where(:hover) {
         background-color: var(--bd6a542c-8470-4a5d-b59f-0c45d3e4a36c,#6B46C1);
         box-shadow: 0 4px 6px #0000001a;
         transform: translateY(-1px);

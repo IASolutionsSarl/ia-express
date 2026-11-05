@@ -518,7 +518,7 @@
         display: flex;
         flex-flow: column;
       }
-      .ww-e-dFP {
+      .ww-e-dFO {
         overflow: unset;
         width: 35%;
         height: auto;
@@ -526,9 +526,28 @@
         background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
       }
       @media (max-width: 767px) {
-        .ww-e-dFP {
+        .ww-e-dFO {
           width: 65%;
         }
+      }
+      .ww-e-dFP {
+        padding: 3px 5px;
+        font-size: 0;
+        font-weight: 500;
+        color: #0000;
+        white-space-collapse: preserve;
+        background-color: #0000;
+        cursor: pointer;
+        box-shadow: 0 2px 4px #0000001a;
+        transition: all 0.2s ease;
+        border: none;
+        border-radius: 8px;
+        --ww-element-transition: all 0.2s ease;
+      }
+      .ww-e-dFP:where(:hover) {
+        background-color: var(--bd6a542c-8470-4a5d-b59f-0c45d3e4a36c,#6B46C1);
+        box-shadow: 0 4px 6px #0000001a;
+        transform: translateY(-1px);
       }
       .ww-e-dFQ {
         padding: 3px 5px;
@@ -545,25 +564,6 @@
         --ww-element-transition: all 0.2s ease;
       }
       .ww-e-dFQ:where(:hover) {
-        background-color: var(--bd6a542c-8470-4a5d-b59f-0c45d3e4a36c,#6B46C1);
-        box-shadow: 0 4px 6px #0000001a;
-        transform: translateY(-1px);
-      }
-      .ww-e-dFR {
-        padding: 3px 5px;
-        font-size: 0;
-        font-weight: 500;
-        color: #0000;
-        white-space-collapse: preserve;
-        background-color: #0000;
-        cursor: pointer;
-        box-shadow: 0 2px 4px #0000001a;
-        transition: all 0.2s ease;
-        border: none;
-        border-radius: 8px;
-        --ww-element-transition: all 0.2s ease;
-      }
-      .ww-e-dFR:where(:hover) {
         background-color: var(--bd6a542c-8470-4a5d-b59f-0c45d3e4a36c,#6B46C1);
         box-shadow: 0 4px 6px #0000001a;
         transform: translateY(-1px);

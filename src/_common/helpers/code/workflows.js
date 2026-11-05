@@ -1589,7 +1589,7 @@ export async function executeWorkflowAction(
                     if (!action.connectionId && integration === backAuthStore.authIntegration) {
                         action.connectionId = backAuthStore.connectionId;
                     }
-                    result = await integrationsCore[integration]?.actions?.[actionName](
+                     result = await integrationsCore[integration]?.actions?.[actionName](
                         { args: resolveConfig('args', action.args, context, { event }) },
                         {
                             connection: integrationsStore.getConnection(action.connectionId),

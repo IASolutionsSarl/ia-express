@@ -81,7 +81,7 @@ export async function loadTableView(id, parameters = {}, options = { isTest: fal
             id,
             options.env
         );
-        if (tableView && integrationTable?.type === 'front') {
+         if (tableView && integrationTable?.type === 'front') {
             let viewInstance = instance;
              const frontParameters = buildTableViewParameterValues(tableView.parameters || [], parameters);
             response = await integrationsCore[integrationTable.integration].loadView({

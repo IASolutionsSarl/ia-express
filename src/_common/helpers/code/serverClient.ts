@@ -1,6 +1,9 @@
 import type { BetterFetchPlugin, BetterFetchOption } from '@better-fetch/fetch';
 import { createFetch } from '@better-fetch/fetch';
 import { getServerUrl } from './backendWorkflows.js';
+/* wwFront:start */
+import { redirectToAppAccessDenied, redirectToAppAccessSignIn } from './appAccessRedirects';
+/* wwFront:end */
  
 interface QueuedRequest {
     resolve: () => void;
@@ -45,7 +48,14 @@ const baseFetch = createFetch({
     plugins: [createSecurityAuditPlugin()],
     throw: true,
     credentials: 'include',
- });
+     /* wwFront:start */
+    onError(context) {
+        const code = context.error?.code;
+        if (context.response.status === 401 && code === 'APP_ACCESS_REQUIRED') redirectToAppAccessSignIn();
+        if (context.response.status === 403 && code === 'APP_ACCESS_DENIED') redirectToAppAccessDenied();
+    },
+    /* wwFront:end */
+});
 
 async function wwServerClient<T>(url: string, options?: BetterFetchOption): Promise<T> {
     if (activeRequests >= WW_CONCURRENCY) {

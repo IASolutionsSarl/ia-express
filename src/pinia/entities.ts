@@ -199,6 +199,10 @@ export interface EditorUser {
     pageId?: string;
     pos?: { x: number; y: number };
     screen?: unknown;
+    /** What the user may do on the project (`accessPermissions`), as the server sends them: none sent restricts nothing. */
+    permissions?: string[];
+    /** What the user may do across the project's workspace (`billing`, `all`…). */
+    workspacePermissions?: string[];
     [key: string]: unknown;
 }
 export interface PopupSidebar {

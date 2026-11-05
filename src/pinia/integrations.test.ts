@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
     initializeConnection: vi.fn(),
+    giveProjectWorkspaceConnectionAccess: vi.fn(),
+    removeProjectWorkspaceConnectionAccess: vi.fn(),
 }));
 
 vi.mock('@/extensions/integrations/index.js', () => ({
@@ -29,11 +31,15 @@ vi.mock('@/_manager/backend/integrations.service.js', () => ({
     createIntegrationConnection: vi.fn(),
     updateIntegrationConnection: vi.fn(),
     deleteIntegrationConnection: vi.fn(),
+    giveProjectWorkspaceConnectionAccess: mocks.giveProjectWorkspaceConnectionAccess,
+    removeProjectWorkspaceConnectionAccess: mocks.removeProjectWorkspaceConnectionAccess,
 }));
 
 describe('useIntegrationsStore', () => {
     beforeEach(() => {
         mocks.initializeConnection.mockReset();
+        mocks.giveProjectWorkspaceConnectionAccess.mockReset();
+        mocks.removeProjectWorkspaceConnectionAccess.mockReset();
         vi.stubGlobal('__WW_STORE_FRONT_CONNECTIONS__', {});
         vi.stubGlobal('wwLib', withStoreRegistry({
             wwLog: { error: vi.fn() },
@@ -115,5 +121,112 @@ describe('useIntegrationsStore', () => {
         finishPrevious({ client: 'retired' });
         await previous;
         expect(store.getInstance('connection-id')).toBe(replacement);
+    });
+
+    it('only uses a workspace connection once the project has access to it, the user giving it', async () => {
+        const pinia = createPinia();
+        // The store reads the project's variables through wwLib.store: the same pinia as the one read below.
+        withStoreRegistry({ wwLog: { error: vi.fn() } }, pinia);
+        const { useIntegrationsStore } = await import('./integrations.js');
+        const store = useIntegrationsStore(pinia);
+        mocks.initializeConnection.mockResolvedValue({ client: 'supabase' });
+        const workspaceConnection = {
+            id: 'workspace-id',
+            name: 'Shared',
+            integration: 'supabase',
+            config: {},
+            isWorkspaceConnection: true,
+        };
+        store.addIntegration('supabase');
+        // Listed without its config, nor its variables, to a user who may not edit it.
+        store.addConnection({ ...workspaceConnection, config: null, projectHasAccess: false });
+
+        await store.initializeInstances();
+        expect(store.getInstance('workspace-id')).toBeNull();
+        expect(store.getConnection('workspace-id')).toBeNull();
+        expect(store.getCodeExposedConnections()).toEqual([]);
+        expect(store.getConnectionIssue('workspace-id')).toBe('no-project-access');
+        expect(store.getConnectionIssue('deleted-id')).toBe('missing');
+        expect(store.isConnectionUsable('workspace-id')).toBe(false);
+
+        const envVariable = {
+            id: 'variable-id',
+            name: 'WORKSPACE_SUPABASE_KEY',
+            editorValue: 'key',
+            secure: false,
+            connectionId: 'workspace-id',
+            workspaceId: 'workspace',
+        };
+        mocks.giveProjectWorkspaceConnectionAccess.mockResolvedValue({
+            connection: { ...workspaceConnection, projectHasAccess: true },
+            envVariables: [envVariable],
+        });
+        const { useEnvVariablesStore } = await import('./envVariables.js');
+        let variableAtInit: unknown;
+        mocks.initializeConnection.mockImplementation(async () => {
+            variableAtInit = (useEnvVariablesStore(pinia).values as Record<string, unknown>).WORKSPACE_SUPABASE_KEY;
+            return { client: 'supabase' };
+        });
+        await store.giveProjectConnectionAccess('workspace-id');
+
+        expect(mocks.giveProjectWorkspaceConnectionAccess).toHaveBeenCalledWith('workspace-id');
+        expect(store.getConnectionIssue('workspace-id')).toBeNull();
+        expect(store.connections['workspace-id'].config).toEqual({});
+        // Its variables come with it, in time for its instance.
+        expect(variableAtInit).toEqual(envVariable);
+        expect(store.getInstance('workspace-id')).toEqual({ client: 'supabase' });
+    });
+
+    it('stops using a workspace connection once the user removes it from the project, which they may add back', async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        wwLib.$pinia = pinia;
+        const { useIntegrationsStore } = await import('./integrations.js');
+        const store = useIntegrationsStore(pinia);
+        mocks.initializeConnection.mockResolvedValue({ client: 'supabase' });
+        const workspaceConnection = {
+            id: 'workspace-id',
+            name: 'Shared',
+            integration: 'supabase',
+            config: {},
+            isWorkspaceConnection: true,
+            userHasAccess: true,
+        };
+        store.addIntegration('supabase');
+        store.addConnection({ ...workspaceConnection, projectHasAccess: true });
+        await store.initializeInstances();
+        expect(store.getInstance('workspace-id')).toEqual({ client: 'supabase' });
+
+        mocks.removeProjectWorkspaceConnectionAccess.mockResolvedValue({
+            connection: { ...workspaceConnection, projectHasAccess: false },
+        });
+        await store.removeProjectConnectionAccess('workspace-id');
+
+        expect(mocks.removeProjectWorkspaceConnectionAccess).toHaveBeenCalledWith('workspace-id');
+        expect(store.getInstance('workspace-id')).toBeNull();
+        expect(store.getConnection('workspace-id')).toBeNull();
+        expect(store.getConnectionIssue('workspace-id')).toBe('no-project-access');
+    });
+
+    it('offers no connection of an integration the project has not installed', async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        wwLib.$pinia = pinia;
+        const { useIntegrationsStore } = await import('./integrations.js');
+        const store = useIntegrationsStore(pinia);
+        store.addConnection({
+            id: 'workspace-id',
+            name: 'Shared',
+            integration: 'supabase',
+            config: {},
+            isWorkspaceConnection: true,
+            projectHasAccess: true,
+        });
+
+        expect(store.selectableConnectionsOf('supabase')).toEqual([]);
+        expect(store.isConnectionUsable('workspace-id')).toBe(false);
+        store.addIntegration('supabase');
+        expect(store.selectableConnectionsOf('supabase').map(connection => connection.id)).toEqual(['workspace-id']);
+        expect(store.isConnectionUsable('workspace-id')).toBe(true);
     });
 });

@@ -1,6 +1,9 @@
 import { createAuthClient } from 'better-auth/client';
 import { magicLinkClient, emailOTPClient } from 'better-auth/client/plugins';
 import { getServerUrl } from '@/_common/helpers/code/backendWorkflows.js';
+/* wwFront:start */
+import { goToAppAccessSignedOut } from '@/_common/helpers/code/appAccessRedirects';
+/* wwFront:end */
  
 function getPageUrl(pageConfig = {}) {
     if (pageConfig.type === 'internal') {
@@ -134,6 +137,15 @@ export default {
         },
         signout: async ({ args }, { instance }) => {
             if (!instance) throw new Error('WeWeb Auth instance is required');
+            /* wwFront:start */
+            if (window.wwg_designInfo?.auth?.appAccess === 'internal') {
+                await instance.signOut();
+                goToAppAccessSignedOut();
+                // The page is leaving: what the workflow does next (going to a page, its own login page...) would sign
+                // the person back in.
+                return new Promise(() => {});
+            }
+            /* wwFront:end */
             const result = await instance.signOut({
                 fetchOptions: {
                     onSuccess: () => {

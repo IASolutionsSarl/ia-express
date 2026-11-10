@@ -22,6 +22,7 @@ export default {
         const { hasLink, tag, properties } = wwLib.wwElement.useLink();
 
         const iconText = ref(null);
+        const isIconLoaded = ref(false);
 
         const icon = computed(() => {
             return props.wwElementState.props.icon || props.content.icon;
@@ -44,6 +45,7 @@ export default {
             } catch (error) {
                 iconText.value = null;
             }
+            isIconLoaded.value = true;
         };
 
         watch(icon, loadIcon, { immediate: true });
@@ -52,6 +54,7 @@ export default {
         return {
             getIcon,
             iconText,
+            isIconLoaded,
             hasLink,
             tag,
             properties,
@@ -61,6 +64,7 @@ export default {
     },
     computed: {
         iconHTML() {
+            if (!this.isIconLoaded) return '';
             return this.iconText || this.placeholder;
         },
         style() {

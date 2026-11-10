@@ -57,6 +57,8 @@ vi.mock('@/_front/services/styleCompilerAtomicClasses', () => ({
 }));
 
 import { usePageStyleCompilerRuntime } from './useStyleCompilerRuntime';
+import { encodeStyleRuntimeManifest } from '@/_common/helpers/styleCompiler/runtimeManifest';
+import type { StyleDynamicVariable } from '@/_common/helpers/styleCompiler/types';
 
 describe('published page style runtime', () => {
     beforeEach(() => {
@@ -135,6 +137,44 @@ describe('published page style runtime', () => {
         usePageStyleCompilerRuntime('runtime');
 
         expect(mocks.registerVariables).toHaveBeenCalledWith([]);
+        expect(mocks.createSources).not.toHaveBeenCalled();
+        expect(mocks.compileStylesheet).not.toHaveBeenCalled();
+        runLifecycleCleanups();
+    });
+
+    it('does not recompile page styles for a published grid binding with an omitted span fallback', async () => {
+        const variable: StyleDynamicVariable = {
+            name: '--ww-style-grid-column',
+            sourceUid: 'card',
+            surface: { key: 'element:card', kind: 'element', selector: '.ww-e-card', group: 'element' },
+            group: 'element',
+            domain: 'style',
+            property: 'gridColumn',
+            state: 'base',
+            breakpoint: 'default',
+            value: { __wwtype: 'f', code: "'auto'", defaultValue: 'auto' },
+            cssProperty: 'grid-column',
+            selector: '.ww-e-card',
+            valueNormalizer: { type: 'empty-if-falsy' },
+            runtimeFallback: {
+                type: 'when-empty',
+                value: undefined,
+                valueNormalizer: { type: 'prefix-if-truthy', prefix: 'span ' },
+            },
+        };
+        const manifest = JSON.parse(JSON.stringify(encodeStyleRuntimeManifest([variable])));
+        // Existing publications lost this property when an undefined legacy span was serialized.
+        delete manifest[1][0][23].value;
+        const page = reactive({ id: 'grid-page', _sm: manifest });
+        setCurrentPage(page);
+
+        usePageStyleCompilerRuntime('runtime');
+        page._sm = JSON.parse(JSON.stringify(manifest));
+        await nextTick();
+
+        expect(mocks.registerVariables).toHaveBeenCalledTimes(2);
+        expect(mocks.registerVariables).toHaveBeenLastCalledWith([variable]);
+        expect(mocks.registrationStops[0]).toHaveBeenCalledOnce();
         expect(mocks.createSources).not.toHaveBeenCalled();
         expect(mocks.compileStylesheet).not.toHaveBeenCalled();
         runLifecycleCleanups();

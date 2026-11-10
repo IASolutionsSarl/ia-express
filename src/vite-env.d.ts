@@ -17,6 +17,7 @@ interface ImportMetaEnv {
     readonly VITE_APP_GITHUB_OAUTH_CLIENT_ID: string;
     readonly VITE_APP_HOSTNAME: string;
     readonly VITE_APP_IS_EDITOR_DEV: string;
+    readonly VITE_APP_LOG_INGEST_URL?: string;
     readonly VITE_APP_PLUGINS_URL: string;
     readonly VITE_APP_PREVIEW_URL: string;
     readonly VITE_APP_SEGMENT_KEY: string;

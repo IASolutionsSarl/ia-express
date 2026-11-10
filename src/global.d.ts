@@ -33,6 +33,7 @@ declare global {
         userflow: typeof userflow;
         wwAxios: typeof wwAxios;
         wwServerClient: typeof wwServerClient;
+        wwUsageTracker?: import('@/_common/helpers/usageTracking').UsageTracker;
     }
 }
 

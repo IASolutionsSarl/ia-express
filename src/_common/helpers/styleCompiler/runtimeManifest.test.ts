@@ -146,6 +146,54 @@ describe('style runtime manifest', () => {
         expect(decodeStyleRuntimeManifest(manifest)).toEqual([]);
     });
 
+    it.each([undefined, null, false, 0, ''])('preserves an empty when-empty fallback (%s) over JSON', value => {
+        const variable: StyleDynamicVariable = {
+            ...createVariable(0),
+            runtimeFallback: {
+                type: 'when-empty',
+                value,
+                valueNormalizer: { type: 'prefix-if-truthy', prefix: 'span ' },
+            },
+        };
+
+        const manifest = JSON.parse(JSON.stringify(encodeStyleRuntimeManifest([variable])));
+
+        expect(manifest[1][0][23]).toEqual({
+            value: value ?? null,
+            valueNormalizer: { type: 'prefix-if-truthy', prefix: 'span ' },
+        });
+        expect(decodeStyleRuntimeManifest(manifest)?.[0].runtimeFallback).toEqual({
+            ...variable.runtimeFallback,
+            value: value ?? null,
+        });
+    });
+
+    it.each([{}, { valueNormalizer: { type: 'prefix-if-truthy', prefix: 'span ' } }])(
+        'accepts a legacy when-empty fallback whose undefined value was omitted from JSON (%j)',
+        fallback => {
+            const manifest = JSON.parse(JSON.stringify(encodeStyleRuntimeManifest([createVariable(0)])));
+            while (manifest[1][0].length < 24) manifest[1][0].push(null);
+            manifest[1][0][23] = fallback;
+
+            expect(decodeStyleRuntimeManifest(manifest)?.[0].runtimeFallback).toEqual({
+                type: 'when-empty',
+                value: undefined,
+                ...fallback,
+            });
+        }
+    );
+
+    it.each([false, 0, '', [], { unexpected: true }])(
+        'rejects malformed when-empty fallback metadata (%j)',
+        fallback => {
+            const manifest = JSON.parse(JSON.stringify(encodeStyleRuntimeManifest([createVariable(0)])));
+            while (manifest[1][0].length < 24) manifest[1][0].push(null);
+            manifest[1][0][23] = fallback;
+
+            expect(decodeStyleRuntimeManifest(manifest)).toBeNull();
+        }
+    );
+
     it('uses page-local source indexes when the Publisher provides them', () => {
         const atomicClasses: StyleAtomicClassAssignment[] = [
             { sourceUid: 'section-a', surfaceKind: 'section-container', className: 'ww-a-section' },

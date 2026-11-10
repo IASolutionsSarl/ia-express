@@ -99,6 +99,7 @@ export default {
             label: { en: 'Left icon', fr: 'Icône gauche' },
             section: 'settings',
             type: 'OnOff',
+            bindable: true,
         },
         leftIcon: {
             hidden: true,
@@ -108,6 +109,7 @@ export default {
             label: { en: 'Right icon', fr: 'Icône droite' },
             type: 'OnOff',
             section: 'settings',
+            bindable: true,
         },
         rightIcon: {
             hidden: true,

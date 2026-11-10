@@ -28,14 +28,13 @@ const KEYFRAMES = 4;
 
 type RuntimeManifestEntry = readonly unknown[];
 
-export type StyleRuntimeManifest = readonly [
-    version: typeof LEGACY_MANIFEST_VERSION,
-    variables: readonly RuntimeManifestEntry[],
-] | readonly [
-    version: typeof ATOMIC_MANIFEST_VERSION,
-    variables: readonly RuntimeManifestEntry[],
-    atomicClasses: readonly RuntimeManifestEntry[],
-];
+export type StyleRuntimeManifest =
+    | readonly [version: typeof LEGACY_MANIFEST_VERSION, variables: readonly RuntimeManifestEntry[]]
+    | readonly [
+          version: typeof ATOMIC_MANIFEST_VERSION,
+          variables: readonly RuntimeManifestEntry[],
+          atomicClasses: readonly RuntimeManifestEntry[],
+      ];
 
 export type StyleRuntimeManifestData = {
     variables: StyleDynamicVariable[];
@@ -60,11 +59,7 @@ export function encodeStyleRuntimeManifest(
     const encodedVariables = variables.map(encodeVariable);
     if (!atomicClasses.length) return [LEGACY_MANIFEST_VERSION, encodedVariables];
 
-    return [
-        ATOMIC_MANIFEST_VERSION,
-        encodedVariables,
-        encodeAtomicClasses(atomicClasses, atomicSourceIndexByUid),
-    ];
+    return [ATOMIC_MANIFEST_VERSION, encodedVariables, encodeAtomicClasses(atomicClasses, atomicSourceIndexByUid)];
 }
 
 /**
@@ -123,10 +118,7 @@ function encodeAtomicClasses(
 
     return [...sources].map(([sourceUid, surfaces]) => [
         sourceUid,
-        ...[...surfaces].map(([surfaceKind, classNames]) => [
-            SURFACE_KINDS.indexOf(surfaceKind),
-            [...classNames],
-        ]),
+        ...[...surfaces].map(([surfaceKind, classNames]) => [SURFACE_KINDS.indexOf(surfaceKind), [...classNames]]),
     ]);
 }
 
@@ -255,7 +247,8 @@ function encodeVariable(variable: StyleDynamicVariable): RuntimeManifestEntry {
         variable.keyframesName ?? null,
         variable.runtimeFallback?.type === 'when-empty'
             ? {
-                  value: variable.runtimeFallback.value,
+                  // JSON omits undefined object properties, but older fronts require this field.
+                  value: variable.runtimeFallback.value ?? null,
                   ...(variable.runtimeFallback.valueNormalizer
                       ? { valueNormalizer: variable.runtimeFallback.valueNormalizer }
                       : {}),
@@ -378,11 +371,14 @@ function decodeRuntimeFallback(
     if (!hasWhenAllEmpty && !hasWhenEmpty) return undefined;
 
     if (hasWhenEmpty) {
-        if (!isRecord(whenEmpty) || !Object.hasOwn(whenEmpty, 'value')) return null;
+        if (!isRecord(whenEmpty)) return null;
+        const hasValue = Object.hasOwn(whenEmpty, 'value');
+        // Older publications lost an undefined span value during JSON serialization.
+        if (!hasValue && Object.keys(whenEmpty).some(key => key !== 'valueNormalizer')) return null;
 
         return {
             type: 'when-empty',
-            value: whenEmpty.value,
+            value: hasValue ? whenEmpty.value : undefined,
             ...(whenEmpty.valueNormalizer === undefined ? {} : { valueNormalizer: whenEmpty.valueNormalizer }),
         } as StyleDynamicVariableRuntimeFallback;
     }

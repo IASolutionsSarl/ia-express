@@ -39,12 +39,12 @@
         },
         {
             "name": "hasLeftIcon",
-            "description": "Set to true to show a left icon. REQUIRED for the icon to render (the icon only shows when this is true); enabling it auto-creates a child ww-icon element in the leftIcon slot.",
+            "description": "Bindable boolean controlling whether the left icon is shown. Use a boolean value or bind it to a variable or formula. The editor creates a child ww-icon in the leftIcon slot when this toggle is enabled or bound, even when the binding currently evaluates to false. Preserve explicit false values and bindings.",
             "type": "boolean"
         },
         {
             "name": "hasRightIcon",
-            "description": "Set to true to show a right icon. REQUIRED for the icon to render (the icon only shows when this is true); enabling it auto-creates a child ww-icon element in the rightIcon slot.",
+            "description": "Bindable boolean controlling whether the right icon is shown. Use a boolean value or bind it to a variable or formula. The editor creates a child ww-icon in the rightIcon slot when this toggle is enabled or bound, even when the binding currently evaluates to false. Preserve explicit false values and bindings.",
             "type": "boolean"
         }
     ],
@@ -84,12 +84,12 @@
     "slots": [
         {
             "name": "leftIcon",
-            "description": "Child ww-icon element displayed on the left side of the button text. Holds a full ww-icon element (its own uid, style and size), NOT an icon-name string. The icon renders only when hasLeftIcon is true (setting hasLeftIcon to true auto-creates this child). Configure the icon by editing this child ww-icon; never write an icon name string into content.default.leftIcon via editElement (it breaks the icon).",
+            "description": "Child ww-icon element displayed on the left side of the button text when hasLeftIcon resolves to true. Holds a full ww-icon element (its own uid, style and size), NOT an icon-name string. Enabling or binding hasLeftIcon creates this child in the editor, including while a binding evaluates to false. Keep the child when the toggle becomes false or its binding is removed so the configured icon can be reused. Configure the icon by editing this child ww-icon; never write an icon name string into content.default.leftIcon via editElement (it breaks the icon).",
             "type": "object"
         },
         {
             "name": "rightIcon",
-            "description": "Child ww-icon element displayed on the right side of the button text. Holds a full ww-icon element (its own uid, style and size), NOT an icon-name string. The icon renders only when hasRightIcon is true (setting hasRightIcon to true auto-creates this child). Configure the icon by editing this child ww-icon; never write an icon name string into content.default.rightIcon via editElement (it breaks the icon).",
+            "description": "Child ww-icon element displayed on the right side of the button text when hasRightIcon resolves to true. Holds a full ww-icon element (its own uid, style and size), NOT an icon-name string. Enabling or binding hasRightIcon creates this child in the editor, including while a binding evaluates to false. Keep the child when the toggle becomes false or its binding is removed so the configured icon can be reused. Configure the icon by editing this child ww-icon; never write an icon name string into content.default.rightIcon via editElement (it breaks the icon).",
             "type": "object"
         }
     ],

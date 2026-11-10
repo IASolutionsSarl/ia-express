@@ -36,12 +36,12 @@
       }
     }
     @layer ordered {
-      .ww-s-dJ > .ww-section-element {
+      .ww-s-dG > .ww-section-element {
         --ww-section-root-auto-align: center;
         --ww-section-root-auto-width: 100%;
         padding: 32px;
       }
-      .ww-s-dJ > .ww-section-element.ww-layout {
+      .ww-s-dG > .ww-section-element.ww-layout {
         display: flex;
         flex-flow: column;
         align-items: stretch;
@@ -84,15 +84,15 @@
       }
     }
     @layer ordered {
-      .ww-e-d1B {
+      .ww-e-d12 {
         width: 100%;
         aspect-ratio: unset;
       }
-      .ww-e-d73 {
+      .ww-e-d6p {
         width: 100%;
         aspect-ratio: unset;
       }
-      .ww-e-d74 {
+      .ww-e-d6q {
         width: var(--ww-section-root-auto-width, revert-layer);
         font-size: 24px;
         white-space-collapse: preserve;

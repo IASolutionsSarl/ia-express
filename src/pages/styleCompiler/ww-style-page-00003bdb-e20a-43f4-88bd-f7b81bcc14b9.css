@@ -31,7 +31,7 @@
       }
     }
     @layer ordered {
-      .ww-s-dC {
+      .ww-s-dA {
         height: auto;
         margin: 0;
         min-height: 100vh;
@@ -42,40 +42,40 @@
         width: revert-layer;
         cursor: auto;
       }
-      .ww-s-dC > .ww-section-element {
+      .ww-s-dA > .ww-section-element {
         padding: 0 32px;
         max-width: unset;
         min-height: 100vh;
       }
       @media (max-width: 991px) {
-        .ww-s-dC > .ww-section-element {
+        .ww-s-dA > .ww-section-element {
           --ww-section-root-auto-align: initial;
           --ww-section-root-auto-width: initial;
           padding: 0 16px;
         }
       }
       @media (max-width: 767px) {
-        .ww-s-dC > .ww-section-element {
+        .ww-s-dA > .ww-section-element {
           --ww-section-root-auto-align: initial;
           --ww-section-root-auto-width: initial;
           padding: 12px;
         }
       }
-      .ww-s-dC > .ww-section-element.ww-layout {
+      .ww-s-dA > .ww-section-element.ww-layout {
         display: flex;
         flex-flow: column;
         justify-content: flex-start;
         align-items: center;
       }
       @media (max-width: 991px) {
-        .ww-s-dC > .ww-section-element.ww-layout {
+        .ww-s-dA > .ww-section-element.ww-layout {
           flex-flow: column;
           justify-content: flex-start;
           align-items: center;
         }
       }
       @media (max-width: 767px) {
-        .ww-s-dC > .ww-section-element.ww-layout {
+        .ww-s-dA > .ww-section-element.ww-layout {
           flex-flow: column;
           justify-content: flex-start;
           align-items: center;
@@ -154,35 +154,35 @@
       }
     }
     @layer ordered {
-      .ww-e-d3z {
+      .ww-e-d3n {
         width: revert-layer;
       }
-      .ww-e-d40 {
+      .ww-e-d3o {
         width: revert-layer;
       }
-      .ww-e-d41 {
+      .ww-e-d3p {
         margin: 50px 0 0;
         display: flex;
         width: 100%;
         max-width: 940px;
         background-color: var(--cc540069-0132-4820-803b-67fe555d743d,#F9FAFB);
       }
-      .ww-e-d41.ww-layout, .ww-e-d41 [data-ww-ls~="d41"] {
+      .ww-e-d3p.ww-layout, .ww-e-d3p [data-ww-ls~="d3p"] {
         display: flex;
         flex-flow: column;
       }
-      .ww-e-d42 {
+      .ww-e-d3q {
         margin: 0 0 20px;
         width: 100%;
       }
-      .ww-e-d42.ww-layout, .ww-e-d42 [data-ww-ls~="d42"] {
+      .ww-e-d3q.ww-layout, .ww-e-d3q [data-ww-ls~="d3q"] {
         display: flex;
         flex-flow: column;
         justify-content: center;
         align-items: flex-start;
         align-content: revert-layer;
       }
-      .ww-e-d6O {
+      .ww-e-d6A {
         margin: 0 0 4px;
         align-self: center;
         font: var(--f2a71115-b847-4f32-ade9-6ec28c04d178, 400 16px/24px var(--ww-default-font-family, sans-serif));
@@ -198,7 +198,7 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-d6e {
+      .ww-e-d6Q {
         margin: 16px 0 0;
         display: var(--ww-style-display, none);
         font: var(--e627551f-2a56-4b99-b7ba-0c6b0940ab96, 500 14px/20px var(--ww-default-font-family, sans-serif));
@@ -214,7 +214,7 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-dCJ {
+      .ww-e-dBG {
         padding: 32px 24px;
         overflow: hidden;
         align-self: center;
@@ -225,14 +225,14 @@
         border: 1px solid var(--5df2264d-813f-4e12-959b-e86f202e40b0, #E4E4E7);
         border-radius: 12px;
       }
-      .ww-e-dCJ.ww-layout, .ww-e-dCJ [data-ww-ls~="dCJ"] {
+      .ww-e-dBG.ww-layout, .ww-e-dBG [data-ww-ls~="dBG"] {
         display: flex;
         flex-flow: column;
         justify-content: center;
         align-items: center;
         align-content: revert-layer;
       }
-      .ww-e-dCK {
+      .ww-e-dBH {
         margin: 48px 0 0;
         width: 100%;
         animation-duration: 1s;
@@ -245,7 +245,7 @@
         100% {
         }
       }
-      .ww-e-dCK.ww-layout, .ww-e-dCK [data-ww-ls~="dCK"] {
+      .ww-e-dBH.ww-layout, .ww-e-dBH [data-ww-ls~="dBH"] {
         display: flex;
       }
     }

@@ -6771,11 +6771,11 @@
       }
       @media (max-width: 767px) {
         .ww-s-dF {
-          height: 100vh;
+          height: 90vh;
           aspect-ratio: unset;
           overflow: auto;
           min-height: 0;
-          max-height: 100vh;
+          max-height: 90vh;
           display: flex;
           transition: transform 0.3s ease-in-out;
           transform: var(--ww-style-transform, translateX(-100%));
@@ -6792,7 +6792,7 @@
       @media (max-width: 767px) {
         .ww-s-dF > .ww-section-element {
           min-height: 0;
-          max-height: 100vh;
+          max-height: 90vh;
           transition: transform 0.3s ease-in-out;
           transform: var(--ww-style-transform, translateX(-100%));
         }

@@ -1131,11 +1131,10 @@
       }
       @media (max-width: 767px) {
         .ww-e-d7Q {
-          font-size: 13px;
+          font-size: 10px;
         }
       }
       .ww-e-d7R {
-        padding: 5px 0 0;
         align-self: unset;
         flex: 0 1 auto;
         height: 30px;
@@ -1149,11 +1148,10 @@
       }
       @media (max-width: 767px) {
         .ww-e-d7R {
-          font-size: 13px;
+          font-size: 10px;
         }
       }
       .ww-e-d7S {
-        padding: 5px 0 0;
         align-self: unset;
         flex: 0 1 auto;
         height: 30px;
@@ -1167,15 +1165,15 @@
       }
       @media (max-width: 767px) {
         .ww-e-d7S {
-          font-size: 13px;
+          font-size: 10px;
         }
       }
       .ww-e-d7T {
         align-self: unset;
         flex: 0 1 auto;
-        height: 30px;
+        height: 40px;
         aspect-ratio: unset;
-        font-size: 16px;
+        font-size: 30px;
         text-align: center;
         color: var(--ba734203-55f3-440e-bb47-127cc018e9a7,#6B7280);
         white-space-collapse: preserve;
@@ -1184,15 +1182,15 @@
       }
       @media (max-width: 767px) {
         .ww-e-d7T {
-          font-size: 13px;
+          font-size: 15px;
         }
       }
       .ww-e-d7U {
         align-self: unset;
         flex: 0 1 auto;
-        height: 30px;
+        height: 40px;
         aspect-ratio: unset;
-        font-size: 16px;
+        font-size: 30px;
         text-align: center;
         color: var(--ba734203-55f3-440e-bb47-127cc018e9a7,#6B7280);
         white-space-collapse: preserve;
@@ -1201,15 +1199,15 @@
       }
       @media (max-width: 767px) {
         .ww-e-d7U {
-          font-size: 13px;
+          font-size: 15px;
         }
       }
       .ww-e-d7V {
         align-self: unset;
         flex: 0 1 auto;
-        height: 30px;
+        height: 40px;
         aspect-ratio: unset;
-        font-size: 16px;
+        font-size: 30px;
         text-align: center;
         color: var(--ba734203-55f3-440e-bb47-127cc018e9a7,#6B7280);
         white-space-collapse: preserve;
@@ -1218,7 +1216,7 @@
       }
       @media (max-width: 767px) {
         .ww-e-d7V {
-          font-size: 13px;
+          font-size: 15px;
         }
       }
       .ww-e-d7W {
@@ -1235,15 +1233,16 @@
       }
       @media (max-width: 767px) {
         .ww-e-d7W {
-          font-size: 13px;
+          font-size: 10px;
         }
       }
       .ww-e-d7X {
+        padding: 5px 0 0;
         align-self: unset;
         flex: 0 1 auto;
-        height: 40px;
+        height: 30px;
         aspect-ratio: unset;
-        font-size: 30px;
+        font-size: 16px;
         text-align: center;
         color: var(--ba734203-55f3-440e-bb47-127cc018e9a7,#6B7280);
         white-space-collapse: preserve;
@@ -1252,15 +1251,15 @@
       }
       @media (max-width: 767px) {
         .ww-e-d7X {
-          font-size: 20px;
+          font-size: 10px;
         }
       }
       .ww-e-d7Y {
         align-self: unset;
         flex: 0 1 auto;
-        height: 40px;
+        height: 30px;
         aspect-ratio: unset;
-        font-size: 30px;
+        font-size: 16px;
         text-align: center;
         color: var(--ba734203-55f3-440e-bb47-127cc018e9a7,#6B7280);
         white-space-collapse: preserve;
@@ -1269,15 +1268,15 @@
       }
       @media (max-width: 767px) {
         .ww-e-d7Y {
-          font-size: 20px;
+          font-size: 10px;
         }
       }
       .ww-e-d7Z {
         align-self: unset;
         flex: 0 1 auto;
-        height: 40px;
+        height: 30px;
         aspect-ratio: unset;
-        font-size: 30px;
+        font-size: 16px;
         text-align: center;
         color: var(--ba734203-55f3-440e-bb47-127cc018e9a7,#6B7280);
         white-space-collapse: preserve;
@@ -1286,10 +1285,11 @@
       }
       @media (max-width: 767px) {
         .ww-e-d7Z {
-          font-size: 20px;
+          font-size: 10px;
         }
       }
       .ww-e-d7a {
+        padding: 5px 0 0;
         align-self: unset;
         flex: 0 1 auto;
         height: 30px;
@@ -1303,7 +1303,7 @@
       }
       @media (max-width: 767px) {
         .ww-e-d7a {
-          font-size: 13px;
+          font-size: 10px;
         }
       }
       .ww-e-d7b {
@@ -1320,7 +1320,7 @@
       }
       @media (max-width: 767px) {
         .ww-e-d7b {
-          font-size: 20px;
+          font-size: 15px;
         }
       }
       .ww-e-d7f {
@@ -1459,6 +1459,35 @@
         flex-wrap: revert-layer;
       }
       .ww-e-d9F {
+        display: flex;
+        width: 100%;
+        max-width: 940px;
+        height: 100px;
+        aspect-ratio: unset;
+        background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
+        border: 1px solid var(--9feeba28-6ae4-4c41-9d2e-ccee2133dc88,#E5E7EB);
+      }
+      .ww-e-d9F.ww-layout, .ww-e-d9F [data-ww-ls~="d9F"] {
+        display: flex;
+        flex-flow: column;
+        justify-content: center;
+        align-items: stretch;
+      }
+      .ww-e-d9J {
+        margin: 0 0 30px;
+        padding: 0;
+        display: flex;
+        width: 100%;
+        max-width: 1200px;
+        background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
+        border: 1px solid var(--9feeba28-6ae4-4c41-9d2e-ccee2133dc88,#E5E7EB);
+        border-radius: 8px;
+      }
+      .ww-e-d9J.ww-layout, .ww-e-d9J [data-ww-ls~="d9J"] {
+        display: flex;
+        flex-flow: column;
+      }
+      .ww-e-d9K {
         padding: 5px 0 0;
         align-self: unset;
         flex: 0 1 auto;
@@ -1472,38 +1501,9 @@
         --ww-text-text-overflow: initial;
       }
       @media (max-width: 767px) {
-        .ww-e-d9F {
-          font-size: 13px;
+        .ww-e-d9K {
+          font-size: 10px;
         }
-      }
-      .ww-e-d9G {
-        display: flex;
-        width: 100%;
-        max-width: 940px;
-        height: 100px;
-        aspect-ratio: unset;
-        background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
-        border: 1px solid var(--9feeba28-6ae4-4c41-9d2e-ccee2133dc88,#E5E7EB);
-      }
-      .ww-e-d9G.ww-layout, .ww-e-d9G [data-ww-ls~="d9G"] {
-        display: flex;
-        flex-flow: column;
-        justify-content: center;
-        align-items: stretch;
-      }
-      .ww-e-d9K {
-        margin: 0 0 30px;
-        padding: 0;
-        display: flex;
-        width: 100%;
-        max-width: 1200px;
-        background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
-        border: 1px solid var(--9feeba28-6ae4-4c41-9d2e-ccee2133dc88,#E5E7EB);
-        border-radius: 8px;
-      }
-      .ww-e-d9K.ww-layout, .ww-e-d9K [data-ww-ls~="d9K"] {
-        display: flex;
-        flex-flow: column;
       }
       .ww-e-d9N {
         margin: 0 10px 0 0;
@@ -1515,21 +1515,15 @@
         --ww-text-text-overflow: initial;
       }
       .ww-e-d9O {
-        align-self: unset;
-        flex: 0 1 auto;
-        height: 40px;
-        aspect-ratio: unset;
-        font-size: 30px;
-        text-align: center;
-        color: var(--ba734203-55f3-440e-bb47-127cc018e9a7,#6B7280);
-        white-space-collapse: preserve;
+        display: flex;
+        width: 100%;
+        max-width: 940px;
         background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
-        --ww-text-text-overflow: initial;
+        border: 1px solid var(--9feeba28-6ae4-4c41-9d2e-ccee2133dc88,#E5E7EB);
       }
-      @media (max-width: 767px) {
-        .ww-e-d9O {
-          font-size: 20px;
-        }
+      .ww-e-d9O.ww-layout, .ww-e-d9O [data-ww-ls~="d9O"] {
+        display: flex;
+        flex-flow: column;
       }
       .ww-e-d9P {
         display: flex;
@@ -1542,16 +1536,22 @@
         display: flex;
         flex-flow: column;
       }
-      .ww-e-d9Q {
-        display: flex;
-        width: 100%;
-        max-width: 940px;
+      .ww-e-d9R {
+        align-self: unset;
+        flex: 0 1 auto;
+        height: 40px;
+        aspect-ratio: unset;
+        font-size: 30px;
+        text-align: center;
+        color: var(--ba734203-55f3-440e-bb47-127cc018e9a7,#6B7280);
+        white-space-collapse: preserve;
         background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
-        border: 1px solid var(--9feeba28-6ae4-4c41-9d2e-ccee2133dc88,#E5E7EB);
+        --ww-text-text-overflow: initial;
       }
-      .ww-e-d9Q.ww-layout, .ww-e-d9Q [data-ww-ls~="d9Q"] {
-        display: flex;
-        flex-flow: column;
+      @media (max-width: 767px) {
+        .ww-e-d9R {
+          font-size: 15px;
+        }
       }
       .ww-e-d9S {
         align-self: center;
@@ -1678,7 +1678,7 @@
       }
       @media (max-width: 767px) {
         .ww-e-dCh {
-          font-size: 13px;
+          font-size: 10px;
         }
       }
       .ww-e-dCi {
@@ -1773,7 +1773,7 @@
       }
       @media (max-width: 767px) {
         .ww-e-dD6 {
-          font-size: 13px;
+          font-size: 10px;
         }
       }
       .ww-e-dD7 {
@@ -1790,7 +1790,7 @@
       }
       @media (max-width: 767px) {
         .ww-e-dD7 {
-          font-size: 13px;
+          font-size: 10px;
         }
       }
       .ww-e-dD8 {
@@ -1807,7 +1807,7 @@
       }
       @media (max-width: 767px) {
         .ww-e-dD8 {
-          font-size: 13px;
+          font-size: 10px;
         }
       }
       .ww-e-dDB {
@@ -1824,7 +1824,7 @@
       }
       @media (max-width: 767px) {
         .ww-e-dDB {
-          font-size: 13px;
+          font-size: 10px;
         }
       }
       .ww-e-dDE {
@@ -1844,7 +1844,7 @@
       }
       @media (max-width: 767px) {
         .ww-e-dDE {
-          font-size: 13px;
+          font-size: 10px;
         }
       }
       .ww-e-dDF {
@@ -1862,7 +1862,7 @@
       }
       @media (max-width: 767px) {
         .ww-e-dDF {
-          font-size: 13px;
+          font-size: 10px;
         }
       }
       .ww-e-dDH {
@@ -1879,7 +1879,7 @@
       }
       @media (max-width: 767px) {
         .ww-e-dDH {
-          font-size: 20px;
+          font-size: 15px;
         }
       }
       .ww-e-dDJ {
@@ -1896,7 +1896,7 @@
       }
       @media (max-width: 767px) {
         .ww-e-dDJ {
-          font-size: 20px;
+          font-size: 15px;
         }
       }
       .ww-e-dDM {
@@ -1913,7 +1913,7 @@
       }
       @media (max-width: 767px) {
         .ww-e-dDM {
-          font-size: 20px;
+          font-size: 15px;
         }
       }
       .ww-e-dDN {

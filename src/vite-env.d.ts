@@ -4,7 +4,6 @@ interface ImportMetaEnv {
     readonly VITE_APP_ADMIN_URL: string;
     readonly VITE_APP_API_URL: string;
     readonly VITE_APP_API_WEBSOCKETS: string;
-    readonly VITE_APP_APOLLO_URL: string;
     readonly VITE_APP_BUCKET_URL: string;
     readonly VITE_APP_CDN_URL: string;
     readonly VITE_APP_CDN_URL_SHORT: string;

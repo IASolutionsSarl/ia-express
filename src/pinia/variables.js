@@ -5,7 +5,7 @@ import { computed } from 'vue';
 
 export const useVariablesStore = defineStore('variables', () => {
     const customCodeVariables = reactive({});
-    const website = shallowReactive({});
+    const website = shallowReactive(/** @type {Record<string, any>} */ ({}));
     const plugins = shallowReactive({});
     const components = reactive({});
     const values = ref({});

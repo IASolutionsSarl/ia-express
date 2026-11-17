@@ -101,7 +101,7 @@ describe('mounted dynamic style targets', () => {
         second.values.color = 'green';
         await nextTick();
 
-        expect(first.component.value.$el.nodeType).toBe(comments ? Node.TEXT_NODE : Node.ELEMENT_NODE);
+        expect(first.component.value.$el.nodeType).toBe(Node.ELEMENT_NODE);
         expect(first.container.querySelector('div')?.getAttribute('data-ww-component-id')).toBe(first.id);
         expect(runtime.values.get(`${first.id}:color`)).toBe('red');
         expect(runtime.values.get(`${first.id}:display`)).toBe('none');

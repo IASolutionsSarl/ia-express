@@ -1,0 +1,297 @@
+@layer ww-style-library {
+  @layer definition, instance;
+  @layer definition {
+    @layer normal, custom;
+    @layer normal {
+    }
+    @layer custom {
+    }
+  }
+  @layer instance {
+    @layer normal, custom;
+    @layer normal {
+    }
+    @layer custom {
+    }
+  }
+}
+@layer ww-style-section {
+  @layer normal, custom;
+  @layer normal {
+    @layer atomic, ordered;
+    @layer atomic {
+      .ww-a-Mt_IyO1ahYQMxfyW {
+        z-index: unset;
+        max-height: unset;
+      }
+      .ww-a-DibRDBsdncAneMNy {
+        width: 100%;
+        min-width: unset;
+        max-height: unset;
+      }
+    }
+    @layer ordered {
+      .ww-s-d7 {
+        height: auto;
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        background-color: var(--cc540069-0132-4820-803b-67fe555d743d,#F9FAFB);
+        position: revert-layer;
+        inset: revert-layer;
+        width: revert-layer;
+        cursor: auto;
+      }
+      .ww-s-d7 > .ww-section-element {
+        padding: 0 32px;
+        max-width: unset;
+        min-height: 100vh;
+      }
+      @media (max-width: 991px) {
+        .ww-s-d7 > .ww-section-element {
+          --ww-section-root-auto-align: initial;
+          --ww-section-root-auto-width: initial;
+          padding: 0 16px;
+        }
+      }
+      @media (max-width: 767px) {
+        .ww-s-d7 > .ww-section-element {
+          --ww-section-root-auto-align: initial;
+          --ww-section-root-auto-width: initial;
+          padding: 12px;
+        }
+      }
+      .ww-s-d7 > .ww-section-element.ww-layout {
+        display: flex;
+        flex-flow: column;
+        justify-content: flex-start;
+        align-items: center;
+      }
+      @media (max-width: 991px) {
+        .ww-s-d7 > .ww-section-element.ww-layout {
+          flex-flow: column;
+          justify-content: flex-start;
+          align-items: center;
+        }
+      }
+      @media (max-width: 767px) {
+        .ww-s-d7 > .ww-section-element.ww-layout {
+          flex-flow: column;
+          justify-content: flex-start;
+          align-items: center;
+        }
+      }
+    }
+  }
+  @layer custom {
+  }
+}
+@layer ww-style-element {
+  @layer normal, custom;
+  @layer normal {
+    @layer atomic, ordered;
+    @layer atomic {
+      .ww-a-mX57v3maAcMbkuVx {
+        padding: 0;
+        z-index: unset;
+        align-self: unset;
+        display: flex;
+        max-width: unset;
+        min-width: unset;
+        height: auto;
+        max-height: unset;
+        min-height: unset;
+      }
+      .ww-a-1XSWouDGLe74KbKM {
+        padding: 0;
+        z-index: unset;
+        display: block;
+        max-width: unset;
+        min-width: unset;
+        height: auto;
+        max-height: unset;
+        min-height: unset;
+      }
+      .ww-a-GfbQibRQPgXgCmyn {
+        margin: 0;
+        padding: 0;
+        z-index: unset;
+        align-self: unset;
+        display: block;
+        max-width: unset;
+        min-width: unset;
+        height: auto;
+        max-height: unset;
+        min-height: unset;
+      }
+      .ww-a-Pl_ddFv4O7h7sQ1q {
+        padding: 0;
+        z-index: unset;
+        align-self: unset;
+        max-width: unset;
+        min-width: unset;
+        height: auto;
+        max-height: unset;
+        min-height: unset;
+      }
+      .ww-a-qqyEbfFlgYFLR-KT {
+        margin: 0;
+        z-index: unset;
+        display: flex;
+        max-width: unset;
+        min-width: unset;
+        max-height: unset;
+        min-height: unset;
+      }
+      .ww-a-JU5hsWRMf20xKDmf {
+        padding: 0;
+        z-index: unset;
+        align-self: var(--ww-section-root-auto-align, unset);
+        min-width: unset;
+        height: auto;
+        max-height: unset;
+        min-height: unset;
+      }
+      .ww-a-UwZcNhn5pQq8yQgY {
+        margin: 0;
+        z-index: unset;
+        align-self: unset;
+        display: flex;
+        width: auto;
+        max-width: unset;
+        min-width: unset;
+        height: auto;
+        max-height: unset;
+        min-height: unset;
+        font-family: var(--ww-default-font-family);
+      }
+    }
+    @layer ordered {
+      .ww-e-d7k {
+        margin: 0 0 20px;
+        width: 100%;
+      }
+      .ww-e-d7k.ww-layout, .ww-e-d7k [data-ww-ls~="d7k"] {
+        display: flex;
+        flex-flow: column;
+        justify-content: center;
+        align-items: flex-start;
+        align-content: revert-layer;
+      }
+      .ww-e-d7l {
+        margin: 0 0 4px;
+        align-self: center;
+        font: var(--f2a71115-b847-4f32-ade9-6ec28c04d178, 400 16px/24px var(--ww-default-font-family, sans-serif));
+        text-align: center;
+        color: var(--ba734203-55f3-440e-bb47-127cc018e9a7,#6B7280);
+        letter-spacing: 0;
+        text-decoration-line: none;
+        text-decoration-thickness: initial;
+        text-decoration-style: solid;
+        text-decoration-color: initial;
+        white-space-collapse: preserve;
+        --ww-text-white-space: initial;
+        --ww-text-overflow: initial;
+        --ww-text-text-overflow: initial;
+      }
+      .ww-e-d7m {
+        width: revert-layer;
+      }
+      .ww-e-d7n {
+        margin: 16px 0 0;
+        display: var(--ww-style-display, none);
+        font: var(--e627551f-2a56-4b99-b7ba-0c6b0940ab96, 500 14px/20px var(--ww-default-font-family, sans-serif));
+        text-align: center;
+        color: #e56161;
+        letter-spacing: 0;
+        text-decoration-line: none;
+        text-decoration-thickness: initial;
+        text-decoration-style: solid;
+        text-decoration-color: initial;
+        white-space-collapse: preserve;
+        --ww-text-white-space: initial;
+        --ww-text-overflow: initial;
+        --ww-text-text-overflow: initial;
+      }
+      .ww-e-d7o {
+        margin: 48px 0 0;
+        width: 100%;
+        animation-duration: 1s;
+        animation-iteration-count: infinite;
+        animation-name: ww-keyframes-element-df82677f-6018-45a7-9d00-363024c2b046-base-default;
+      }
+      @keyframes ww-keyframes-element-df82677f-6018-45a7-9d00-363024c2b046-base-default {
+        0% {
+        }
+        100% {
+        }
+      }
+      .ww-e-d7o.ww-layout, .ww-e-d7o [data-ww-ls~="d7o"] {
+        display: flex;
+      }
+      .ww-e-d7p {
+        padding: 32px 24px;
+        overflow: hidden;
+        align-self: center;
+        width: 400px;
+        height: auto;
+        background-color: var(--a0807a87-ef9f-4369-b558-9fe92fcd4dd7,#FFFFFF);
+        box-shadow: 0 1px 1px #10182805;
+        border: 1px solid var(--5df2264d-813f-4e12-959b-e86f202e40b0, #E4E4E7);
+        border-radius: 12px;
+      }
+      .ww-e-d7p.ww-layout, .ww-e-d7p [data-ww-ls~="d7p"] {
+        display: flex;
+        flex-flow: column;
+        justify-content: center;
+        align-items: center;
+        align-content: revert-layer;
+      }
+      .ww-e-d7q {
+        margin: 50px 0 0;
+        display: flex;
+        width: 100%;
+        max-width: 940px;
+        background-color: var(--cc540069-0132-4820-803b-67fe555d743d,#F9FAFB);
+      }
+      .ww-e-d7q.ww-layout, .ww-e-d7q [data-ww-ls~="d7q"] {
+        display: flex;
+        flex-flow: column;
+      }
+      .ww-e-d7r {
+        width: revert-layer;
+      }
+      .ww-e-d7s {
+        margin: 0 6px 0 0;
+        width: 20px;
+      }
+      .ww-e-d7t {
+        margin: 0 0 0 6px;
+        width: 20px;
+      }
+      .ww-e-d7u {
+        padding: 12px 24px;
+        font-size: 16px;
+        font-weight: 500;
+        color: #fff;
+        white-space-collapse: preserve;
+        background-color: var(--bd6a542c-8470-4a5d-b59f-0c45d3e4a36c,#6B46C1);
+        cursor: pointer;
+        box-shadow: 0 2px 4px #0000001a;
+        transition: all 0.2s ease;
+        border: none;
+        border-radius: 8px;
+        --ww-element-transition: all 0.2s ease;
+      }
+      .ww-e-d7u:where(:hover) {
+        background-color: #2563eb;
+        box-shadow: 0 4px 6px #0000001a;
+        transform: translateY(-1px);
+      }
+    }
+  }
+  @layer custom {
+  }
+}
+@layer ww-style-layout-override {
+}

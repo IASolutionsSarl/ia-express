@@ -31,7 +31,7 @@
       }
     }
     @layer ordered {
-      .ww-s-dA {
+      .ww-s-dB {
         height: auto;
         margin: 0;
         min-height: 100vh;
@@ -42,40 +42,40 @@
         width: revert-layer;
         cursor: auto;
       }
-      .ww-s-dA > .ww-section-element {
+      .ww-s-dB > .ww-section-element {
         padding: 0 32px;
         max-width: unset;
         min-height: 100vh;
       }
       @media (max-width: 991px) {
-        .ww-s-dA > .ww-section-element {
+        .ww-s-dB > .ww-section-element {
           --ww-section-root-auto-align: initial;
           --ww-section-root-auto-width: initial;
           padding: 0 16px;
         }
       }
       @media (max-width: 767px) {
-        .ww-s-dA > .ww-section-element {
+        .ww-s-dB > .ww-section-element {
           --ww-section-root-auto-align: initial;
           --ww-section-root-auto-width: initial;
           padding: 12px;
         }
       }
-      .ww-s-dA > .ww-section-element.ww-layout {
+      .ww-s-dB > .ww-section-element.ww-layout {
         display: flex;
         flex-flow: column;
         justify-content: flex-start;
         align-items: center;
       }
       @media (max-width: 991px) {
-        .ww-s-dA > .ww-section-element.ww-layout {
+        .ww-s-dB > .ww-section-element.ww-layout {
           flex-flow: column;
           justify-content: flex-start;
           align-items: center;
         }
       }
       @media (max-width: 767px) {
-        .ww-s-dA > .ww-section-element.ww-layout {
+        .ww-s-dB > .ww-section-element.ww-layout {
           flex-flow: column;
           justify-content: flex-start;
           align-items: center;
@@ -154,35 +154,35 @@
       }
     }
     @layer ordered {
-      .ww-e-d3e {
-        width: revert-layer;
-      }
       .ww-e-d3f {
         width: revert-layer;
       }
       .ww-e-d3g {
+        width: revert-layer;
+      }
+      .ww-e-d3h {
         margin: 50px 0 0;
         display: flex;
         width: 100%;
         max-width: 940px;
         background-color: var(--cc540069-0132-4820-803b-67fe555d743d,#F9FAFB);
       }
-      .ww-e-d3g.ww-layout, .ww-e-d3g [data-ww-ls~="d3g"] {
+      .ww-e-d3h.ww-layout, .ww-e-d3h [data-ww-ls~="d3h"] {
         display: flex;
         flex-flow: column;
       }
-      .ww-e-d3h {
+      .ww-e-d3i {
         margin: 0 0 20px;
         width: 100%;
       }
-      .ww-e-d3h.ww-layout, .ww-e-d3h [data-ww-ls~="d3h"] {
+      .ww-e-d3i.ww-layout, .ww-e-d3i [data-ww-ls~="d3i"] {
         display: flex;
         flex-flow: column;
         justify-content: center;
         align-items: flex-start;
         align-content: revert-layer;
       }
-      .ww-e-d5v {
+      .ww-e-d5w {
         margin: 0 0 4px;
         align-self: center;
         font: var(--f2a71115-b847-4f32-ade9-6ec28c04d178, 400 16px/24px var(--ww-default-font-family, sans-serif));
@@ -198,7 +198,7 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-d6B {
+      .ww-e-d6C {
         margin: 16px 0 0;
         display: var(--ww-style-display, none);
         font: var(--e627551f-2a56-4b99-b7ba-0c6b0940ab96, 500 14px/20px var(--ww-default-font-family, sans-serif));
@@ -214,7 +214,7 @@
         --ww-text-overflow: initial;
         --ww-text-text-overflow: initial;
       }
-      .ww-e-dBL {
+      .ww-e-dBX {
         padding: 32px 24px;
         overflow: hidden;
         align-self: center;
@@ -225,14 +225,14 @@
         border: 1px solid var(--5df2264d-813f-4e12-959b-e86f202e40b0, #E4E4E7);
         border-radius: 12px;
       }
-      .ww-e-dBL.ww-layout, .ww-e-dBL [data-ww-ls~="dBL"] {
+      .ww-e-dBX.ww-layout, .ww-e-dBX [data-ww-ls~="dBX"] {
         display: flex;
         flex-flow: column;
         justify-content: center;
         align-items: center;
         align-content: revert-layer;
       }
-      .ww-e-dBM {
+      .ww-e-dBY {
         margin: 48px 0 0;
         width: 100%;
         animation-duration: 1s;
@@ -245,7 +245,7 @@
         100% {
         }
       }
-      .ww-e-dBM.ww-layout, .ww-e-dBM [data-ww-ls~="dBM"] {
+      .ww-e-dBY.ww-layout, .ww-e-dBY [data-ww-ls~="dBY"] {
         display: flex;
       }
     }

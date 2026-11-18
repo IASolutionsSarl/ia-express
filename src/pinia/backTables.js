@@ -1,9 +1,18 @@
 import { defineStore } from 'pinia';
 import { reactive, watch } from 'vue';
  
+// A table of the project's own schema is named as is; one WeWeb manages (auth, agents) as schema.name.
+export const tableKeyOf = (table, schema) => (schema && schema !== 'public' ? `${schema}.${table}` : table);
+
 export const useBackTablesStore = defineStore('backTables', () => {
     const integrationsStore = wwLib.store.integrations;
     const tables = reactive({
+        editor: {},
+        staging: {},
+        production: {},
+    });
+    // Read-only tables WeWeb manages, keyed by schema.name: kept apart so they never reach the write actions.
+    const nativeTables = reactive({
         editor: {},
         staging: {},
         production: {},
@@ -52,6 +61,20 @@ export const useBackTablesStore = defineStore('backTables', () => {
             };
         }
 
+        const nativeTable = nativeTables.editor[tableIdentifier];
+        if (nativeTable) {
+            return {
+                id: tableIdentifier,
+                name: nativeTable.name,
+                schema: nativeTable.schema,
+                integration: null,
+                connectionId: null,
+                config: null,
+                icon: 'logos/weweb',
+                rawTable: nativeTable,
+            };
+        }
+
         const table = tables.editor[tableIdentifier];
         if (!table) return null;
 
@@ -77,7 +100,7 @@ export const useBackTablesStore = defineStore('backTables', () => {
         }
 
         const physicalColumns = (tableInfo.rawTable.columns || [])
-            .filter(column => !column.isSystem)
+            .filter(column => tableInfo.schema || !column.isSystem)
             .map(column => ({
                 id: column.name,
                 name: column.name,
@@ -123,8 +146,22 @@ export const useBackTablesStore = defineStore('backTables', () => {
         return [...nativeOptions, ...integrationOptions];
     };
 
+    // What a view reads: an integration table by its id, a table WeWeb manages as schema.name, a project table by name.
+    const getViewTableKey = tableView =>
+        tableView?.tableId || tableKeyOf(tableView?.config?.table, tableView?.config?.schema);
+    const getViewTable = tableView => {
+        if (tableView?.tableId) return integrationTables[tableView.tableId] || null;
+        const key = getViewTableKey(tableView);
+        return tables.editor[key] || nativeTables.editor[key] || null;
+    };
+
+    const assertWritable = tableName => {
+        if (nativeTables.editor[tableName]) throw new Error('This table is managed by WeWeb and is read only.');
+    };
+
     return {
         tables,
+        nativeTables,
         integrationTables,
         isLoading,
         addIntegrationTable(table) {
@@ -135,6 +172,8 @@ export const useBackTablesStore = defineStore('backTables', () => {
             await loadTables(env);
         },
          isIntegrationTable,
+        getViewTableKey,
+        getViewTable,
         getTableInfo,
         getTableColumns,
         getTableOptions,

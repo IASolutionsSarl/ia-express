@@ -22,6 +22,7 @@ interface ImportMetaEnv {
     readonly VITE_APP_SEGMENT_KEY: string;
     readonly VITE_APP_STRIPE_PUBLIC_KEY: string;
     readonly VITE_APP_SURVEYS_API_URL: string;
+    readonly VITE_APP_SURVEYS_SEGMENT_KEY: string;
     readonly VITE_APP_SURVEYS_SUPABASE_KEY: string;
     readonly VITE_APP_SURVEYS_SUPABASE_URL: string;
     readonly VITE_APP_USERFLOW_KEY: string;

@@ -1,4 +1,4 @@
-import { omit } from 'lodash-es';
+import { isPlainObject, omit } from 'lodash-es';
 import { computed, watch, provide, ref } from 'vue';
 
 export function useFormInputs({ updateInputValidity, removeInputValidity, validationType }) {
@@ -12,14 +12,30 @@ export function useFormInputs({ updateInputValidity, removeInputValidity, valida
                 .filter(([key, value]) => key !== 'null' && value !== null)
                 .map(([key, value]) => [
                     key,
-                    omit(value, ['forceValidateField', 'updateValue', 'cancelValidation', 'pending', 'initialValue', 'initialIsValid']),
+                    omit(value, [
+                        'forceValidateField',
+                        'updateValue',
+                        'cancelValidation',
+                        'pending',
+                        'initialValue',
+                        'initialIsValid',
+                    ]),
                 ])
         );
     });
 
     function registerInput(id, input) {
         inputsMap.value[id] = input;
-        const [, value] = Object.entries(input)[0];
+        const [name, value] = Object.entries(input)[0];
+        const pendingId = `form-data:${name}`;
+        const pending = inputsMap.value[pendingId];
+        if (id !== pendingId && pending) {
+            // A prefill can run before a native input mounts. Transfer ownership
+            // rather than retaining a shadow value that could reappear on unmount.
+            value.value = pending[name].value;
+            value.updateValue?.(value.value);
+            unregisterInput(pendingId);
+        }
         updateInputValidity(id, value.isValid ?? null);
     }
 
@@ -34,6 +50,38 @@ export function useFormInputs({ updateInputValidity, removeInputValidity, valida
     function unregisterInput(id) {
         delete inputsMap.value[id];
         removeInputValidity(id);
+    }
+
+    function setFormData(values) {
+        if (!isPlainObject(values)) {
+            throw new TypeError('Form data must be a plain object.');
+        }
+
+        const entries = Object.entries(values);
+        for (const [name] of entries) {
+            if (['__proto__', 'constructor', 'prototype'].includes(name)) {
+                throw new TypeError(`Invalid form field name: ${name}`);
+            }
+        }
+
+        for (const [name, value] of entries) {
+            let registered = false;
+            for (const [id, input] of Object.entries(inputsMap.value)) {
+                if (!Object.hasOwn(input, name)) continue;
+                registered = true;
+                updateInput(id, fields => {
+                    fields[name].value = value;
+                    fields[name].updateValue?.(value);
+                });
+            }
+            if (registered) continue;
+
+            // Custom inputs have no native registration. Keep their values in the
+            // same registry so synchronization, submission and reset retain them.
+            registerInput(`form-data:${name}`, {
+                [name]: { value, isValid: true, initialIsValid: true },
+            });
+        }
     }
 
     watch(
@@ -154,6 +202,7 @@ export function useFormInputs({ updateInputValidity, removeInputValidity, valida
         inputsMap,
         formInputs,
         updateInput,
+        setFormData,
         forceValidateAllFields,
         resetInputs,
     };

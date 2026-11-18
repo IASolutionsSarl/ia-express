@@ -2,13 +2,7 @@
     "metadata": {
         "name": "ww-form-container",
         "description": "A form container component that manages form inputs, validation, and submission handling. It serves as a wrapper for form elements and manages their state and interactions.",
-        "keywords": [
-            "form",
-            "container",
-            "validation",
-            "submit",
-            "inputs"
-        ],
+        "keywords": ["form", "container", "validation", "submit", "inputs"],
         "features": [
             "Form validation on submit or on input change",
             "Debounce delay for change-based validation",
@@ -19,19 +13,14 @@
             "Does not support file upload inputs",
             "Does not support nested forms"
         ],
-        "inherit": [
-            "ww-layout"
-        ]
+        "inherit": ["ww-layout"]
     },
     "properties": [
         {
             "name": "validation",
             "description": "Controls when form validation occurs. 'submit' validates only on form submission, 'change' validates on every input change with a debounce delay.",
             "type": "string",
-            "options": [
-                "submit",
-                "change"
-            ],
+            "options": ["submit", "change"],
             "defaultValue": "submit"
         },
         {
@@ -61,6 +50,17 @@
     ],
     "localContext": [],
     "actions": [
+        {
+            "label": "Update form data",
+            "actionName": "updateFormData",
+            "description": "Merge field values into the form, including values from custom inputs. Existing native inputs are updated and keep their validation. Custom fields remain in formData and submission until the form unmounts, even if their custom input is hidden. Clear them with an empty value or null; reset the custom input UI in the same workflow as Reset form. A native input mounted later takes ownership of a matching prefill.",
+            "args": [
+                {
+                    "name": "formData",
+                    "type": "object"
+                }
+            ]
+        },
         {
             "label": "Set form state",
             "actionName": "setFormState",

@@ -41,6 +41,16 @@ export default {
     },
     actions: [
         {
+            label: 'Update form data',
+            action: 'updateFormData',
+            args: [
+                {
+                    name: 'formData',
+                    type: 'object',
+                },
+            ],
+        },
+        {
             label: 'Set form state',
             action: '_setFormState',
             args: [

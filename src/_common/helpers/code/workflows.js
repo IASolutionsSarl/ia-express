@@ -4,10 +4,11 @@ import { detectInfinityLoop } from '@/_common/helpers/code/workflowsCallstack.js
 import { applyVariableUpdate } from '@/_common/helpers/updateVariable.js';
 import { getFrontWorkflowCapabilities } from '@/_common/helpers/workflowVersion';
 import { set } from 'lodash-es';
-import { unref } from 'vue';
+import { toRaw, unref } from 'vue';
 
 import { executeBackendWorkflow, parseSSEStreamAsync } from '@/_common/helpers/code/backendWorkflows.js';
 
+import { requestWithOptionalSSE } from '@/_common/helpers/code/editorRequests.ts';
 import { betterFetch } from '@better-fetch/fetch';
 import integrationsCore from '@/extensions/integrations/index.js';
 
@@ -985,6 +986,30 @@ export async function executeWorkflowAction(
                 result = await executeBackendWorkflow(workflowId, inputData, options, context);
                 break;
             }
+            case 'call-agent': {
+                const args = resolveConfig('args', action.args || {}, context, { event });
+                if (args.files) args.files = await Promise.all([args.files].flat().filter(Boolean).map(toAgentFile));
+                const url = `/ww/agents/${action.type.split(':')[1]}/run`;
+                try {
+                    // Streamed, the answer comes as `text` and `tool-result` chunks, then a `result` or `error` one, for the
+                    // action's loop.
+                    result = args.__wwstream
+                        ? await requestWithOptionalSSE({
+                              url,
+                              requestOptions: { method: 'POST', body: args },
+                              stream: true,
+                          })
+                        : await wwServerClient(url, { method: 'POST', body: args });
+                } catch (error) {
+                    // The server explains a refusal (access rules, a quota reached): the user reads that, not the status.
+                    const reason = error?.error?.error;
+                    throw Object.assign(new Error(reason?.message || error?.message || 'The agent could not answer.'), {
+                        status: error?.status,
+                        code: reason?.code,
+                    });
+                }
+                break;
+            }
             case 'trigger-event': {
                 if (!action.triggerId) throw new Error('No trigger selected.');
                 const trigger =
@@ -1165,7 +1190,7 @@ export async function executeWorkflowAction(
                         timestamp: response.timestamp,
                     };
                 } catch (error) {
-                    throw new Error('Error while geolocation.');
+                    throw new Error('Error while geolocation.', { cause: error });
                 }
 
                 break;
@@ -1320,6 +1345,37 @@ export async function executeWorkflowAction(
             case 'log': {
                  break;
             }
+            case 'get-agent-approval':
+            case 'answer-agent-approval': {
+                const args = resolveConfig('args', action.args || {}, context, { event });
+                // An approval page of the app: the link the approval workflows send carries ?approvalId=…&token=….
+                const query = new URLSearchParams(window.location.search);
+                const approvalId = args.approvalId || query.get('approvalId');
+                const token = args.token || query.get('token');
+                if (!approvalId || !token) throw new Error('This page was not opened from an approval link.');
+                // With the app's session: a signed-in user is kept as the approver.
+                const url = `/ww/agent-approvals/${encodeURIComponent(approvalId)}`;
+                try {
+                    result =
+                        action.type === 'get-agent-approval'
+                            ? await wwServerClient(url, { query: { token } })
+                            : await wwServerClient(url, {
+                                  method: 'POST',
+                                  body: {
+                                      token,
+                                      approved: !!args.approved,
+                                      changes: !!args.changes,
+                                      name: args.name || undefined,
+                                      note: args.note || undefined,
+                                  },
+                              });
+                } catch (error) {
+                    throw new Error(error?.error?.error?.message || 'The approval could not be reached.', {
+                        cause: error,
+                    });
+                }
+                break;
+            }
             case 'copy-clipboard': {
                 result = resolveConfig('value', action.value, context, { event });
                 // Preview clicks focus the canvas iframe, so use its clipboard instead of the editor document.
@@ -1370,7 +1426,7 @@ export async function executeWorkflowAction(
 
                 if (!('Notification' in window)) throw new Error('Notifications are not available');
 
-                const permission = await Notification.requestPermission();
+                const permission = await window.Notification.requestPermission();
                 if (permission !== 'granted') throw new Error('Notification permission denied');
 
                 const registration = await navigator.serviceWorker?.getRegistration();
@@ -1384,7 +1440,7 @@ export async function executeWorkflowAction(
                     if (vibrate) options.vibrate = vibrate;
                     registration.showNotification(title, options);
                 } else {
-                    new Notification(title, { body, icon, image, tag });
+                    new window.Notification(title, { body, icon, image, tag });
                 }
                 break;
             }
@@ -2027,6 +2083,19 @@ export function convertErrorToObject(err) {
     let error = {};
     for (const key of keys) error[key] = err[key];
     return error;
+}
+
+// A file goes to the agent in JSON, as a data URI with its name. Duck-typed: a file picked in the front's frame is not
+// an instance of this frame's Blob.
+async function toAgentFile(value) {
+    // A file kept in a variable may be a reactive proxy, on which the File methods throw.
+    const file = toRaw(value);
+    if (typeof file?.arrayBuffer !== 'function') return file;
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    const mimeType = file.type || 'application/octet-stream';
+    return { name: file.name || '', mimeType, base64: `data:${mimeType};base64,${btoa(binary)}` };
 }
 
 function getPageUrl(pageConfig = {}) {

@@ -136,6 +136,7 @@ export default {
             const collection = {
                 ...currentCollectionInfo,
                 ...newCollectionInfo,
+                error: newCollectionInfo.error || null,
             };
 
             if (typeof currentCollectionInfo.limit === 'object') {
@@ -157,7 +158,7 @@ export default {
                 wwLib.store.data.setCollectionFetching({ id, isFetching: false });
             }
         } catch (err) {
-            if (currentNavigationId === wwLib.globalVariables._navigationId) {
+             if (currentNavigationId === wwLib.globalVariables._navigationId) {
                 wwLib.store.data.setCollectionFetching({ id, isFetching: false });
             }
         }

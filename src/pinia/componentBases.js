@@ -17,7 +17,6 @@ import wwobject9ae1fce82e314bfda4d20450235bdfd5 from '@weweb-internal/ext-elemen
 import wwobject6145eb600af84e52bcc6dc0f6743654e from '@weweb-internal/ext-element-6145eb60-0af8-4e52-bcc6-dc0f6743654e/config';
 import wwobject6d692ca26cdc4805aa0c211102f335d0 from '@weweb-internal/ext-element-6d692ca2-6cdc-4805-aa0c-211102f335d0/config';
 import wwobject97a634605c254d74ac1f86693c2e4a08 from '@weweb-internal/ext-element-97a63460-5c25-4d74-ac1f-86693c2e4a08/config';
-import wwobject9ecb2cfccef74be8b7363e17a3b7e9ff from '@weweb-internal/ext-element-9ecb2cfc-cef7-4be8-b736-3e17a3b7e9ff/config';
 import wwobject2dff59573bd846f9afa3a5c5bab91931 from '@weweb-internal/ext-element-2dff5957-3bd8-46f9-afa3-a5c5bab91931/config';
 import wwobject99ea5bf7b91e43ea8ec3dbaf2b171e34 from '@weweb-internal/ext-element-99ea5bf7-b91e-43ea-8ec3-dbaf2b171e34/config';
 import wwobject1ba25bdfdee94e0ea0b8b3f3128c3b65 from '@weweb-internal/ext-element-1ba25bdf-dee9-4e0e-a0b8-b3f3128c3b65/config';
@@ -37,6 +36,7 @@ import wwobject6047b8df81b745a7a6b37355fb2fa3cd from '@weweb-internal/ext-elemen
 import wwobjectfd8c482f532c4aeba7ae6904a6b62a1b from '@weweb-internal/ext-element-fd8c482f-532c-4aeb-a7ae-6904a6b62a1b/config';
 import wwobject985570fcb3c04566800482ab3b30a11d from '@weweb-internal/ext-element-985570fc-b3c0-4566-8004-82ab3b30a11d/config';
 import wwobjectb783dc65d5284f748c14e27c934c39b1 from '@weweb-internal/ext-element-b783dc65-d528-4f74-8c14-e27c934c39b1/config';
+import wwobject9ecb2cfccef74be8b7363e17a3b7e9ff from '@weweb-internal/ext-element-9ecb2cfc-cef7-4be8-b736-3e17a3b7e9ff/config';
 /* wwFront:end */
 
 export const useComponentBasesStore = defineStore('componentBases', () => {
@@ -57,7 +57,6 @@ export const useComponentBasesStore = defineStore('componentBases', () => {
 'wwobject-6145eb60-0af8-4e52-bcc6-dc0f6743654e': getInheritedConfiguration({ ...wwobject6145eb600af84e52bcc6dc0f6743654e, name: 'wwobject-6145eb60-0af8-4e52-bcc6-dc0f6743654e' }),
 'wwobject-6d692ca2-6cdc-4805-aa0c-211102f335d0': getInheritedConfiguration({ ...wwobject6d692ca26cdc4805aa0c211102f335d0, name: 'wwobject-6d692ca2-6cdc-4805-aa0c-211102f335d0' }),
 'wwobject-97a63460-5c25-4d74-ac1f-86693c2e4a08': getInheritedConfiguration({ ...wwobject97a634605c254d74ac1f86693c2e4a08, name: 'wwobject-97a63460-5c25-4d74-ac1f-86693c2e4a08' }),
-'wwobject-9ecb2cfc-cef7-4be8-b736-3e17a3b7e9ff': getInheritedConfiguration({ ...wwobject9ecb2cfccef74be8b7363e17a3b7e9ff, name: 'wwobject-9ecb2cfc-cef7-4be8-b736-3e17a3b7e9ff' }),
 'wwobject-2dff5957-3bd8-46f9-afa3-a5c5bab91931': getInheritedConfiguration({ ...wwobject2dff59573bd846f9afa3a5c5bab91931, name: 'wwobject-2dff5957-3bd8-46f9-afa3-a5c5bab91931' }),
 'wwobject-99ea5bf7-b91e-43ea-8ec3-dbaf2b171e34': getInheritedConfiguration({ ...wwobject99ea5bf7b91e43ea8ec3dbaf2b171e34, name: 'wwobject-99ea5bf7-b91e-43ea-8ec3-dbaf2b171e34' }),
 'wwobject-1ba25bdf-dee9-4e0e-a0b8-b3f3128c3b65': getInheritedConfiguration({ ...wwobject1ba25bdfdee94e0ea0b8b3f3128c3b65, name: 'wwobject-1ba25bdf-dee9-4e0e-a0b8-b3f3128c3b65' }),
@@ -76,7 +75,8 @@ export const useComponentBasesStore = defineStore('componentBases', () => {
 'wwobject-6047b8df-81b7-45a7-a6b3-7355fb2fa3cd': getInheritedConfiguration({ ...wwobject6047b8df81b745a7a6b37355fb2fa3cd, name: 'wwobject-6047b8df-81b7-45a7-a6b3-7355fb2fa3cd' }),
 'wwobject-fd8c482f-532c-4aeb-a7ae-6904a6b62a1b': getInheritedConfiguration({ ...wwobjectfd8c482f532c4aeba7ae6904a6b62a1b, name: 'wwobject-fd8c482f-532c-4aeb-a7ae-6904a6b62a1b' }),
 'wwobject-985570fc-b3c0-4566-8004-82ab3b30a11d': getInheritedConfiguration({ ...wwobject985570fcb3c04566800482ab3b30a11d, name: 'wwobject-985570fc-b3c0-4566-8004-82ab3b30a11d' }),
-'wwobject-b783dc65-d528-4f74-8c14-e27c934c39b1': getInheritedConfiguration({ ...wwobjectb783dc65d5284f748c14e27c934c39b1, name: 'wwobject-b783dc65-d528-4f74-8c14-e27c934c39b1' })};
+'wwobject-b783dc65-d528-4f74-8c14-e27c934c39b1': getInheritedConfiguration({ ...wwobjectb783dc65d5284f748c14e27c934c39b1, name: 'wwobject-b783dc65-d528-4f74-8c14-e27c934c39b1' }),
+'wwobject-9ecb2cfc-cef7-4be8-b736-3e17a3b7e9ff': getInheritedConfiguration({ ...wwobject9ecb2cfccef74be8b7363e17a3b7e9ff, name: 'wwobject-9ecb2cfc-cef7-4be8-b736-3e17a3b7e9ff' })};
     /* wwFront:end */
  
     return {
